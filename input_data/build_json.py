@@ -1,34 +1,21 @@
+# builds the json data file from the input folder
 import os
 import logging
 import json
 import glob
 from collections import defaultdict
-import xml.etree.ElementTree as etree
+import xml.etree.ElementTree as eTree
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import TextConverter
 from pdfminer.layout import LAParams
 from pdfminer.pdfpage import PDFPage
 from io import StringIO
+from utils.logger import process_logger
 
-
-# builds the json data file from the input folder
 
 # create logger with 'spam_application'
 logger = logging.getLogger('input_data')
-logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('json_build.log')
-fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(fh)
-logger.addHandler(ch)
+process_logger(logger, file_name="json_data")
 
 
 build_w2 = False  # set to True to display field names and change code
@@ -126,7 +113,7 @@ def parse_w2(path):
 
 def parse_1099(path):
     # parsing xml file
-    tree = etree.parse(path)
+    tree = eTree.parse(path)
     root = tree.getroot()
 
     def get_tax_root():
