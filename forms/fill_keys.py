@@ -18,8 +18,59 @@ def create_empty_fields():
                 logger.debug("Creating fields file for %s -- %s", fields_name, e)
         else:
             logger.info("File ignored %s", u)
-    for u in glob.glob(os.path.join(fields_mapping_folder, "*", "*")):
-        logger.info("File exists %s", u)
+
+
+def fill_fields_files():
+    yes_no = " y n"
+    proceeds_columns = " proceeds cost adjustments gain"
+    dollar_cents = " dollar cents"
+    trade = " proceeds cost code adjustment gain"
+    full_trade = " description date_acq date_sold" + trade
+    for u in glob.glob(os.path.join(fields_mapping_folder, "*", "*" + fields_extension)):
+        logger.info("Filling fields %s", u)
+        with open(u, 'w') as f:
+            if "f1040sd" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                for i in ['1a', '1b', '2', '3']:
+                    f.write(i + proceeds_columns + "\n")
+                for i in range(4, 8):
+                    f.write(str(i) + "\n")
+                for i in ['8a', '8b', '9', '10']:
+                    f.write(i + proceeds_columns + "\n")
+                for i in range(11, 17):
+                    f.write(str(i) + "\n")
+                f.write("17" + yes_no + "\n")
+                for i in range(18, 20):
+                    f.write(str(i) + "\n")
+                f.write("20" + yes_no + "\n")
+                f.write("21\n")
+                f.write("22" + yes_no + "\n")
+            elif "f6251" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                lines = ['1']
+                for i in range(20):
+                    lines.append("2" + chr(ord('a') + i))
+                for i in range(3, 41):
+                    lines.append(str(i))
+                for l in lines:
+                    f.write(l + dollar_cents + "\n")
+            elif "f8949" in u:
+                f.write("I_name\n")
+                f.write("I_ssn\n")
+                f.write("short" + " a b c" + "\n")
+                for i in range(14):
+                    f.write("I_1_" + str(i + 1) + full_trade + "\n")
+                f.write("I_2" + trade + "\n")
+                f.write("II_name\n")
+                f.write("II_ssn\n")
+                f.write("short" + " d e f" + "\n")
+                for i in range(14):
+                    f.write("II_1_" + str(i + 1) + full_trade + "\n")
+                f.write("II_2" + trade + "\n")
+            else:
+                logger.error("Fields File not defined %s", u)
 
 
 def build_keys(file, keys_name, keys_orig):
@@ -31,10 +82,18 @@ def build_keys(file, keys_name, keys_orig):
             d = load_keys(keys_orig, out_dict=False)
             it = iter(d)
             for command in f:
-                print(command)
-                u = next(it)
-                u = command.strip(), u[1], u[2]
-                out.write("\t\t".join(u) + "\n")
+                if " " not in command:
+                    u = next(it)
+                    u = command.strip(), u[1], u[2]
+                    out.write("\t\t".join(u) + "\n")
+                else:
+                    c = command.strip().split(" ")
+                    columns = c[1:]
+                    for j in columns:
+                        u = next(it)
+                        n = c[0] + "_" + j
+                        u = n, u[1], u[2]
+                        out.write("\t\t".join(u) + "\n")
 
 
 def process_fields(file):
@@ -59,8 +118,6 @@ def generate_keys_pdf():
         if u.endswith(fields_extension):
             logger.info("Processing fields file %s", u)
             process_fields(u)
-    # for u in glob.glob(os.path.join(fields_mapping_folder, "*", "*")):
-    #     logger.info("File exists %s", u)
 
 
 def move_keys_to_parent():
@@ -68,12 +125,16 @@ def move_keys_to_parent():
         if u.endswith(keys_extension):
             logger.info("Moving keys file %s", u)
             rel = os.path.relpath(u, fields_mapping_folder)
-            os.rename(u, rel)
-            logger.info("Moved  %s to %s", u, rel)
+            try:
+                os.rename(u, rel)
+                logger.info("Moved  %s to %s", u, rel)
+            except FileExistsError as e:
+                logger.error("Already Exists - Not Moved  %s to %s", u, rel)
 
 
 if __name__ == "__main__":
     map_folders(fields_mapping_folder)
     create_empty_fields()
+    fill_fields_files()  # run after defining the fields files
     generate_keys_pdf()
-    # move_keys_to_parent()  # moves the keys files when done
+    move_keys_to_parent()  # moves the keys files when done
