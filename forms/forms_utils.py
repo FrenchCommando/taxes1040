@@ -47,9 +47,18 @@ def fill_pdf_from_keys(file, out_file, d):
                 if annotation[ANNOT_FIELD_KEY]:
                     key = annotation[ANNOT_FIELD_KEY][1:-1]
                     if key in d.keys():
-                        annotation.update(
-                            pdfrw.PdfDict(V='{}'.format(d[key][0]))
-                        )
+                        if annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_BTN:
+                            # it's a button
+                            annotation.update(
+                                # pdfrw.PdfDict(AS=pdfrw.PdfName('Off'))
+                                pdfrw.PdfDict(AS=pdfrw.PdfName('Yes'))
+                                # pdfrw.PdfDict(AS=pdfrw.PdfName(d[key][0]))
+                            )
+                            pass
+                        elif annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_TXT:
+                            annotation.update(
+                                pdfrw.PdfDict(V='{}'.format(d[key]))
+                            )
     try:
         pdfrw.PdfWriter().write(out_file, template_pdf)
         logger.info("Exporting PDF file %s succeeded", out_file)

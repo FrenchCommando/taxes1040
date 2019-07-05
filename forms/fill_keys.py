@@ -21,15 +21,124 @@ def create_empty_fields():
 
 
 def fill_fields_files():
+    first_last_ssn = " first_name_initial last_name ssn"
+    standard_deduction = " can_be_claimed_as_dependent_y" \
+                         " born_before_19540102_y" \
+                         " blind"
+    dependents = " first_last" \
+                 " ssn" \
+                 " relationship" \
+                 " child_tax_credit" \
+                 " credit_for_other_dependent"
+    occupation_pin = " occupation identity_protection_pin"
     yes_no = " y n"
     proceeds_columns = " proceeds cost adjustments gain"
     dollar_cents = " dollar cents"
+    payer_dollar_cents = " payer" + dollar_cents
     trade = " proceeds cost code adjustment gain"
     full_trade = " description date_acq date_sold" + trade
     for u in glob.glob(os.path.join(fields_mapping_folder, "*", "*" + fields_extension)):
         logger.info("Filling fields %s", u)
         with open(u, 'w') as f:
-            if "f1040sd" in u:
+            if "f1040." in u:
+                f.write("single\n")
+                f.write("married_filling_jointly\n")
+                f.write("married_filling_separately\n")
+                f.write("head_of_household\n")
+                f.write("qualifying_widower\n")
+                f.write("qualifying_widower_name\n")
+                f.write("self" + first_last_ssn + "\n")
+                f.write("self" + standard_deduction + "\n")
+                f.write("spouse" + first_last_ssn + "\n")
+                f.write("spouse" + standard_deduction + "\n")  # check order for accuracy
+                f.write("spouse_itemizes_on_separate_or_dual_status_alien\n")
+                f.write("address\n")
+                f.write("apt\n")
+                f.write("city_state_zip\n")
+                f.write("full_year_health_coverage_or_exempt\n")
+                f.write("presidential_election self spouse\n")
+                f.write("more_than_four_dependents\n")
+                for i in range(1, 5):
+                    f.write("dependent_" + str(i) + dependents + "\n")
+                f.write("self" + occupation_pin + "\n")
+                f.write("spouse" + occupation_pin + "\n")
+                f.write("preparer_name\n")
+                f.write("ptin\n")
+                f.write("firm_ein\n")
+                f.write("firm_name\n")
+                f.write("firm_phone\n")
+                f.write("third_party_designee\n")
+                f.write("self_employed\n")
+                f.write("firm_address\n")
+
+                lines = ['1']
+                for i in range(2, 6):
+                    for j in range(2):
+                        lines.append(str(i) + chr(ord('a') + i))
+                for l in lines:
+                    f.write(l + dollar_cents + "\n")
+                f.write("6_from_s1_22\n")
+                for i in range(6, 11):
+                    f.write(str(i) + dollar_cents + "\n")
+                f.write("11a tax 1 2 3 3_value\n")
+                f.write("11b\n")
+                f.write("11" + dollar_cents + "\n")
+                f.write("12a\n")
+                f.write("12b\n")
+                for i in range(12, 17):
+                    f.write(str(i) + dollar_cents + "\n")
+                f.write("17a\n")
+                f.write("17b\n")
+                f.write("17c\n")
+                f.write("17_from_5\n")
+                for i in range(17, 20):
+                    f.write(str(i) + dollar_cents + "\n")
+                f.write("20a 8888" + dollar_cents + "\n")
+                f.write("20b\n")
+                f.write("20c checking savings\n")
+                f.write("20d\n")
+                for i in range(21, 24):
+                    f.write(str(i) + dollar_cents + "\n")
+            elif "f1040s1" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+
+                f.write("1_9b" + dollar_cents + "\n")
+                for i in range(10, 13):
+                    f.write(str(i) + dollar_cents + "\n")
+                f.write("13_not_d\n")
+                for i in range(13, 21):
+                    f.write(str(i) + dollar_cents + "\n")
+                f.write("21_type\n")
+                for i in range(21, 31):
+                    f.write(str(i) + dollar_cents + "\n")
+                f.write("31b\n")
+                f.write("31a" + dollar_cents + "\n")
+                for i in range(32, 37):
+                    f.write(str(i) + dollar_cents + "\n")
+            elif "f1040s3" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                for i in range(48, 54):
+                    f.write(str(i) + dollar_cents + "\n")
+                f.write("54 a b c c_value\n")
+                for i in range(54, 56):
+                    f.write(str(i) + dollar_cents + "\n")
+            elif "f1040sb" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                for i in range(1, 15):
+                    f.write("1_" + str(i) + payer_dollar_cents + "\n")
+                for i in range(2, 5):
+                    f.write(str(i) + dollar_cents + "\n")
+                for i in range(1, 17):
+                    f.write("5_" + str(i) + payer_dollar_cents + "\n")
+                f.write("6" + dollar_cents + "\n")
+                for i in ["7a", "7a_yes"]:
+                    f.write(i + yes_no + "\n")
+                f.write("7b\n")
+                f.write("8" + yes_no + "\n")
+            elif "f1040sd" in u:
                 f.write("name\n")
                 f.write("ssn\n")
                 for i in ['1a', '1b', '2', '3']:
@@ -110,7 +219,7 @@ def process_fields(file):
     except FileNotFoundError as e:
         logger.error(e)
     pdf_orig = os.path.join(key_mapping_folder, os.path.relpath(pdf_name, fields_mapping_folder))
-    fill_pdf_from_keys(file=pdf_orig, out_file=pdf_name, d=d)
+    fill_pdf_from_keys(file=pdf_orig, out_file=pdf_name, d={k: v[0] for k, v in d.items()})
 
 
 def generate_keys_pdf():

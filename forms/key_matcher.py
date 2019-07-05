@@ -40,11 +40,14 @@ def process_all():
     for u in glob.glob(os.path.join("*", "", "*")):
         if os.path.splitext(u)[1] == pdf_extension:
             logger.info("Processing file %s", u)
-            process_pdf(u)
+            try:
+                process_pdf(u)
+            except Exception as e:
+                logger.error(e)
         else:
             logger.info("File ignored %s", u)
-    for u in glob.glob(os.path.join(key_mapping_folder, "*", "")):
-        logger.info("File exists %s", u)
+    # for u in glob.glob(os.path.join(key_mapping_folder, "*", "")):
+    #     logger.info("File exists %s", u)
 
 
 if __name__ == "__main__":
