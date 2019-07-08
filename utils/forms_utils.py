@@ -2,19 +2,18 @@ import os
 import glob
 import re
 import pdfrw
-from forms.forms_constants import *
+from utils.forms_constants import *
 
 
 def map_folders(name):
     if not os.path.isdir(name):
         os.mkdir(name)
-
-    for u in glob.glob(os.path.join("*", "")):
-        if not any(f in u for f in utils_folders):
-            u_path = os.path.join(name, u)
-            if not os.path.isdir(u_path):
-                os.mkdir(u_path)
-                logger.info("Folders created %s", u_path)
+    for u in glob.glob(os.path.join(forms_folder, "*", "")):
+        rel = os.path.relpath(u, forms_folder)
+        u_path = os.path.join(name, rel)
+        if not os.path.isdir(u_path):
+            os.mkdir(u_path)
+            logger.info("Folders created %s", u_path)
     logger.info("Folders created for %s - Done", name)
 
 
@@ -50,14 +49,14 @@ def fill_pdf_from_keys(file, out_file, d):
                         if annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_BTN:
                             # it's a button
                             annotation.update(
-                                # pdfrw.PdfDict(AS=pdfrw.PdfName('Off'))
-                                pdfrw.PdfDict(AS=pdfrw.PdfName('Yes'))
-                                # pdfrw.PdfDict(AS=pdfrw.PdfName(d[key][0]))
+                                pdfrw.PdfDict(AS=pdfrw.PdfName('Yes' if d[key] else 'Off'))
                             )
-                            pass
                         elif annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_TXT:
+                            r = d[key]
+                            if isinstance(r, float) and r == round(r):
+                                r = int(r)
                             annotation.update(
-                                pdfrw.PdfDict(V='{}'.format(d[key]))
+                                pdfrw.PdfDict(V='{}'.format(r))
                             )
     try:
         pdfrw.PdfWriter().write(out_file, template_pdf)

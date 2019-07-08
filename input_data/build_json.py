@@ -1,4 +1,7 @@
 # builds the json data file from the input folder
+# One file per person
+# Select file using different values in the main
+
 import os
 import logging
 import json
@@ -90,9 +93,9 @@ def parse_w2(path):
         **city_state_zip(u[company_index + 3], "Company"),
         **first_mid_last(u[name_index]),
         "Address": u[name_index + 1],
-        "Address_apt": u[name_index + 2],
+        "Address_apt": u[name_index + 2].split(" ")[-1],
         **city_state_zip(u[name_index + 3], "Address"),
-        "SSN": u[ssn_index],
+        "SSN": u[ssn_index].replace("-", ""),
         "Wages": u[wages_index],
         "SocialSecurity_wages": u[wages_index + 2],
         "Medicare_wages": u[wages_index + 4],
@@ -203,7 +206,11 @@ def build_json(folder):
         logger.debug("json dumped %s", f.name)
 
 
-if __name__ == "__main__":
+def main():
     my_folder = "toto"
-    read_data_pdf(my_folder)
+    read_data_pdf(os.path.join("input_data", my_folder))
     build_json(my_folder)
+
+
+if __name__ == "__main__":
+    main()

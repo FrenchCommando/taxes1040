@@ -5,7 +5,7 @@
 # .keys is generated automatically
 # next: just need to replace integer values with names
 # (using the fill_keys.py script)
-from forms.forms_utils import *
+from utils.forms_utils import *
 
 
 def process_pdf(file):
@@ -25,19 +25,19 @@ def process_pdf(file):
                         d_type[key] = fields_type
                         i += 1
 
-        k_file_map = os.path.join(key_mapping_folder, k_file)
+        k_file_map = os.path.join(key_mapping_folder, os.path.relpath(k_file, forms_folder))
         with open(k_file_map, 'w+') as f:
             logger.info("File created %s", k_file_map)
             for k, i in d.items():
                 f.write(str(i) + "\t\t" + k + "\t\t" + d_type[k] + "\n")
     else:
         d = load_keys(k_file)
-    out_file = os.path.join(key_mapping_folder, file)
+    out_file = os.path.join(key_mapping_folder, os.path.relpath(file, forms_folder))
     fill_pdf_from_keys(file=file, out_file=out_file, d=d)
 
 
 def process_all():
-    for u in glob.glob(os.path.join("*", "", "*")):
+    for u in glob.glob(os.path.join(forms_folder, "*", "", "*")):
         if os.path.splitext(u)[1] == pdf_extension:
             logger.info("Processing file %s", u)
             try:
@@ -50,6 +50,10 @@ def process_all():
     #     logger.info("File exists %s", u)
 
 
-if __name__ == "__main__":
+def main():
     map_folders(key_mapping_folder)
     process_all()
+
+
+if __name__ == "__main__":
+    main()

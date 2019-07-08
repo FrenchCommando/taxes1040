@@ -2,7 +2,7 @@
 # the fields file then contains the names of the fields to be mapped
 # with a clear syntax to describe tables and dollar/cents splits
 
-from forms.forms_utils import *
+from utils.forms_utils import *
 
 
 def create_empty_fields():
@@ -74,7 +74,7 @@ def fill_fields_files():
                 lines = ['1']
                 for i in range(2, 6):
                     for j in range(2):
-                        lines.append(str(i) + chr(ord('a') + i))
+                        lines.append(str(i) + chr(ord('a') + j))
                 for l in lines:
                     f.write(l + dollar_cents + "\n")
                 f.write("6_from_s1_22\n")
@@ -174,7 +174,7 @@ def fill_fields_files():
                 f.write("I_2" + trade + "\n")
                 f.write("II_name\n")
                 f.write("II_ssn\n")
-                f.write("short" + " d e f" + "\n")
+                f.write("long" + " d e f" + "\n")
                 for i in range(14):
                     f.write("II_1_" + str(i + 1) + full_trade + "\n")
                 f.write("II_2" + trade + "\n")
@@ -234,16 +234,21 @@ def move_keys_to_parent():
         if u.endswith(keys_extension):
             logger.info("Moving keys file %s", u)
             rel = os.path.relpath(u, fields_mapping_folder)
+            folder_path = os.path.join(forms_folder, rel)
             try:
-                os.rename(u, rel)
-                logger.info("Moved  %s to %s", u, rel)
+                os.rename(u, folder_path)
+                logger.info("Moved  %s to %s", u, folder_path)
             except FileExistsError as e:
-                logger.error("Already Exists - Not Moved  %s to %s", u, rel)
+                logger.error("Already Exists - Not Moved  %s to %s", u, folder_path)
 
 
-if __name__ == "__main__":
+def main():
     map_folders(fields_mapping_folder)
     create_empty_fields()
     fill_fields_files()  # run after defining the fields files
     generate_keys_pdf()
     move_keys_to_parent()  # moves the keys files when done
+
+
+if __name__ == "__main__":
+    main()

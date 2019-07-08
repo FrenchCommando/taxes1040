@@ -1,5 +1,4 @@
-import logging
-from utils.logger import process_logger
+from utils.logger import process_logger, logging
 
 
 logger = logging.getLogger('key_matching')
@@ -7,11 +6,14 @@ process_logger(logger, file_name='key_matching')
 
 key_mapping_folder = 'key_mapping'
 fields_mapping_folder = 'fields_mapping'
-utils_folders = ["__", key_mapping_folder, fields_mapping_folder]
+output_pdf_folder = "output"
+forms_folder = "forms"
 
 keys_extension = ".keys"
 pdf_extension = ".pdf"
 fields_extension = ".fields"
+log_extension = ".log"
+json_extension = ".json"
 
 ANNOT_KEY = '/Annots'
 ANNOT_FIELD_KEY = '/T'
