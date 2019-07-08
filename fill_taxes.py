@@ -1,19 +1,11 @@
 import json
 from itertools import islice
 from utils.forms_utils import *
+from forms.form_worksheet_names import *
 from pdfrw import PdfReader, PdfWriter
 
 
 override_keyword = "override"
-
-k_1040 = 'Federal/f1040'
-k_1040s1 = 'Federal/f1040s1'
-k_1040s3 = 'Federal/f1040s3'
-k_1040sb = 'Federal/f1040sb'
-k_1040sd = 'Federal/f1040sd'
-k_6251 = 'Federal/f6251'
-k_8949 = 'Federal/f8949'
-
 
 logger = logging.getLogger('fill_taxes')
 process_logger(logger, file_name='fill_taxes')
@@ -64,17 +56,35 @@ def get_main_info(d):
     return info
 
 
+def computation(amount):
+    if amount == 0:
+        return 0
+    if amount <= 157500:
+        return amount * 0.24 - 5710.50
+    if amount <= 200000:
+        return amount * 0.32 - 18310.50
+    if amount <= 500000:
+        return amount * 0.35 - 24310.50
+    return amount * 0.37 - 34310.50
+
+
 def fill_taxes(d):
     main_info = get_main_info(d)
     wages = sum(w['Wages'] for w in d['W2'])
     federal_tax = sum(w['Federal_tax'] for w in d['W2'])
-    taxable_interest = sum(i['Interest'] for i in d['1099'])
-    dividends_qualified = sum(i['Qualified Dividends'] for i in d['1099'])
-    dividends_ordinary = sum(i['Ordinary Dividends'] for i in d['1099'])
 
-    n_trades = sum(len(i['Trades']) for i in d['1099'])
-    sum_trades = {"SHORT": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0},
-                  "LONG": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0}}  # from 8949 to fill 1040sd
+    has_1099 = '1099' in d
+    dividends_qualified = None
+    additional_income = None
+
+    if has_1099:
+        n_trades = sum(len(i['Trades']) for i in d['1099'])
+        additional_income = n_trades > 0
+        sum_trades = {"SHORT": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0},
+                      "LONG": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0}}  # from 8949 to fill 1040sd
+
+    standard_deduction = 12000  # if single
+    qualified_business_deduction = 0
 
     forms_state = {}  # mapping name of forms with content
     worksheets = {}  # worksheets need not be printed
@@ -105,7 +115,6 @@ def fill_taxes(d):
             Form.__init__(self, k_1040)
 
         def build(self):
-            print("Called")
             first_name_and_initial = main_info['first_name']
             if main_info['initial'] != "":
                 first_name_and_initial += " " + main_info['initial']
@@ -123,38 +132,74 @@ def fill_taxes(d):
             })
 
             self.push_to_dict('1_dollar', wages)
-            self.push_to_dict('2b_dollar', taxable_interest)
-            self.push_to_dict('3a_dollar', dividends_qualified)
-            self.push_to_dict('3b_dollar', dividends_ordinary)
 
-            if n_trades > 0:
+            if has_1099:
+                Form1040sb().build()
+                self.push_to_dict('2b_dollar', forms_state[k_1040sb]['4_dollar'])
+                self.push_to_dict('3b_dollar', forms_state[k_1040sb]['6_dollar'])
+
+                if forms_state[k_1040sb]['4_dollar'] == 0 \
+                        and forms_state[k_1040sb]['6_dollar'] == 0 \
+                        and 'foreign_account' not in d:
+                    del forms_state[k_1040sb]
+
+                nonlocal dividends_qualified
+                dividends_qualified = sum(i['Qualified Dividends'] for i in d['1099'])
+                self.push_to_dict('3a_dollar', dividends_qualified)
+
+            if additional_income:
                 # need line 22 from schedule 1
-                if k_1040s1 not in forms_state:
-                    Form1040s1().build()
+                Form1040s1().build()
                 self.push_to_dict('6_from_s1_22', forms_state[k_1040s1]['22_dollar'])
 
             self.push_sum('6_dollar', ['1_dollar',
-                                       '2a_dollar', '2b_dollar',
-                                       '3a_dollar', '3b_dollar',
-                                       '4a_dollar', '4b_dollar',
-                                       '5a_dollar', '5b_dollar',
+                                       '2b_dollar',
+                                       '3b_dollar',
+                                       '4b_dollar',
+                                       '5b_dollar',
                                        '6_from_s1_22'
                                        ])
 
-            if k_1040s1 in forms_state:
+            if additional_income:
                 self.push_to_dict('7_dollar', self.d['6_dollar'] - forms_state[k_1040s1].get('36_dollar', 0))
             else:
                 self.push_to_dict('7_dollar', self.d['6_dollar'])
 
-            self.push_to_dict('8_dollar', 12000)
+            self.push_to_dict('8_dollar', standard_deduction)
 
-            # 9 is qbi
+            self.push_to_dict('9_dollar', qualified_business_deduction)
 
             self.push_to_dict('10_dollar', max(0, self.d.get('7_dollar', 0)
                                                - self.d.get('8_dollar', 0) - self.d.get('9_dollar', 0)))
 
-            tax_computed = self.d['10_dollar']
-            self.push_to_dict('11a_tax', tax_computed)
+            if dividends_qualified:
+                qualified_dividend_worksheet = QualifiedDividendsCapitalGainTaxWorksheet()
+                qualified_dividend_worksheet.build()
+                self.push_to_dict('11a_tax', worksheets[w_qualified_dividends_and_capital_gains][27])
+            else:
+                self.push_to_dict('11a_tax', computation(self.d['10_dollar']))
+
+            # add from 11b
+            should_fill = ShouldFill6251Worksheet()
+            should_fill.build()
+            awt = 0
+            if should_fill.fill6251:
+                Form1040s2().build()
+                Form6251().build()
+                awt = forms_state[k_6251]['11_dollar']
+            if awt > 0:
+                self.d['11b'] = True
+                self.push_to_dict('11_dollar', self.d['11a_tax'] + awt)
+            else:
+                self.push_sum('11_dollar', ['11a_tax'])
+            if has_1099:
+                Form1040s3().build()
+                foreign_tax = forms_state[k_1040s3]['55_dollar']
+                if foreign_tax != 0:
+                    self.d['12b'] = True
+                    self.push_to_dict('12_dollar', forms_state[k_1040s3]['55_dollar'])
+                else:
+                    del forms_state[k_1040s3]
 
             self.push_to_dict('13_dollar', max(0, self.d.get('11_dollar', 0) - self.d.get('12_dollar', 0)))
             self.push_sum('15_dollar', ['13_dollar', '14_dollar'])
@@ -168,16 +213,20 @@ def fill_taxes(d):
                 self.push_to_dict('19_dollar', overpaid)
                 # all refunded
                 self.push_to_dict('20a_dollar', overpaid)
-                self.d['20b_dollar'] = d['routing_number']
+                self.d['20b'] = d['routing_number']
                 if d['checking']:
                     self.d['20c_checking'] = True
                 else:
                     self.d['20c_savings'] = True
-                self.d['20d_dollar'] = d['account_number']
-                self.push_to_dict('21_dollar', 0)
+                self.d['20d'] = d['account_number']
+                self.d['21_dollar'] = "-0-"
             else:
                 self.push_to_dict('22_dollar', -overpaid)
                 self.push_to_dict('23_dollar', 0)
+
+    class Form1040NR(Form):
+        def __init__(self):
+            Form.__init__(self, k_1040nr)
 
     class Form1040s1(Form):
         def __init__(self):
@@ -204,12 +253,24 @@ def fill_taxes(d):
                              for i in range(10, 22)]
                            ])
 
+    class Form1040s2(Form):
+        def __init__(self):
+            Form.__init__(self, k_1040s2)
+
+        def build(self):
+            self.push_name_ssn()
+
     class Form1040s3(Form):
         def __init__(self):
             Form.__init__(self, k_1040s3)
 
         def build(self):
             self.push_name_ssn()
+            # I don't need the 1116
+            # https://turbotax.intuit.com/tax-tips/military/filing-irs-form-1116-to-claim-the-foreign-tax-credit/L2ODfqp89
+            foreign_tax = sum(i['Foreign Tax'] for i in d['1099'])
+            self.push_to_dict('48_dollar', foreign_tax)
+            self.push_sum('55_dollar', [str(i) + "_dollar" for i in range(48, 55)])
 
     class Form1040sb(Form):
         def __init__(self):
@@ -217,6 +278,28 @@ def fill_taxes(d):
 
         def build(self):
             self.push_name_ssn()
+
+            if len(d['1099']) > 14:
+                logger.error("1040sb - too many brokers")
+
+            def fill_value(index, key):
+                i = 1
+                for f in d['1099']:
+                    self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
+                    self.push_to_dict("{}_{}_dollar".format(index, str(i)), f[key])
+                    i += 1
+            fill_value("1", "Interest")
+            fill_value("5", "Ordinary Dividends")
+
+            self.push_sum('2_dollar', ['1_{}_dollar'.format(str(i)) for i in range(1, 15)])
+            self.push_to_dict('4_dollar', self.d.get('2_dollar', 0) - self.d.get('3_dollar', 0))
+            self.push_sum('6_dollar', ['5_{}_dollar'.format(str(i)) for i in range(1, 17)])
+
+            if 'foreign_account' in d:
+                self.d['7a_y'] = True
+                self.d['7a_yes_y'] = True
+                self.d['7b'] = d['foreign_account']
+                self.d['8_n'] = True
 
     class Form1040sd(Form):
         def __init__(self):
@@ -235,6 +318,10 @@ def fill_taxes(d):
             fill_gains("LONG", "8")
 
             # fill capital loss carryover worksheet
+            capital_loss = CapitalLossCarryoverWorksheet()
+            capital_loss.build()
+            self.push_to_dict('6', worksheets[w_capital_loss_carryover][8])
+            self.push_to_dict('14', worksheets[w_capital_loss_carryover][13])
 
             self.push_sum('7', ['1a_gain', '1b_gain', '2_gain', '3_gain', '4', '5', '6'])
             self.push_sum('15', ['8a_gain', '8b_gain', '9_gain', '10_gain', '11', '12', '13', '14'])
@@ -337,10 +424,111 @@ def fill_taxes(d):
             fill_trades('LONG', 'long_d', 'II')
             return self.d.copy()
 
-    Form1040().build()  # one other version for NR
-    # Form1040NR().build()  # one other version for NR
-    print(forms_state)
-    print(sum_trades)
+    class Worksheet:
+        def __init__(self, key, n):
+            self.key = key
+            self.d = [0 for i in range(n + 1)]
+            worksheets[self.key] = self.d
+
+        def build(self):
+            raise NotImplementedError()
+
+    class CapitalLossCarryoverWorksheet(Worksheet):
+        def __init__(self):
+            Worksheet.__init__(self, w_capital_loss_carryover, 13)
+
+        def build(self):
+            self.d[1] = 0  # Taxes[2017][k_1040]['41']
+            self.d[2] = 0  # max(0, -Taxes[2017][k_1040sd]['21'])
+            self.d[3] = max(0, self.d[1] + self.d[2])
+            self.d[4] = min(self.d[2], self.d[3])
+            self.d[5] = 0  # max(0, -Taxes[2017][k_1040sd]['7'])
+            self.d[6] = 0  # max(0, Taxes[2017][k_1040sd]['15'])
+            self.d[7] = self.d[4] + self.d[6]
+            self.d[8] = max(0, self.d[5] - self.d[7])
+            if self.d[6] == 0:
+                self.d[9] = 0  # max(0, -Taxes[2017][k_1040sd]['15'])
+                self.d[10] = 0  # max(0, Taxes[2017][k_1040sd]['7'])
+                self.d[11] = max(0, self.d[4] - self.d[5])
+                self.d[12] = self.d[10] + self.d[11]
+                self.d[13] = max(0, self.d[9] - self.d[12])
+
+    class QualifiedDividendsCapitalGainTaxWorksheet(Worksheet):
+        def __init__(self):
+            Worksheet.__init__(self, w_qualified_dividends_and_capital_gains, 27)
+
+        def build(self):
+            self.d[1] = forms_state[k_1040]['10_dollar']
+            self.d[2] = forms_state[k_1040]['3a_dollar']
+            if d['scheduleD']:
+                self.d[3] = max(0, min(forms_state[k_1040sd]['15'], forms_state[k_1040sd]['16']))
+            else:
+                self.d[3] = forms_state[k_1040s1]['13_dollar']
+            self.d[4] = self.d[2] + self.d[3]
+            self.d[5] = 0  # form 4952
+            self.d[6] = max(0, self.d[4] - self.d[5])
+            self.d[7] = max(0, self.d[1] - self.d[6])
+            self.d[8] = 38600 if d['single'] else 77200
+            self.d[9] = min(self.d[1], self.d[8])
+            self.d[10] = min(self.d[7], self.d[9])
+            self.d[11] = self.d[9] - self.d[10]  # taxed at 0%
+            self.d[12] = min(self.d[1], self.d[6])
+            self.d[13] = self.d[11]
+            self.d[14] = self.d[12] - self.d[13]
+            self.d[15] = 425800  # for single
+            self.d[16] = min(self.d[1], self.d[15])
+            self.d[17] = self.d[7] + self.d[11]
+            self.d[18] = max(0, self.d[16] - self.d[17])
+            self.d[19] = min(self.d[14], self.d[18])
+            self.d[20] = self.d[19] * 0.15
+            self.d[21] = self.d[11] + self.d[19]
+            self.d[22] = self.d[12] - self.d[21]
+            self.d[23] = self.d[22] * 0.2
+            self.d[24] = computation(self.d[7])
+            self.d[25] = self.d[20] + self.d[23] + self.d[24]
+            self.d[26] = computation(self.d[1])
+            self.d[27] = min(self.d[25], self.d[26])
+
+    class ShouldFill6251Worksheet(Worksheet):
+        def __init__(self):
+            Worksheet.__init__(self, w_should_fill_6251, 13)
+            self.fill6251 = None
+
+        def build(self):
+            if k_1040sa in forms_state:
+                self.d[1] = forms_state[k_1040]['10_dollar']
+                self.d[2] = forms_state[k_1040sa]['7']
+                self.d[3] = self.d[1] + self.d[2]
+            self.d[4] = forms_state[k_1040s1].get('10_dollar', 0) \
+                + forms_state[k_1040s1].get('21_dollar', 0) \
+                if k_1040s1 in forms_state else 0
+            self.d[5] = self.d[3] - self.d[4]
+            self.d[6] = 70300  # single
+            if self.d[5] <= self.d[6]:
+                self.fill6251 = False
+                return
+            self.d[7] = self.d[5] - self.d[6]
+            self.d[8] = 500000  # single
+            if self.d[5] <= self.d[8]:
+                self.d[9] = 0
+                self.d[11] = self.d[7]
+            else:
+                self.d[9] = self.d[5] - self.d[8]
+                self.d[10] = min(self.d[9] * 0.25, self.d[6])
+                self.d[11] = self.d[7] + self.d[10]
+            if self.d[11] >= 191100:  # single
+                self.fill6251 = True
+                return
+            self.d[12] = self.d[11] * 0.26
+            self.d[13] = forms_state[k_1040]['11a'] \
+                + forms_state[k_1040s2]['46']
+            self.fill6251 = (self.d[13] < self.d[12])
+
+    if d['resident']:
+        Form1040().build()  # one other version for NR
+    else:
+        logger.error("Non-resident not yet implemented")
+        # Form1040NR().build()  # one other version for NR
     return forms_state, worksheets
 
 
@@ -376,16 +564,18 @@ def main():
     j = json.load(open("{}.json".format(name), 'rb'))
 
     additional_info = {
-        "single": True,
-        "dependents": False,
-        'occupation': 'Analyst',
+        'single': True,
+        'dependents': False,
+        'occupation': "Analyst",
         'full_year_health_coverage_or_exempt': True,
         'presidential_election_self': True,
+        'resident': True,  # if you're not it's not done yet
         'standard_deduction': True,  # not a key
         'scheduleD': True,
         'checking': True,
-        'routing_number': '11111111',
-        'account_number': '444444444',
+        'routing_number': "11111111",
+        'account_number': "444444444",
+        'foreign_account': 'FRANCE'
     }
 
     override_stuff = {
