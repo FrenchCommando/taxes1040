@@ -1,3 +1,6 @@
+# works for dictionaries
+# lists of dictionaries
+# dictionaries with values being handled types
 import tkinter as tk
 
 
@@ -10,36 +13,50 @@ class DictChecker(tk.Frame):
         self.table = None
 
     def check_dict(self, d):
-        self.table = tk.Frame(self.master)
+        table = tk.Frame(self.master)
         entries = dict()
         for (n, (k, v)) in enumerate(d.items()):
-            label = tk.Label(self.table, text=str(k))
+            label = tk.Label(table, text=str(k))
             label.grid(row=n, column=1, sticky="nsew")
-            ent = tk.Entry(self.table, textvariable=tk.StringVar(value=str(v)))  # ,width=30)
+            ent = tk.Entry(table, textvariable=tk.StringVar(value=str(v)))
             ent.grid(row=n, column=2, sticky="nsew")
-            entries[k] = ent
-        self.table.pack()
+            if isinstance(v, dict):
+                self.check_dict(v)
+            elif isinstance(v, list):
+                if len(v) > 0 and isinstance(v[0], dict):
+                    for q in v:
+                        self.check_dict(q)
+            else:
+                entries[k] = ent
+        table.pack()
 
         var = tk.IntVar()
         button = tk.Button(self.master, text="I'm done", command=lambda: var.set(1))
+        button.bind_all("<Return>", lambda _: var.set(2))
         button.pack(side='bottom')
-
         button.wait_variable(var)
-        saisies = dict()
-        for k, v in d.items():
+
+        modified_entries = {}
+        for k in entries:
             u = entries[k].get()
             if u.lower() == "true":
-                saisies[k] = True
+                modified_entries[k] = True
             elif u.lower() == "false":
-                saisies[k] = False
+                modified_entries[k] = False
+            elif any(kkk in k.lower() for kkk in ['tax', 'wage', 'dividend', 'interest', 'proceeds', 'cost']):
+                modified_entries[k] = float(u)
             else:
-                saisies[k] = u
-        return saisies
+                modified_entries[k] = u
+
+        button.destroy()
+        table.destroy()
+        return modified_entries
 
     def close(self):
         self.master.destroy()
 
 
+# this si the exported function
 def update_dict(d):
     root = tk.Tk()
     root.title("Input Parser")
@@ -50,6 +67,7 @@ def update_dict(d):
     app.mainloop()
 
 
+# this is just for testing
 def main():
     root = tk.Tk()
     root.title("Input Parser")

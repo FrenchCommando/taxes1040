@@ -588,8 +588,7 @@ def main():
 
     update_dict(additional_info)
     update_dict(override_stuff)
-    print(additional_info)
-    print(override_stuff)
+    update_dict(j)
 
     data = {}
     data.update(j)
