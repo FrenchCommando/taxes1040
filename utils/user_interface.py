@@ -43,14 +43,14 @@ class DictChecker(tk.Frame):
                 modified_entries[k] = True
             elif u.lower() == "false":
                 modified_entries[k] = False
-            elif any(kkk in k.lower() for kkk in ['tax', 'wage', 'dividend', 'interest', 'proceeds', 'cost']):
+            elif any(kkk in k.lower() for kkk in ['tax', 'wage', 'dividend', 'interest', 'proceeds', 'cost', 'value']):
                 modified_entries[k] = float(u)
             else:
                 modified_entries[k] = u
+        d.update(modified_entries)
 
         button.destroy()
         table.destroy()
-        return modified_entries
 
     def close(self):
         self.master.destroy()
@@ -62,7 +62,7 @@ def update_dict(d):
     root.title("Input Parser")
     root.attributes('-topmost', True)
     app = DictChecker(master=root)
-    d.update(app.check_dict(d))
+    app.check_dict(d)
     app.close()
     app.mainloop()
 
@@ -74,7 +74,7 @@ def main():
     root.attributes('-topmost', True)
     app = DictChecker(master=root)
     d = {'oui': 'ouioui', 'no': 'nono'}
-    d.update(app.check_dict(d))
+    app.check_dict(d)
     app.close()
     app.mainloop()
     print(d)
