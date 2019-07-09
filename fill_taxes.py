@@ -1,8 +1,9 @@
 import json
 from itertools import islice
 from utils.forms_utils import *
-from forms.form_worksheet_names import *
+from utils.form_worksheet_names import *
 from pdfrw import PdfReader, PdfWriter
+from utils.user_interface import update_dict
 
 
 override_keyword = "override"
@@ -560,12 +561,11 @@ def merge_pdfs(files, out):
 
 
 def main():
-    name = "toto"
-    j = json.load(open("{}.json".format(name), 'rb'))
+    j = json.load(open("input.json", 'rb'))
 
     additional_info = {
-        'single': True,
-        'dependents': False,
+        'single': True,  # if you're not single too bad for you
+        'dependents': False,  # same if you have dependents
         'occupation': "Analyst",
         'full_year_health_coverage_or_exempt': True,
         'presidential_election_self': True,
@@ -579,7 +579,17 @@ def main():
     }
 
     override_stuff = {
+        'address_street_and_number': next(iter(j['W2']))['Address'],
+        'address_apt': next(iter(j['W2']))['Address_apt'],
+        'address_city_state_zip': " ".join([next(iter(j['W2']))['Address_city'],
+                                            next(iter(j['W2']))['Address_state'],
+                                            next(iter(j['W2']))['Address_zip']]),
     }
+
+    update_dict(additional_info)
+    update_dict(override_stuff)
+    print(additional_info)
+    print(override_stuff)
 
     data = {}
     data.update(j)
@@ -591,7 +601,7 @@ def main():
 
     states, worksheets_all = fill_taxes(data)
     pdf_files = fill_pdfs(states)
-    outfile = name + pdf_extension
+    outfile = "forms" + pdf_extension
     merge_pdfs(pdf_files, outfile)
 
 

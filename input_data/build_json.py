@@ -199,17 +199,15 @@ def read_data_pdf(folder):
     # print(data)
 
 
-def build_json(folder):
-    logger.debug("Folder Name is %s", folder)
-    with open('{}.json'.format(folder), 'w+') as f:
+def build_json():
+    with open('input.json', 'w+') as f:
         json.dump(data, f, indent=4)
         logger.debug("json dumped %s", f.name)
 
 
 def main():
-    my_folder = "toto"
-    read_data_pdf(os.path.join("input_data", my_folder))
-    build_json(my_folder)
+    read_data_pdf("input_data")
+    build_json()
 
 
 if __name__ == "__main__":
