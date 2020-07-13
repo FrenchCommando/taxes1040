@@ -7,6 +7,7 @@ import logging
 import json
 import glob
 from collections import defaultdict
+import pandas as pd
 import xml.etree.ElementTree as eTree
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import TextConverter
@@ -20,13 +21,13 @@ from utils.logger import process_logger
 logger = logging.getLogger('input_data')
 process_logger(logger, file_name="json_data")
 
+year_folder = "2019"
 
-build_w2 = False  # set to True to display field names and change code
-build_1099 = False
+
 data = defaultdict(list)
 
 
-def parse_w2(path):
+def parse_pdf(path, print_lines=False):
     rsrcmgr = PDFResourceManager()
     retstr = StringIO()
     codec = 'utf-8'
@@ -48,7 +49,7 @@ def parse_w2(path):
     retstr.close()
 
     u = text.split("\n")
-    if build_w2:  # print line numbers
+    if print_lines:  # print line numbers
         it = iter(u)
         i = 0
         try:
@@ -58,18 +59,71 @@ def parse_w2(path):
         except StopIteration:
             pass
 
-    company_index = 25
-    name_index = 32
-    ssn_index = 39
-    wages_index = 41
-    federal_index = 47
-    state_index = 65
-    locality_index = 85
+    return u
+
+
+def parse_xml(path, print_tag=False):
+    # parsing xml file
+    tree = eTree.parse(path)
+    root = tree.getroot()
+
+    def get_tax_root():
+        for node in root:
+            for node1 in node:
+                for node2 in node1:
+                    if node2.tag == "TAX1099RS":
+                        return node2
+    tax_root = get_tax_root()
+
+    for u in tax_root:
+        if print_tag:
+            print(u)
+            for t in u:
+                print(t.tag, t.text)
+
+    return tax_root
+
+
+def parse_w2(path):
+    u = parse_pdf(path=path, print_lines=False)
+
+    if "SG-W2-2018" in path:
+        name_overflow = True
+        company_index = 216
+        name_index = 223
+        ssn_index = 230
+        wages_index = 232
+        federal_index = 238
+        state_index = 256
+        state_index_end = 276
+        state_row_first = False
+
+    if "SG-W2-2019" in path:
+        name_overflow = True
+        company_index = 43
+        name_index = 50
+        ssn_index = 57
+        wages_index = 59
+        federal_index = 65
+        state_index = 71
+        state_index_end = 91
+        state_row_first = False
+
+    if "GS-W2-2019" in path:
+        name_overflow = False
+        company_index = 44
+        name_index = 84
+        ssn_index = 91
+        wages_index = 93
+        federal_index = 99
+        state_index = 294
+        state_index_end = 308
+        state_row_first = True
 
     def city_state_zip(line, name):
         ll = line.split(" ")
         return {
-            name + "_city": " ".join(ll[:-2]),
+            name + "_city": " ".join(ll[:-2]).strip(","),
             name + "_state": ll[-2],
             name + "_zip": ll[-1]
         }
@@ -87,9 +141,36 @@ def parse_w2(path):
             })
         return dd
 
+    def company_name_address(lines):
+        if name_overflow:
+            return dict(
+                Company=" ".join(lines[:2]),
+                Company_address=lines[-1],
+            )
+        else:
+            return dict(
+                Company=lines[0],
+                Company_address=" ".join(lines[1:]),
+            )
+
+    def state_and_local(lines):
+        if state_row_first:
+            return dict(
+                State=lines[0],
+                State_tax=lines[6],
+                Local_tax=lines[12],
+                Locality=lines[-1],
+            )
+        else:
+            return dict(
+                State=lines[0],
+                State_tax=lines[4],
+                Local_tax=lines[6],
+                Locality=lines[-1],
+            )
+
     d = {
-        "Company": " ".join(u[company_index:company_index + 2]),
-        "Company_address": u[company_index + 2],
+        **company_name_address(lines=u[company_index:company_index+3]),
         **city_state_zip(u[company_index + 3], "Company"),
         **first_mid_last(u[name_index]),
         "Address": u[name_index + 1],
@@ -102,10 +183,7 @@ def parse_w2(path):
         "Federal_tax": u[federal_index],
         "SocialSecurity_tax": u[federal_index + 2],
         "Medicare_tax": u[federal_index + 4],
-        "State": u[state_index],
-        "State_tax": u[state_index + 4],
-        "Local_tax": u[state_index + 6],
-        "Locality": u[locality_index]
+        **state_and_local(lines=u[state_index:state_index_end+1]),
     }
     for u, v in d.copy().items():
         if 'tax' in u or 'wages' in u.lower():
@@ -115,17 +193,36 @@ def parse_w2(path):
 
 
 def parse_1099(path):
-    # parsing xml file
-    tree = eTree.parse(path)
-    root = tree.getroot()
+    if 'xml' in path:
+        parse_1099_xml(path=path)
 
-    def get_tax_root():
-        for node in root:
-            for node1 in node:
-                for node2 in node1:
-                    if node2.tag == "TAX1099RS":
-                        return node2
-    tax_root = get_tax_root()
+    if 'csv' in path:
+        parse_1099_csv(path=path)
+
+
+def parse_1099_csv(path):
+    table = pd.read_csv(path, header=None)
+
+    # interest
+    t_interest = table.loc[table[0] == "1099 Summary          "]. \
+        drop([0], axis=1).dropna(axis=1).T.set_index(0).T
+    d_interest = t_interest.to_dict('records')
+    if "Fidelity" in path:
+        for u in d_interest:
+            u['Payer'] = """NATIONAL FINANCIAL SERVICES LLC
+499 WASHINGTON BLVD
+JERSEY CITY, NJ 07310"""
+    data['1099'].extend(d_interest)
+
+    # trades
+    t_trades = table.loc[table[0] == "1099-B-Detail                           "].\
+        drop([0], axis=1).dropna(axis=1).T.set_index(1).T
+    data['1099'].extend(t_trades.to_dict('records'))
+
+    logger.info("Parsed 1099 %s", path)
+
+
+def parse_1099_xml(path):
 
     def parse_dict(dd, name_map):
         def parse_element(name):
@@ -176,15 +273,13 @@ def parse_1099(path):
         "B_V100": {"EXTDBINFO_V100": "Trades"},
     }
 
+    tax_root = parse_xml(path=path, print_tag=False)
+
     d = {}
     for u in tax_root:
         for t, v in tag_map.items():
             if t in u.tag:
                 d.update(parse_dict(u, v))
-        if build_1099:
-            print(u)
-            for t in u:
-                print(t.tag, t.text)
 
     data['1099'].append(d)
     logger.info("Parsed 1099 %s", path)
@@ -192,22 +287,33 @@ def parse_1099(path):
 
 def read_data_pdf(folder):
     for f in glob.glob(os.path.join(folder, "*")):
-        if 'W2' in f:
-            parse_w2(f)  # there may be several w2
-        if '1099' in f and 'xml' in f:
+        name = os.path.basename(f)
+        name_sub, extension = name.split(".")
+        if extension == 'json':
+            continue
+        company, form, year = name_sub.split("-")
+        if form == "W2":
+            parse_w2(f)
+        if form == '1099':
             parse_1099(f)  # there may be several 1099
     # print(data)
 
 
-def build_json():
-    with open('input.json', 'w+') as f:
+def build_json(folder):
+    with open(os.path.join(folder, 'input.json'), 'w+') as f:
         json.dump(data, f, indent=4)
         logger.debug("json dumped %s", f.name)
 
 
+def get_input_path():
+    input_path = ("input_data", year_folder)
+    return os.path.join(os.getcwd(), *input_path)
+
+
 def main():
-    read_data_pdf("input_data")
-    build_json()
+    input_full_folder = get_input_path()
+    read_data_pdf(input_full_folder)
+    build_json(input_full_folder)
 
 
 if __name__ == "__main__":

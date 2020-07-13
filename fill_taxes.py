@@ -11,6 +11,8 @@ override_keyword = "override"
 logger = logging.getLogger('fill_taxes')
 process_logger(logger, file_name='fill_taxes')
 
+year_folder = "2019"
+
 
 def get_main_info(d):
     # gets name ssn address etc from w2
@@ -79,7 +81,7 @@ def fill_taxes(d):
     additional_income = None
 
     if has_1099:
-        n_trades = sum(len(i['Trades']) for i in d['1099'])
+        n_trades = sum(len(i['Trades']) for i in d['1099'] if 'Trades' in i)
         additional_income = n_trades > 0
         sum_trades = {"SHORT": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0},
                       "LONG": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0}}  # from 8949 to fill 1040sd
@@ -534,7 +536,7 @@ def fill_taxes(d):
 
 
 def fill_pdfs(forms_state):
-    map_folders(output_pdf_folder)
+    map_folders(output_pdf_folder, year_folder)
     all_out_files = []
     for f, d_contents in forms_state.items():
         d_mapping = load_keys(os.path.join(forms_folder, f + keys_extension))
@@ -561,7 +563,8 @@ def merge_pdfs(files, out):
 
 
 def main():
-    j = json.load(open("input.json", 'rb'))
+    input_folder = os.path.join("input_data", year_folder)
+    j = json.load(open(os.path.join(input_folder, 'input.json'), 'rb'))
 
     additional_info = {
         'single': True,  # if you're not single too bad for you
@@ -588,7 +591,7 @@ def main():
 
     update_dict(additional_info)
     update_dict(override_stuff)
-    update_dict(j)
+    # update_dict(j)
 
     data = {}
     data.update(j)

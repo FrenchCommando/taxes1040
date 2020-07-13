@@ -5,12 +5,16 @@ import pdfrw
 from utils.forms_constants import *
 
 
-def map_folders(name):
+def map_folders(name, year_folder):
     if not os.path.isdir(name):
         os.mkdir(name)
-    for u in glob.glob(os.path.join(forms_folder, "*", "")):
-        rel = os.path.relpath(u, forms_folder)
-        u_path = os.path.join(name, rel)
+    year_name = os.path.join(name, year_folder)
+    if not os.path.isdir(year_name):
+        os.mkdir(year_name)
+    forms_year_folder = os.path.join(forms_folder, year_folder)
+    for u in glob.glob(os.path.join(forms_year_folder, "*", "")):
+        rel = os.path.relpath(u, forms_year_folder)
+        u_path = os.path.join(year_name, rel)
         if not os.path.isdir(u_path):
             os.mkdir(u_path)
             logger.info("Folders created %s", u_path)
