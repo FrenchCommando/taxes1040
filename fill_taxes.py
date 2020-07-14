@@ -537,15 +537,18 @@ def fill_taxes(d):
 
 def fill_pdfs(forms_state):
     map_folders(output_pdf_folder, year_folder)
+    form_year_folder = os.path.join(forms_folder, year_folder)
+    output_year_folder = os.path.join(output_pdf_folder, year_folder)
+
     all_out_files = []
     for f, d_contents in forms_state.items():
-        d_mapping = load_keys(os.path.join(forms_folder, f + keys_extension))
+        d_mapping = load_keys(os.path.join(form_year_folder, f + keys_extension))
 
         def fill_one_pdf(contents, suffix=""):
             ddd = {k: contents[val[0]] for k, val in d_mapping.items() if val[0] in contents}
-            outfile = os.path.join(output_pdf_folder, f + suffix + pdf_extension)
+            outfile = os.path.join(output_year_folder, f + suffix + pdf_extension)
             all_out_files.append(outfile)
-            fill_pdf_from_keys(file=os.path.join(forms_folder, f + pdf_extension),
+            fill_pdf_from_keys(file=os.path.join(form_year_folder, f + pdf_extension),
                                out_file=outfile, d=ddd)
         if isinstance(d_contents, list):
             for i, one_content in enumerate(d_contents):
