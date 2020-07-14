@@ -89,13 +89,13 @@ def parse_w2(path):
 
     if "SG-W2-2018" in path:
         name_overflow = True
-        company_index = 216
-        name_index = 223
-        ssn_index = 230
-        wages_index = 232
-        federal_index = 238
-        state_index = 256
-        state_index_end = 276
+        company_index = 25
+        name_index = 32
+        ssn_index = 39
+        wages_index = 41
+        federal_index = 47
+        state_index = 65
+        state_index_end = 85
         state_row_first = False
 
     if "SG-W2-2019" in path:
