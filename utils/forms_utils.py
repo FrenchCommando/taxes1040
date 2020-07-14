@@ -51,10 +51,10 @@ def fill_pdf_from_keys(file, out_file, d):
                     key = annotation[ANNOT_FIELD_KEY][1:-1]
                     if key in d.keys():
                         if annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_BTN:
-                            # it's a button
-                            annotation.update(
-                                pdfrw.PdfDict(AS=pdfrw.PdfName('Yes' if d[key] else 'Off'))
-                            )
+                            if d[key]:
+                                annotation.update(pdfrw.PdfDict(AS=next(iter(annotation['/AP']['/N']))))
+                            else:
+                                annotation.update(pdfrw.PdfDict(AS='Off'))
                         elif annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_TXT:
                             r = d[key]
                             if isinstance(r, float) and r == round(r):

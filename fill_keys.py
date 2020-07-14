@@ -338,6 +338,11 @@ def process_fields(file):
         logger.info("Loaded fields names from %s", keys_name)
     except FileNotFoundError as e:
         logger.error(e)
+    for k, (v0, v1) in d.items():
+        # if v1 == '/Tx':
+        #     d[k] = ('yytt', v1)
+        if v1 == '/Btn':
+            d[k] = (True, v1)
     pdf_orig = os.path.join(year_keys_name, os.path.relpath(pdf_name, year_fields_name))
     fill_pdf_from_keys(file=pdf_orig, out_file=pdf_name, d={k: v[0] for k, v in d.items()})
 
@@ -366,8 +371,6 @@ def move_keys_to_parent():
 
 
 def main():
-    # global year_folder
-    # year_folder = "2018"
     map_folders(fields_mapping_folder, year_folder)
     create_empty_fields()
     fill_fields_files()  # run after defining the fields files
@@ -376,4 +379,5 @@ def main():
 
 
 if __name__ == "__main__":
+    year_folder = "2018"
     main()
