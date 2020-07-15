@@ -353,7 +353,7 @@ def fill_taxes(d):
             def yield_trades(long_short):
                 for uu in d['1099']:
                     for tt in uu['Trades']:
-                        if tt['LongShort'] == long_short:
+                        if long_short in tt['LongShort']:
                             yield tt
 
             trades_short = yield_trades('SHORT')
@@ -592,8 +592,8 @@ def main():
                                             next(iter(j['W2']))['Address_zip']]),
     }
 
-    update_dict(additional_info)
-    update_dict(override_stuff)
+    # update_dict(additional_info)
+    # update_dict(override_stuff)
     # update_dict(j)
 
     data = {}
@@ -611,4 +611,17 @@ def main():
 
 
 if __name__ == "__main__":
+    year_folder = "2019"
     main()
+
+    # outfile = "forms" + pdf_extension
+    # pdf_files = [
+    #     'output\\2018\\Federal\\f1040sd.pdf',
+    #     'output\\2018\\Federal\\f1040s1.pdf',
+    #     # 'output\\2018\\Federal\\f8949_0.pdf',
+    #     # 'output\\2018\\Federal\\f8949_1.pdf',
+    #     'output\\2018\\Federal\\f1040.pdf',
+    #     # 'output\\2018\\Federal\\f1040sb.pdf',
+    #     # 'output\\2018\\Federal\\f1040s3.pdf',
+    # ]
+    # merge_pdfs(pdf_files, outfile)
