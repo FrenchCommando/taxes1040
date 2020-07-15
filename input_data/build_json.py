@@ -89,13 +89,21 @@ def parse_w2(path):
 
     if "SG-W2-2018" in path:
         name_overflow = True
-        company_index = 25
-        name_index = 32
-        ssn_index = 39
-        wages_index = 41
-        federal_index = 47
-        state_index = 65
-        state_index_end = 85
+        company_index = 216
+        name_index = 223
+        ssn_index = 230
+        wages_index = 232
+        federal_index = 238
+        state_index = 256
+        state_index_end = 276
+        # of course it depends on the version you use
+        # company_index = 25
+        # name_index = 32
+        # ssn_index = 39
+        # wages_index = 41
+        # federal_index = 47
+        # state_index = 65
+        # state_index_end = 85
         state_row_first = False
 
     if "SG-W2-2019" in path:
@@ -206,18 +214,59 @@ def parse_1099_csv(path):
     # interest
     t_interest = table.loc[table[0] == "1099 Summary          "]. \
         drop([0], axis=1).dropna(axis=1).T.set_index(0).T
-    d_interest = t_interest.to_dict('records')
+    d_interest = t_interest.to_dict('records')[0]
+
+    def try_float(x):
+        try:
+            return float(x)
+        except ValueError:
+            return x.strip()
+
+    interest_mapping = {
+        "1099-DIV-1A Total Ordinary Dividends": "Ordinary Dividends",
+        "1099-DIV-1B Qualified Dividends": "Qualified Dividends",
+        "1099-DIV-7 Foreign Tax Paid": "Foreign Tax",
+        "1099-INT-1 Interest Income": "Interest",
+        "1099-B-Total Proceeds": "Proceeds",
+        "1099-B-Total Cost Basis": "Cost Basis",
+        "1099-B-Total Market Discount": "Market Discount",
+        "1099-B-Total Wash Sales": "Wash Sales",
+        "1099-B-Realized Gain/Loss": "Realized Gain/Loss",
+        "1099-B-Federal Income Tax Withheld": "Federal Income Tax Withheld",
+    }
+
+
+    d_interest = dict((interest_mapping.get(k, k), try_float(v)) for k, v in d_interest.items())
+
     if "Fidelity" in path:
-        for u in d_interest:
-            u['Payer'] = """NATIONAL FINANCIAL SERVICES LLC
+        d_interest['Institution'] = """NATIONAL FINANCIAL SERVICES LLC
 499 WASHINGTON BLVD
 JERSEY CITY, NJ 07310"""
-    data['1099'].extend(d_interest)
 
     # trades
-    t_trades = table.loc[table[0] == "1099-B-Detail                           "].\
+    t_trades = table.loc[table[0] == "1099-B-Detail                           "]. \
         drop([0], axis=1).dropna(axis=1).T.set_index(1).T
-    data['1099'].extend(t_trades.to_dict('records'))
+    d_trades = t_trades.to_dict('records')
+
+    trades_mapping = {
+        "1099-B-1a Description of property Stock or Other symbol CUSIP ": "SalesDescription",
+        "Quantity": "Shares",
+        "1099-B-1b Date Acquired": "DateAcquired",
+        "1099-B-1c Date Sold or Disposed": "DateSold",
+        "1099-B-1d Proceeds": "Proceeds",
+        "1099-B-1e Cost or Other Basis": "Cost",
+        "1099-B-1f Accrued Market Discount": "WashSaleCode",
+        "1099-B-1g-Wash sale loss Disallowed": "WashSaleValue",
+        "Term": "LongShort",
+    }
+
+    d_trades_clean = [
+        dict((trades_mapping.get(k, k), try_float(v)) for k, v in t.items()) for t in d_trades
+    ]
+
+    d_interest["Trades"] = d_trades_clean
+
+    data['1099'].append(d_interest)
 
     logger.info("Parsed 1099 %s", path)
 

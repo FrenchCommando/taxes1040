@@ -52,10 +52,6 @@ def remove_folder(folder):
 
 
 def clean():
-    year_keys_name = os.path.join(key_mapping_folder, filing_year)
-    year_fields_name = os.path.join(fields_mapping_folder, filing_year)
-    output_year_folder = os.path.join(output_pdf_folder, filing_year)
-
     # remove log files
     remove_by_extension(log_extension)  # log files are in use, haha
     # remove json files
@@ -64,11 +60,14 @@ def clean():
     remove_by_extension(keys_extension)
 
     # remove key_mapping folder
+    year_keys_name = os.path.join(key_mapping_folder, filing_year)
     remove_folder(year_keys_name)
     # remove fields_mapping folder
+    year_fields_name = os.path.join(fields_mapping_folder, filing_year)
     remove_folder(year_fields_name)
     # remove output folder
-    remove_folder(output_year_folder)
+    # output_year_folder = os.path.join(output_pdf_folder, filing_year)
+    # remove_folder(output_year_folder)
     pass
 
 
@@ -85,6 +84,6 @@ if __name__ == '__main__':
     fill_keys.main()
 
     fill_taxes.year_folder = str(filing_year)
-    # fill_taxes.main()
+    fill_taxes.main()
 
-    clean()
+    # clean()
