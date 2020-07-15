@@ -1,5 +1,6 @@
 from utils.logger import process_logger, logging
 
+override_keyword = "override"
 
 logger = logging.getLogger('key_matching')
 process_logger(logger, file_name='key_matching')

@@ -12,7 +12,7 @@ class DictChecker(tk.Frame):
         self.pack()
         self.table = None
 
-    def check_dict(self, d):
+    def check_dict(self, d, modify):
         table = tk.Frame(self.master)
         entries = dict()
         for (n, (k, v)) in enumerate(d.items()):
@@ -21,11 +21,11 @@ class DictChecker(tk.Frame):
             ent = tk.Entry(table, textvariable=tk.StringVar(value=str(v)))
             ent.grid(row=n, column=2, sticky="nsew")
             if isinstance(v, dict):
-                self.check_dict(v)
+                self.check_dict(v, modify)
             elif isinstance(v, list):
                 if len(v) > 0 and isinstance(v[0], dict):
                     for q in v:
-                        self.check_dict(q)
+                        self.check_dict(q, modify)
             else:
                 entries[k] = ent
         table.pack()
@@ -36,18 +36,20 @@ class DictChecker(tk.Frame):
         button.pack(side='bottom')
         button.wait_variable(var)
 
-        modified_entries = {}
-        for k in entries:
-            u = entries[k].get()
-            if u.lower() == "true":
-                modified_entries[k] = True
-            elif u.lower() == "false":
-                modified_entries[k] = False
-            elif any(kkk in k.lower() for kkk in ['tax', 'wage', 'dividend', 'interest', 'proceeds', 'cost', 'value']):
-                modified_entries[k] = float(u)
-            else:
-                modified_entries[k] = u
-        d.update(modified_entries)
+        if modify:
+            modified_entries = {}
+            for k in entries:
+                u = entries[k].get()
+                if u.lower() == "true":
+                    modified_entries[k] = True
+                elif u.lower() == "false":
+                    modified_entries[k] = False
+                elif any(kkk in k.lower()
+                         for kkk in ['tax', 'wage', 'dividend', 'interest', 'proceeds', 'cost', 'value']):
+                    modified_entries[k] = float(u)
+                else:
+                    modified_entries[k] = u
+            d.update(modified_entries)
 
         button.destroy()
         table.destroy()
@@ -57,12 +59,12 @@ class DictChecker(tk.Frame):
 
 
 # this si the exported function
-def update_dict(d):
+def update_dict(d, modify=True):
     root = tk.Tk()
     root.title("Input Parser")
     root.attributes('-topmost', True)
     app = DictChecker(master=root)
-    app.check_dict(d)
+    app.check_dict(d, modify)
     app.close()
     app.mainloop()
 
