@@ -10,13 +10,14 @@ from utils.forms_core import fill_taxes
 logger = logging.getLogger('fill_taxes')
 process_logger(logger, file_name='fill_taxes')
 
-year_folder = "2019"
+input_year_folder = "2019"
+forms_year_folder = "2019"
 
 
 def fill_pdfs(forms_state):
-    map_folders(output_pdf_folder, year_folder)
-    form_year_folder = os.path.join(forms_folder, year_folder)
-    output_year_folder = os.path.join(output_pdf_folder, year_folder)
+    map_folders(output_pdf_folder, forms_year_folder)
+    form_year_folder = os.path.join(forms_folder, forms_year_folder)
+    output_year_folder = os.path.join(output_pdf_folder, forms_year_folder)
 
     all_out_files = []
     for f, d_contents in forms_state.items():
@@ -44,7 +45,7 @@ def merge_pdfs(files, out):
 
 
 def main():
-    input_folder = os.path.join("input_data", year_folder)
+    input_folder = os.path.join("input_data", input_year_folder)
     j = json.load(open(os.path.join(input_folder, 'input.json'), 'rb'))
 
     additional_info = {
@@ -89,7 +90,7 @@ def main():
 
 
 if __name__ == "__main__":
-    year_folder = "2019"
+    # year_folder = "2019"
     main()
 
     # outfile = "forms" + pdf_extension

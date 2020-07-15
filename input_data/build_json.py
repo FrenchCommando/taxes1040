@@ -235,13 +235,12 @@ def parse_1099_csv(path):
         "1099-B-Federal Income Tax Withheld": "Federal Income Tax Withheld",
     }
 
-
     d_interest = dict((interest_mapping.get(k, k), try_float(v)) for k, v in d_interest.items())
 
     if "Fidelity" in path:
-        d_interest['Institution'] = """NATIONAL FINANCIAL SERVICES LLC
-499 WASHINGTON BLVD
-JERSEY CITY, NJ 07310"""
+        d_interest['Institution'] = """NATIONAL FINANCIAL SERVICES LLC"""
+# """499 WASHINGTON BLVD
+# JERSEY CITY, NJ 07310"""
 
     # trades
     t_trades = table.loc[table[0] == "1099-B-Detail                           "]. \
@@ -260,9 +259,14 @@ JERSEY CITY, NJ 07310"""
         "Term": "LongShort",
     }
 
-    d_trades_clean = [
-        dict((trades_mapping.get(k, k), try_float(v)) for k, v in t.items()) for t in d_trades
-    ]
+    d_trades_clean = []
+    for t in d_trades:
+        trade_d = dict((trades_mapping.get(k, k), try_float(v)) for k, v in t.items())
+        form_code = trade_d['Covered/Uncovered']
+        long_short = trade_d['LongShort']
+        trade_d["FormCode"] = ("A" if form_code == "COVERED" else "B") if long_short == "SHORT TERM" \
+            else ("D" if form_code == "COVERED" else "E")
+        d_trades_clean.append(trade_d)
 
     d_interest["Trades"] = d_trades_clean
 
@@ -290,7 +294,8 @@ def parse_1099_xml(path):
                 "Cost": "COSTBASIS",
                 "Shares": "NUMSHRS",
                 "Name": "SECNAME",
-                "LongShort": "LONGSHORT"
+                "LongShort": "LONGSHORT",
+                "FormCode": "FORM8949CODE",
             }
             for ttt in uu:
                 ddd = {k: ttt.find(desc).text for k, desc in trade_info_map.items()}

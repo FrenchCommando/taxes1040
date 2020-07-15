@@ -72,18 +72,20 @@ def clean():
 
 
 if __name__ == '__main__':
-    filing_year = "2019"
+    input_filing_year = "2019"
+    form_filing_year = "2018"
 
-    input_data.build_json.year_folder = str(filing_year)
+    input_data.build_json.year_folder = str(input_filing_year)
     input_data.build_json.main()
 
-    key_matcher.year_folder = str(filing_year)
+    key_matcher.year_folder = str(form_filing_year)
     key_matcher.main()
 
-    fill_keys.year_folder = str(filing_year)
+    fill_keys.year_folder = str(form_filing_year)
     fill_keys.main()
 
-    fill_taxes.year_folder = str(filing_year)
+    fill_taxes.input_year_folder = str(input_filing_year)
+    fill_taxes.forms_year_folder = str(form_filing_year)
     fill_taxes.main()
 
     # clean()

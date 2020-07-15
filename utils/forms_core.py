@@ -80,7 +80,7 @@ def fill_taxes(d):
                     del forms_state[k_1040sb]
 
                 nonlocal dividends_qualified
-                dividends_qualified = sum(i['Qualified Dividends'] for i in d['1099'])
+                dividends_qualified = sum(i.get('Qualified Dividends', 0) for i in d['1099'])
                 self.push_to_dict('3a_dollar', dividends_qualified)
 
             if additional_income:
@@ -204,7 +204,7 @@ def fill_taxes(d):
             self.push_name_ssn()
             # I don't need the 1116
             # https://turbotax.intuit.com/tax-tips/military/filing-irs-form-1116-to-claim-the-foreign-tax-credit/L2ODfqp89
-            foreign_tax = sum(i['Foreign Tax'] for i in d['1099'])
+            foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
             self.push_to_dict('48_dollar', foreign_tax)
             self.push_sum('55_dollar', [str(i) + "_dollar" for i in range(48, 55)])
 
@@ -221,9 +221,10 @@ def fill_taxes(d):
             def fill_value(index, key):
                 i = 1
                 for f in d['1099']:
-                    self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
-                    self.push_to_dict("{}_{}_dollar".format(index, str(i)), f[key])
-                    i += 1
+                    if key in f and f[key] != 0:
+                        self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
+                        self.push_to_dict("{}_{}_dollar".format(index, str(i)), f[key])
+                        i += 1
             fill_value("1", "Interest")
             fill_value("5", "Ordinary Dividends")
 
@@ -283,37 +284,44 @@ def fill_taxes(d):
             Form.__init__(self, k_8949)
 
         def build(self):
-            def yield_trades(long_short):
+            def yield_trades(long_short, form_code):
                 for uu in d['1099']:
-                    for tt in uu['Trades']:
-                        if long_short in tt['LongShort']:
-                            yield tt
+                    if 'Trades' in uu:
+                        for tt in uu['Trades']:
+                            if long_short in tt['LongShort'] and form_code == tt['FormCode']:
+                                yield tt
 
-            trades_short = yield_trades('SHORT')
-            trades_long = yield_trades('LONG')
-            trades_per_page_limit = 14
+            # need a-b-c granularity here
+            # a means "Covered/Uncovered" == 'COVERED' --  "FormCode" == "A"
+            # b means "Covered/Uncovered" == 'UNCOVERED' --  "FormCode" == "B"
 
             trades_subsets = []
-            while True:
-                trades = {
-                    'SHORT': list(islice(trades_short, trades_per_page_limit)),
-                    'LONG': list(islice(trades_long, trades_per_page_limit))
-                }
-                if len(trades['SHORT']) == 0 and len(trades['LONG']) == 0:
-                    break
-                trades_subsets.append(trades)
+            trades_per_page_limit = 14
+            for code in ["A", "B", "C", "D", "E", "F"]:
+                trades_short = yield_trades(long_short='SHORT', form_code=code)
+                trades_long = yield_trades(long_short='LONG', form_code=code)
+                while True:
+                    trades = {
+                        'SHORT': list(islice(trades_short, trades_per_page_limit)),
+                        'LONG': list(islice(trades_long, trades_per_page_limit))
+                    }
+                    if len(trades['SHORT']) == 0 and len(trades['LONG']) == 0:
+                        break
+                    trades_subsets.append((code, trades))
 
             # accumulate the proceeds/cost/adjustment/gain for 1040sd
 
             if len(trades_subsets) == 1:
                 # if few enough trades
-                forms_state[k_8949] = self.build_one(trades)
+                forms_state[k_8949] = self.build_one(trades_subsets[0])
             else:
                 # if many -> use a list of content dictionaries
                 ll = [self.build_one(l) for l in trades_subsets]
                 forms_state[k_8949] = ll
 
-        def build_one(self, trades):
+        def build_one(self, code_trades):
+            code, trades = code_trades
+            self.d = {}
             self.push_name_ssn(prefix="I_")
             self.push_name_ssn(prefix="II_")
 
@@ -356,8 +364,10 @@ def fill_taxes(d):
                     sum_trades[ls_key]['Adjustment'] += s_adj
                     sum_trades[ls_key]['Gain'] += s_gain
 
-            fill_trades('SHORT', 'short_a', 'I')
-            fill_trades('LONG', 'long_d', 'II')
+            # code is A, B, or C
+
+            fill_trades('SHORT', f'short_{code.lower()}', 'I')
+            fill_trades('LONG', f'long_{code.lower()}', 'II')
             return self.d.copy()
 
     class Worksheet:
