@@ -34,14 +34,13 @@ import utils.forms_clean
 if __name__ == '__main__':
 
     for form_filing_year in ["2018", "2019"]:
-        key_matcher.year_folder = str(form_filing_year)
+        key_matcher.year_folder = form_filing_year
         key_matcher.main()
-        fill_keys.year_folder = str(form_filing_year)
+        fill_keys.year_folder = form_filing_year
         fill_keys.main()
 
     for input_filing_year in ["2018", "2019"]:
-        input_data.build_json.year_folder = str(input_filing_year)
-        input_data.build_json.main()
+        input_data.build_json.build_input(year_folder=input_filing_year)
 
     fill_taxes.main()
 

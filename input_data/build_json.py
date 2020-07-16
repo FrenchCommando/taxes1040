@@ -21,11 +21,6 @@ from utils.logger import process_logger
 logger = logging.getLogger('input_data')
 process_logger(logger, file_name="json_data")
 
-year_folder = "2019"
-
-
-data = defaultdict(list)
-
 
 def parse_pdf(path, print_lines=False):
     rsrcmgr = PDFResourceManager()
@@ -73,6 +68,7 @@ def parse_xml(path, print_tag=False):
                 for node2 in node1:
                     if node2.tag == "TAX1099RS":
                         return node2
+
     tax_root = get_tax_root()
 
     for u in tax_root:
@@ -178,7 +174,7 @@ def parse_w2(path):
             )
 
     d = {
-        **company_name_address(lines=u[company_index:company_index+3]),
+        **company_name_address(lines=u[company_index:company_index + 3]),
         **city_state_zip(u[company_index + 3], "Company"),
         **first_mid_last(u[name_index]),
         "Address": u[name_index + 1],
@@ -191,21 +187,23 @@ def parse_w2(path):
         "Federal_tax": u[federal_index],
         "SocialSecurity_tax": u[federal_index + 2],
         "Medicare_tax": u[federal_index + 4],
-        **state_and_local(lines=u[state_index:state_index_end+1]),
+        **state_and_local(lines=u[state_index:state_index_end + 1]),
     }
     for u, v in d.copy().items():
         if 'tax' in u or 'wages' in u.lower():
             d[u] = float(v)
-    data['W2'].append(d)
+
     logger.info("Parsed W2 %s", path)
+
+    return d
 
 
 def parse_1099(path):
     if 'xml' in path:
-        parse_1099_xml(path=path)
+        return parse_1099_xml(path=path)
 
     if 'csv' in path:
-        parse_1099_csv(path=path)
+        return parse_1099_csv(path=path)
 
 
 def parse_1099_csv(path):
@@ -239,8 +237,8 @@ def parse_1099_csv(path):
 
     if "Fidelity" in path:
         d_interest['Institution'] = """NATIONAL FINANCIAL SERVICES LLC"""
-# """499 WASHINGTON BLVD
-# JERSEY CITY, NJ 07310"""
+    # """499 WASHINGTON BLVD
+    # JERSEY CITY, NJ 07310"""
 
     # trades
     t_trades = table.loc[table[0] == "1099-B-Detail                           "]. \
@@ -270,9 +268,9 @@ def parse_1099_csv(path):
 
     d_interest["Trades"] = d_trades_clean
 
-    data['1099'].append(d_interest)
-
     logger.info("Parsed 1099 %s", path)
+
+    return d_interest
 
 
 def parse_1099_xml(path):
@@ -315,6 +313,7 @@ def parse_1099_xml(path):
             logger.info("Total capital gain %.2f", sum(i["Proceeds"] - i["Cost"] + i.get("WashSaleValue", 0.)
                                                        for i in trades))
             return trades
+
         return {clean_name: parse_element(name)
                 for name, clean_name in name_map.items()}
 
@@ -335,11 +334,13 @@ def parse_1099_xml(path):
             if t in u.tag:
                 d.update(parse_dict(u, v))
 
-    data['1099'].append(d)
     logger.info("Parsed 1099 %s", path)
+    return d
 
 
 def read_data_pdf(folder):
+    data = defaultdict(list)
+
     for f in glob.glob(os.path.join(folder, "*")):
         name = os.path.basename(f)
         name_sub, extension = name.split(".")
@@ -347,27 +348,35 @@ def read_data_pdf(folder):
             continue
         company, form, year = name_sub.split("-")
         if form == "W2":
-            parse_w2(f)
+            w2_data = parse_w2(f)
+            data['W2'].append(w2_data)
+
         if form == '1099':
-            parse_1099(f)  # there may be several 1099
-    # print(data)
+            data_1099 = parse_1099(f)  # there may be several 1099
+            data['1099'].append(data_1099)
+
+    return data
 
 
 def build_json(folder):
+    data = read_data_pdf(folder=folder)
     with open(os.path.join(folder, 'input.json'), 'w+') as f:
         json.dump(data, f, indent=4)
         logger.debug("json dumped %s", f.name)
 
 
-def get_input_path():
+def get_input_path(year_folder):
     input_path = ("input_data", year_folder)
     return os.path.join(os.getcwd(), *input_path)
 
 
-def main():
-    input_full_folder = get_input_path()
-    read_data_pdf(input_full_folder)
+def build_input(year_folder):
+    input_full_folder = get_input_path(year_folder)
     build_json(input_full_folder)
+
+
+def main():
+    build_input(year_folder="2018")
 
 
 if __name__ == "__main__":

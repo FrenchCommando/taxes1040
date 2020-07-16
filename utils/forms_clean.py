@@ -34,5 +34,5 @@ def clean(filing_year):
     remove_folder(year_fields_name)
     # remove output folder
     output_year_folder = os.path.join(output_pdf_folder, filing_year)
-    remove_folder(output_year_folder)
+    # remove_folder(output_year_folder)
     pass

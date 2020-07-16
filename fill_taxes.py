@@ -78,28 +78,21 @@ def gather_inputs(input_year_folder):
     data.update(additional_info)
     data[override_keyword] = override_stuff
 
-    for u, v in data.items():
-        print(u, v)
-
     return data
 
 
 def main():
-    input_year_folder = "2018"
-    data = gather_inputs(input_year_folder=input_year_folder)
-    states, worksheets_all = fill_taxes_2018(data)
-    forms_year_folder = "2018"
-    pdf_files = fill_pdfs(states, forms_year_folder)
-    outfile = "forms" + forms_year_folder + pdf_extension
-    merge_pdfs(pdf_files, outfile)
+    data2018 = gather_inputs(input_year_folder="2018")
+    states2018, worksheets_all2018 = fill_taxes_2018(data2018)
+    pdf_files2018 = fill_pdfs(states2018, "2018")
+    outfile2018 = "forms" + "2018" + pdf_extension
+    merge_pdfs(pdf_files2018, outfile2018)
 
-    input_year_folder = "2019"
-    data = gather_inputs(input_year_folder=input_year_folder)
-    states, worksheets_all = fill_taxes_2019(data, (states, worksheets_all))
-    forms_year_folder = "2019"
-    pdf_files = fill_pdfs(states, forms_year_folder)
-    outfile = "forms" + forms_year_folder + pdf_extension
-    merge_pdfs(pdf_files, outfile)
+    data2019 = gather_inputs(input_year_folder="2019")
+    states2019, worksheets_all2019 = fill_taxes_2019(data2019, (states2018, worksheets_all2018))
+    pdf_files2019 = fill_pdfs(states2019, "2019")
+    outfile2019 = "forms" + "2019" + pdf_extension
+    merge_pdfs(pdf_files2019, outfile2019)
 
 
 if __name__ == "__main__":
