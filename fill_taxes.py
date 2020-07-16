@@ -50,7 +50,7 @@ def gather_inputs(input_year_folder):
         'single': True,  # if you're not single too bad for you
         'dependents': False,  # same if you have dependents
         'occupation': "Analyst",
-        'full_year_health_coverage_or_exempt': True,
+        'full_year_health_coverage_or_exempt': True,  # ignored starting 2019
         'presidential_election_self': True,
         'resident': True,  # if you're not it's not done yet
         'standard_deduction': True,  # not a key
@@ -58,7 +58,8 @@ def gather_inputs(input_year_folder):
         'checking': True,
         'routing_number': "11111111",
         'account_number': "444444444",
-        'foreign_account': 'FRANCE'
+        'foreign_account': 'FRANCE',
+        'email': 'martialren@gmail.com',
     }
 
     override_stuff = {

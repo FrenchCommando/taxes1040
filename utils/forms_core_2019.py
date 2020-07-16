@@ -22,7 +22,7 @@ def fill_taxes_2019(d, output_2018=None):
         sum_trades = {"SHORT": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0},
                       "LONG": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0}}  # from 8949 to fill 1040sd
 
-    standard_deduction = 12000  # if single
+    standard_deduction = 12200  # if single or married filing separately
     qualified_business_deduction = 0
 
     forms_state = {}  # mapping name of forms with content
@@ -70,21 +70,21 @@ def fill_taxes_2019(d, output_2018=None):
                 'self_occupation': d['occupation']
             })
 
-            self.push_to_dict('1_dollar', wages)
+            self.push_to_dict('1', wages)
 
             if has_1099:
                 Form1040sb().build()
-                self.push_to_dict('2b_dollar', forms_state[k_1040sb]['4_dollar'])
-                self.push_to_dict('3b_dollar', forms_state[k_1040sb]['6_dollar'])
+                self.push_to_dict('2_b', forms_state[k_1040sb]['4_value'])
+                self.push_to_dict('3_b', forms_state[k_1040sb]['6_value'])
 
-                if forms_state[k_1040sb]['4_dollar'] == 0 \
-                        and forms_state[k_1040sb]['6_dollar'] == 0 \
+                if forms_state[k_1040sb]['4_value'] == 0 \
+                        and forms_state[k_1040sb]['6_value'] == 0 \
                         and 'foreign_account' not in d:
                     del forms_state[k_1040sb]
 
                 nonlocal dividends_qualified
                 dividends_qualified = sum(i.get('Qualified Dividends', 0) for i in d['1099'])
-                self.push_to_dict('3a_dollar', dividends_qualified)
+                self.push_to_dict('3_a', dividends_qualified)
 
             if additional_income:
                 # need line 22 from schedule 1
@@ -226,14 +226,14 @@ def fill_taxes_2019(d, output_2018=None):
                 for f in d['1099']:
                     if key in f and f[key] != 0:
                         self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
-                        self.push_to_dict("{}_{}_dollar".format(index, str(i)), f[key])
+                        self.push_to_dict("{}_{}_value".format(index, str(i)), f[key])
                         i += 1
             fill_value("1", "Interest")
             fill_value("5", "Ordinary Dividends")
 
-            self.push_sum('2_dollar', ['1_{}_dollar'.format(str(i)) for i in range(1, 15)])
-            self.push_to_dict('4_dollar', self.d.get('2_dollar', 0) - self.d.get('3_dollar', 0))
-            self.push_sum('6_dollar', ['5_{}_dollar'.format(str(i)) for i in range(1, 17)])
+            self.push_sum('2_value', ['1_{}_value'.format(str(i)) for i in range(1, 15)])
+            self.push_to_dict('4_value', self.d.get('2_value', 0) - self.d.get('3_value', 0))
+            self.push_sum('6_value', ['5_{}_value'.format(str(i)) for i in range(1, 17)])
 
             if 'foreign_account' in d:
                 self.d['7a_y'] = True
