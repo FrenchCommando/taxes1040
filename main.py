@@ -24,68 +24,26 @@
 ====================================================================================================================
 """
 
-import os
 import key_matcher
 import fill_keys
 import fill_taxes
 import input_data.build_json
-import shutil
-from utils.forms_constants import keys_extension, key_mapping_folder, \
-    fields_mapping_folder, log_extension, json_extension, output_pdf_folder
-
-
-filing_year = "2019"
-
-
-def remove_by_extension(extension):
-    for root, dirs, files in os.walk(os.getcwd()):
-        for file in files:
-            if file.endswith(extension):
-                try:
-                    os.remove(os.path.join(root, file))
-                except PermissionError as e:
-                    print(e)
-
-
-def remove_folder(folder):
-    shutil.rmtree(folder)
-
-
-def clean():
-    # remove log files
-    remove_by_extension(log_extension)  # log files are in use, haha
-    # remove json files
-    remove_by_extension(json_extension)
-    # remove keys files
-    remove_by_extension(keys_extension)
-
-    # remove key_mapping folder
-    year_keys_name = os.path.join(key_mapping_folder, filing_year)
-    remove_folder(year_keys_name)
-    # remove fields_mapping folder
-    year_fields_name = os.path.join(fields_mapping_folder, filing_year)
-    remove_folder(year_fields_name)
-    # remove output folder
-    # output_year_folder = os.path.join(output_pdf_folder, filing_year)
-    # remove_folder(output_year_folder)
-    pass
+import utils.forms_clean
 
 
 if __name__ == '__main__':
-    input_filing_year = "2019"
-    form_filing_year = "2018"
 
-    input_data.build_json.year_folder = str(input_filing_year)
-    input_data.build_json.main()
+    for form_filing_year in ["2018", "2019"]:
+        key_matcher.year_folder = str(form_filing_year)
+        key_matcher.main()
+        fill_keys.year_folder = str(form_filing_year)
+        fill_keys.main()
 
-    key_matcher.year_folder = str(form_filing_year)
-    key_matcher.main()
+    for input_filing_year in ["2018", "2019"]:
+        input_data.build_json.year_folder = str(input_filing_year)
+        input_data.build_json.main()
 
-    fill_keys.year_folder = str(form_filing_year)
-    fill_keys.main()
-
-    fill_taxes.input_year_folder = str(input_filing_year)
-    fill_taxes.forms_year_folder = str(form_filing_year)
     fill_taxes.main()
 
-    # clean()
+    for form_filing_year in ["2018", "2019"]:
+        utils.forms_clean.clean(form_filing_year)

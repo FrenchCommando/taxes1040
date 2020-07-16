@@ -4,7 +4,7 @@ from utils.form_worksheet_names import *
 from utils.forms_constants import logger
 
 
-def fill_taxes(d):
+def fill_taxes_2018(d):
     main_info = get_main_info(d)
     wages = sum(w['Wages'] for w in d['W2'])
     federal_tax = sum(w['Federal_tax'] for w in d['W2'])
@@ -384,6 +384,9 @@ def fill_taxes(d):
             Worksheet.__init__(self, w_capital_loss_carryover, 13)
 
         def build(self):
+            ddd = d
+            fff = forms_state
+            www = worksheets
             self.d[1] = 0  # Taxes[2017][k_1040]['41']
             self.d[2] = 0  # max(0, -Taxes[2017][k_1040sd]['21'])
             self.d[3] = max(0, self.d[1] + self.d[2])

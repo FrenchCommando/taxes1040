@@ -4,17 +4,15 @@ from utils.forms_constants import *
 from utils.forms_utils import fill_pdf_from_keys, logging, process_logger, map_folders, load_keys, output_pdf_folder
 from pdfrw import PdfReader, PdfWriter
 from utils.user_interface import update_dict
-from utils.forms_core import fill_taxes
+from utils.forms_core_2018 import fill_taxes_2018
+from utils.forms_core_2019 import fill_taxes_2019
 
 
 logger = logging.getLogger('fill_taxes')
 process_logger(logger, file_name='fill_taxes')
 
-input_year_folder = "2019"
-forms_year_folder = "2019"
 
-
-def fill_pdfs(forms_state):
+def fill_pdfs(forms_state, forms_year_folder):
     map_folders(output_pdf_folder, forms_year_folder)
     form_year_folder = os.path.join(forms_folder, forms_year_folder)
     output_year_folder = os.path.join(output_pdf_folder, forms_year_folder)
@@ -44,7 +42,7 @@ def merge_pdfs(files, out):
     writer.write(out)
 
 
-def main():
+def gather_inputs(input_year_folder):
     input_folder = os.path.join("input_data", input_year_folder)
     j = json.load(open(os.path.join(input_folder, 'input.json'), 'rb'))
 
@@ -71,9 +69,9 @@ def main():
                                             next(iter(j['W2']))['Address_zip']]),
     }
 
-    update_dict(additional_info)
-    update_dict(override_stuff)
-    update_dict(j, modify=False)
+    # update_dict(additional_info)
+    # update_dict(override_stuff)
+    # update_dict(j, modify=False)
 
     data = {}
     data.update(j)
@@ -83,9 +81,24 @@ def main():
     for u, v in data.items():
         print(u, v)
 
-    states, worksheets_all = fill_taxes(data)
-    pdf_files = fill_pdfs(states)
-    outfile = "forms" + pdf_extension
+    return data
+
+
+def main():
+    input_year_folder = "2018"
+    data = gather_inputs(input_year_folder=input_year_folder)
+    states, worksheets_all = fill_taxes_2018(data)
+    forms_year_folder = "2018"
+    pdf_files = fill_pdfs(states, forms_year_folder)
+    outfile = "forms" + forms_year_folder + pdf_extension
+    merge_pdfs(pdf_files, outfile)
+
+    input_year_folder = "2019"
+    data = gather_inputs(input_year_folder=input_year_folder)
+    states, worksheets_all = fill_taxes_2019(data, (states, worksheets_all))
+    forms_year_folder = "2019"
+    pdf_files = fill_pdfs(states, forms_year_folder)
+    outfile = "forms" + forms_year_folder + pdf_extension
     merge_pdfs(pdf_files, outfile)
 
 
