@@ -1,5 +1,5 @@
 from itertools import islice
-from utils.forms_functions import computation, get_main_info
+from utils.forms_functions import get_main_info, computation_2018 as computation
 from utils.form_worksheet_names import *
 from utils.forms_constants import logger
 

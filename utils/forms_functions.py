@@ -46,7 +46,7 @@ def get_main_info(d):
     return info
 
 
-def computation(amount):
+def computation_2018(amount):
     if amount == 0:
         return 0
     if amount <= 157500:
@@ -56,3 +56,15 @@ def computation(amount):
     if amount <= 500000:
         return amount * 0.35 - 24310.50
     return amount * 0.37 - 34310.50
+
+
+def computation_2019(amount):
+    if amount == 0:
+        return 0
+    if amount <= 160725:
+        return amount * 0.24 - 5825.50
+    if amount <= 204100:
+        return amount * 0.32 - 18683.50
+    if amount <= 510300:
+        return amount * 0.35 - 24806.50
+    return amount * 0.37 - 35012.50
