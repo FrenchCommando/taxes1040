@@ -59,6 +59,7 @@ def gather_inputs(input_year_folder):
         'routing_number': "11111111",
         'account_number': "444444444",
         'foreign_account': 'FRANCE',
+        'phone': '6465555555',
         'email': 'martialren@gmail.com',
     }
 

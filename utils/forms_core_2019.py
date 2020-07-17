@@ -71,7 +71,9 @@ def fill_taxes_2019(d, output_2018=None):
                 'city_state_zip': main_info['address_city_state_zip'],
                 'full_year_health_coverage_or_exempt': d['full_year_health_coverage_or_exempt'],
                 'presidential_election_self': d['presidential_election_self'],
-                'self_occupation': d['occupation']
+                'self_occupation': d['occupation'],
+                'phone': d['phone'],
+                'email': d['email'],
             })
 
             self.push_to_dict('1', wages)
