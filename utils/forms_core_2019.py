@@ -11,6 +11,10 @@ def fill_taxes_2019(d, output_2018=None):
     main_info = get_main_info(d)
     wages = sum(w['Wages'] for w in d['W2'])
     federal_tax = sum(w['Federal_tax'] for w in d['W2'])
+    social_security_tax = sum(w['SocialSecurity_tax'] for w in d['W2'])
+    medicare_tax = sum(w['Medicare_tax'] for w in d['W2'])
+    state_tax = sum(w['State_tax'] for w in d['W2'])
+    local_tax = sum(w['Local_tax'] for w in d['W2'])
 
     has_1099 = '1099' in d
     dividends_qualified = None
@@ -96,14 +100,14 @@ def fill_taxes_2019(d, output_2018=None):
             if d['scheduleD']:
                 Form8949().build()  # build 8949 first
                 Form1040sd().build()
-                self.push_to_dict('6_value', forms_state[k_1040sd]['21'])
+                self.push_to_dict('6_value', -forms_state[k_1040sd]['21'])
 
             # if additional_income:
                 # need line 22 from schedule 1
                 # Form1040s1().build()
                 # self.push_to_dict('6_from_s1_22', forms_state[k_1040s1]['22_dollar'])
 
-            self.push_sum('7_b', ['1', '2_b', '3_b', '4_b', '4_d', '5_b', '6', '7_a'])  # total income
+            self.push_sum('7_b', ['1', '2_b', '3_b', '4_b', '4_d', '5_b', '6_value', '7_a'])  # total income
 
             if additional_income:
                 self.push_to_dict('8_a', forms_state[k_1040s1].get('22', 0))
