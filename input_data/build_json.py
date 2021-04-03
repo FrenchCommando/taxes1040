@@ -124,6 +124,31 @@ def parse_w2(path):
         state_index_end = 308
         state_row_first = True
 
+    if "GS-W2-2020" in path:
+        name_overflow = False
+        company_index = 44
+        name_index = 84
+        ssn_index = 91
+        wages_index = 93
+        federal_index = 99
+        state_index = 297
+        state_tax_index = 303
+        local_tax_index = 307
+        locality_index = 309
+
+    if "MS-W2-2020" in path:
+        name_overflow = False
+        company_index = 86
+        company_title_length = 2
+        name_index = 90
+        ssn_index = 97
+        wages_index = 99
+        federal_index = 105
+        state_index = 290
+        state_tax_index = 296
+        local_tax_index = 302
+        locality_index = 304
+
     def city_state_zip(line, name):
         ll = line.split(" ")
         return {
@@ -172,10 +197,12 @@ def parse_w2(path):
                 Local_tax=lines[6],
                 Locality=lines[-1],
             )
+    if 'company_title_length' not in locals():
+        company_title_length = 3
 
     d = {
-        **company_name_address(lines=u[company_index:company_index + 3]),
-        **city_state_zip(u[company_index + 3], "Company"),
+        **company_name_address(lines=u[company_index:company_index + company_title_length]),
+        **city_state_zip(u[company_index + company_title_length], "Company"),
         **first_mid_last(u[name_index]),
         "Address": u[name_index + 1],
         "Address_apt": u[name_index + 2].split(" ")[-1],
@@ -187,8 +214,17 @@ def parse_w2(path):
         "Federal_tax": u[federal_index],
         "SocialSecurity_tax": u[federal_index + 2],
         "Medicare_tax": u[federal_index + 4],
-        **state_and_local(lines=u[state_index:state_index_end + 1]),
     }
+    if 'state_row_first' in locals():
+        d.update(state_and_local(lines=u[state_index:state_index_end + 1]))
+    else:
+        d.update(dict(
+            State=u[state_index],
+            State_tax=u[state_tax_index],
+            Local_tax=u[local_tax_index],
+            Locality=u[locality_index],
+        ))
+
     for u, v in d.copy().items():
         if 'tax' in u or 'wages' in u.lower():
             d[u] = float(v)
@@ -201,9 +237,78 @@ def parse_w2(path):
 def parse_1099(path):
     if 'xml' in path:
         return parse_1099_xml(path=path)
-
-    if 'csv' in path:
+    elif 'pdf' in path:
+        return parse_1099_pdf(path=path)
+    elif 'csv' in path:
         return parse_1099_csv(path=path)
+    else:
+        logger.error(f"Input not parsed parse_1099\t{path}")
+
+
+def parse_1099_pdf(path):
+    u = parse_pdf(path=path, print_lines=False)
+
+    def try_float(x):
+        try:
+            return float(x)
+        except ValueError:
+            return x.strip()
+
+    def try_float_dollar(x):
+        if x.strip()[0] == "$":
+            return try_float(x=x.strip()[1:])
+
+    if "etrade" in path:
+        # didn't get 1099-INT that year
+
+        # 1099-DIV
+
+        d = dict()
+        d["Total Qualified Dividends  (Box 1b included in Box 1a)"] = try_float_dollar(x=u[133])
+        d["Total Ordinary Dividends (Box 1a)"] = try_float_dollar(x=u[134])
+
+        # 1099-B
+        # only covered / short-term
+        d_trades = [
+            {
+                "SalesDescription": " ".join(u[610:613]),
+                "Shares": try_float(x=u[533]),
+                "DateAcquired": u[535],
+                "DateSold": u[537],
+                "Proceeds": try_float_dollar(x=u[542]),
+                "Cost": try_float_dollar(x=u[548]),
+                "WashSaleCode": "",
+                "WashSaleValue": try_float_dollar(x=u[567]),
+                "LongShort": "SHORT",
+                "FormCode": "A",
+            },
+            {
+                "SalesDescription": " ".join(u[614:617]),
+                "Shares": try_float(x=u[573]),
+                "DateAcquired": u[575],
+                "DateSold": u[577],
+                "Proceeds": try_float_dollar(x=u[579]),
+                "Cost": try_float_dollar(x=u[581]),
+                "WashSaleCode": "",
+                "WashSaleValue": try_float_dollar(x=u[585]),
+                "LongShort": "SHORT",
+                "FormCode": "A",
+            },
+        ]
+
+        d["Trades"] = d_trades
+
+    elif "Marcus" in path:
+        d = {
+            "Interest": try_float(x=u[81]),
+            "Institution": u[0],
+        }
+    else:
+        logger.error(f"Input not parsed parse_1099_pdf\t{path}")
+
+    logger.info("Parsed 1099 %s", path)
+
+    return d
 
 
 def parse_1099_csv(path):
@@ -350,11 +455,11 @@ def read_data_pdf(folder):
         if form == "W2":
             w2_data = parse_w2(f)
             data['W2'].append(w2_data)
-
-        if form == '1099':
+        elif form == '1099':
             data_1099 = parse_1099(f)  # there may be several 1099
             data['1099'].append(data_1099)
-
+        else:
+            logger.error(f"Input not parsed read_data_pdf\t{name}")
     return data
 
 
@@ -376,7 +481,7 @@ def build_input(year_folder):
 
 
 def main():
-    build_input(year_folder="2018")
+    build_input(year_folder="2020")
 
 
 if __name__ == "__main__":

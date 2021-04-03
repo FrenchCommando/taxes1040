@@ -6,6 +6,7 @@ from pdfrw import PdfReader, PdfWriter
 from utils.user_interface import update_dict
 from utils.forms_core_2018 import fill_taxes_2018
 from utils.forms_core_2019 import fill_taxes_2019
+from utils.forms_core_2020 import fill_taxes_2020
 
 
 logger = logging.getLogger('fill_taxes')
@@ -95,6 +96,12 @@ def main():
     pdf_files2019 = fill_pdfs(states2019, "2019")
     outfile2019 = "forms" + "2019" + pdf_extension
     merge_pdfs(pdf_files2019, outfile2019)
+
+    data2020 = gather_inputs(input_year_folder="2020")
+    states2020, worksheets_all2020 = fill_taxes_2020(data2020, (states2018, worksheets_all2018))
+    pdf_files2020 = fill_pdfs(states2020, "2020")
+    outfile2020 = "forms" + "2020" + pdf_extension
+    merge_pdfs(pdf_files2020, outfile2020)
 
 
 if __name__ == "__main__":
