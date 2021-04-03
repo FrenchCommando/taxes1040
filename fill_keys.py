@@ -42,7 +42,7 @@ def fill_fields_files():
     if year_folder == "2018":
         dollar_cents = " dollar cents"
         payer_dollar_cents = " payer" + dollar_cents
-    if year_folder == "2019":
+    if year_folder == "2019" or year_folder == "2020":
         payer_dollar_cents = " payer value"
         dollar_cents = " value"
 
@@ -185,6 +185,97 @@ def fill_fields_files():
                     f.write("self_employed\n")
                     f.write("firm_address\n")
                     f.write("firm_ein\n")
+                elif year_folder == "2020":
+                    f.write("single\n")
+                    f.write("married_filling_jointly\n")
+                    f.write("married_filling_separately\n")
+                    f.write("head_of_household\n")
+                    f.write("qualifying_widower\n")
+                    f.write("qualifying_name\n")
+                    f.write("self" + first_last_ssn + "\n")
+                    f.write("spouse" + first_last_ssn + "\n")
+                    f.write("address\n")
+                    f.write("apt\n")
+
+                    f.write("city\n")
+                    f.write("state\n")
+                    f.write("zip\n")
+
+                    f.write("foreign country province postal\n")
+
+                    # f.write("full_year_health_coverage_or_exempt\n")
+                    f.write("presidential_election self spouse\n")
+                    f.write("virtual_currency y n\n")
+
+                    f.write("can_be_claimed_as_dependent self spouse\n")
+                    f.write("spouse_itemizes_on_separate_or_dual_status_alien\n")
+
+                    f.write("self born_before_19560102 blind\n")
+                    f.write("spouse born_before_19560102 blind\n")
+
+                    f.write("more_than_four_dependents\n")
+
+                    for i in range(1, 5):
+                        f.write("dependent_" + str(i) + dependents + "\n")
+
+                    f.write("1\n")
+                    f.write("2 a b\n")
+                    f.write("3 a b\n")
+                    f.write("4 a b\n")
+                    f.write("5 a b\n")
+                    f.write("6 a b\n")
+                    f.write("7 n value\n")
+                    f.write("8\n")
+                    f.write("9\n")
+                    f.write("10 a b c\n")
+                    f.write("11\n")
+                    f.write("12\n")
+                    f.write("13\n")
+                    f.write("14\n")
+                    f.write("15\n")
+                    f.write("16 1 2 3 3_value\n")
+                    f.write("16\n")
+                    f.write("17\n")
+                    f.write("18\n")
+                    f.write("19\n")
+                    f.write("20\n")
+                    f.write("21\n")
+                    f.write("22\n")
+                    f.write("23\n")
+                    f.write("24\n")
+                    f.write("25 a b c d\n")
+                    f.write("26\n")
+                    f.write("27\n")
+                    f.write("28\n")
+                    f.write("29\n")
+                    f.write("30\n")
+                    f.write("31\n")
+                    f.write("32\n")
+                    f.write("33\n")
+                    f.write("34\n")
+                    f.write("35a 8888 value\n")
+                    f.write("35b\n")
+                    f.write("35c checking savings\n")
+                    f.write("35d\n")
+                    f.write("36\n")
+                    f.write("37\n")
+                    f.write("38\n")
+
+                    f.write("other_designee y n name phone pin\n")
+
+                    f.write("self" + occupation_pin + "\n")
+                    f.write("spouse" + occupation_pin + "\n")
+                    f.write("phone\n")
+                    f.write("email\n")
+
+                    f.write("preparer_name\n")
+                    f.write("ptin\n")
+                    f.write("third_party_designee\n")
+                    f.write("firm_name\n")
+                    f.write("firm_phone\n")
+                    f.write("self_employed\n")
+                    f.write("firm_address\n")
+                    f.write("firm_ein\n")
             elif "f1040s1" in u:
                 f.write("name\n")
                 f.write("ssn\n")
@@ -252,7 +343,7 @@ def fill_fields_files():
                 f.write("name\n")
                 f.write("ssn\n")
 
-                if year_folder == "2019":
+                if year_folder == "2019" or year_folder == "2020":
                     f.write("dispose_opportunity y n\n")
 
                 for i in ['1a', '1b', '2', '3']:
