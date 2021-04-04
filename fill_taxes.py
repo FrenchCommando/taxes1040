@@ -63,7 +63,8 @@ def gather_inputs(input_year_folder):
         'email': 'martialren@gmail.com',
         'health_savings_account': True,
         'health_savings_account_contributions': 3550,
-        'health_savings_account_distributions': 3550,
+        'health_savings_account_distributions': 3050,
+        'medical_expenses': 20000,
     }
 
     override_stuff = {

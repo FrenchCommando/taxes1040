@@ -254,6 +254,32 @@ def fill_taxes_2020(d, output_2019=None):
         def build(self):
             self.push_name_ssn()
 
+            self.push_to_dict('1', d.get('medical_expenses', 0))
+            self.push_to_dict('2', forms_state[k_1040]['11'])
+            self.push_to_dict('3', self.d['2'] * 0.075)
+            self.push_to_dict('4', max(0, self.d.get('1', 0) - self.d['3']))
+
+            if d.get('deduct_sales_tax', False):
+                self.push_to_dict('5_a_y', True)
+                self.push_to_dict('5_a', d.get('deduct_sales_tax_amount', 0))
+            else:
+                self.push_to_dict('5_a', state_tax + local_tax)
+
+            self.push_sum('5_d', ['5_a', '5_b', '5_c'])
+            self.push_to_dict('5_e', min(self.d.get('5_d', 0), 10000))
+            # 6 is other
+            self.push_sum('7', ['5_e', '6'])
+
+            # mortgage interest
+            # charity
+            # theft
+            # other
+
+            self.push_sum('17', ['4', '7', '10', '14', '15', '16'])
+            # to 1040 line 12
+
+            # tick 18 if you want to lose money
+
     class Form1040sb(Form):
         def __init__(self):
             Form.__init__(self, k_1040sb)
