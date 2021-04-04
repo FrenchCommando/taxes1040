@@ -121,7 +121,13 @@ def fill_taxes_2020(d, output_2019=None):
 
             self.push_to_dict('11', self.d['9'] - self.d.get('10_c', 0))  # Adjusted Gross Income
 
-            self.push_to_dict('12', standard_deduction)
+            Form1040sa().build()
+            itemized_deduction = forms_state[k_1040sa].get('17', 0)
+            if itemized_deduction > standard_deduction:
+                self.push_to_dict('12', itemized_deduction)
+            else:
+                self.push_to_dict('12', standard_deduction)
+
             self.push_to_dict('13', qualified_business_deduction)
             self.push_sum('14', ['12', '13'])
             self.push_to_dict('15', max(0, self.d.get('11', 0) - self.d.get('14', 0)))  # Taxable income
@@ -240,6 +246,13 @@ def fill_taxes_2020(d, output_2019=None):
             foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
             self.push_to_dict('48_dollar', foreign_tax)
             self.push_sum('55_dollar', [str(i) + "_dollar" for i in range(48, 55)])
+
+    class Form1040sa(Form):
+        def __init__(self):
+            Form.__init__(self, k_1040sa)
+
+        def build(self):
+            self.push_name_ssn()
 
     class Form1040sb(Form):
         def __init__(self):

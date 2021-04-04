@@ -54,7 +54,6 @@ def gather_inputs(input_year_folder):
         'full_year_health_coverage_or_exempt': True,  # ignored starting 2019
         'presidential_election_self': True,
         'resident': True,  # if you're not it's not done yet
-        'standard_deduction': True,  # not a key
         'scheduleD': True,
         'checking': True,
         'routing_number': "11111111",

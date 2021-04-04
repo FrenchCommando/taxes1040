@@ -346,6 +346,20 @@ def fill_fields_files():
                         f.write(f"{i}\n")
                     f.write("12 a b c d d_value e f\n")
                     f.write("13\n")
+            elif "f1040sa" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                for i in range(1, 5):
+                    f.write(f"{i}\n")
+                f.write("5 a_y a b c d e\n")
+                f.write("6 type1 type2 amount\n")
+                f.write("7\n")
+                f.write("8 y a b_type1 b_type2 b_amount c d e\n")
+                for i in range(9, 16):
+                    f.write(f"{i}\n")
+                f.write("16 type1 type2 type3 amount\n")
+                f.write("17\n")
+                f.write("18\n")
             elif "f1040sb" in u:
                 f.write("name\n")
                 f.write("ssn\n")
