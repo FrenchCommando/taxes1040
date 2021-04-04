@@ -65,14 +65,15 @@ def gather_inputs(input_year_folder):
         'health_savings_account_contributions': 3550,
         'health_savings_account_distributions': 3050,
         'medical_expenses': 20000,
+        'virtual_currency': False
     }
 
     override_stuff = {
         'address_street_and_number': next(iter(j['W2']))['Address'],
         'address_apt': next(iter(j['W2']))['Address_apt'],
-        'address_city_state_zip': " ".join([next(iter(j['W2']))['Address_city'],
-                                            next(iter(j['W2']))['Address_state'],
-                                            next(iter(j['W2']))['Address_zip']]),
+        'address_city': next(iter(j['W2']))['Address_city'],
+        'address_state': next(iter(j['W2']))['Address_state'],
+        'address_zip': next(iter(j['W2']))['Address_zip'],
     }
 
     # update_dict(additional_info)

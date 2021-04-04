@@ -73,13 +73,22 @@ def fill_taxes_2020(d, output_2019=None):
                 'self_ssn': main_info['ssn'],
                 'address': main_info['address_street_and_number'],
                 'apt': main_info['address_apt'],
-                'city_state_zip': main_info['address_city_state_zip'],
+                'city': main_info['address_city'],
+                'state': main_info['address_state'],
+                'zip': main_info['address_zip'],
                 'full_year_health_coverage_or_exempt': d['full_year_health_coverage_or_exempt'],
                 'presidential_election_self': d['presidential_election_self'],
                 'self_occupation': d['occupation'],
                 'phone': d['phone'],
                 'email': d['email'],
             })
+
+            if d.get('virtual_currency', False):
+                self.push_to_dict('virtual_currency_y', True)
+                self.push_to_dict('virtual_currency_n', False)
+            else:
+                self.push_to_dict('virtual_currency_y', False)
+                self.push_to_dict('virtual_currency_n', True)
 
             self.push_to_dict('1', wages)
 
