@@ -373,20 +373,20 @@ def fill_taxes_2020(d, output_2019=None):
 
             self.d['1_single'] = True
 
-            self.push_to_dict('2', d['health_savings_account_contributions'])
+            self.push_to_dict('2', d.get('health_savings_account_contributions', 0))
             self.push_to_dict('3', 3550)
             self.push_to_dict('4', 0)
             self.push_to_dict('5', self.d['3'] - self.d.get('4', 0))
             self.push_to_dict('6', self.d['5'])  # except if you have separate for spouse
             self.push_to_dict('7', 0)
             self.push_sum('8', ['6', '7'])
-            self.push_to_dict('9', 0)
+            self.push_to_dict('9', d.get('health_savings_account_contributions', 0))
             self.push_to_dict('10', 0)
             self.push_sum('11', ['9', '10'])
-            self.push_to_dict('12', self.d['8'] - self.d['11'])
+            self.push_to_dict('12', max(0, self.d['8'] - self.d['11']))
             self.push_to_dict('13', min(self.d['2'], self.d['12']))  # to Schedule 1-II-12
 
-            self.push_to_dict('14_a', d['health_savings_account_distributions'])
+            self.push_to_dict('14_a', d.get('health_savings_account_distributions', 0))
             self.push_to_dict('14_b', 0)  # distribution rolled over
             self.push_to_dict('14_c', self.d['14_a'] - self.d.get('14_b', 0))
             self.push_to_dict('15', self.d['14_c'])  # I don't assume it to be different
