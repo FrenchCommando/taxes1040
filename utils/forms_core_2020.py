@@ -122,7 +122,7 @@ def fill_taxes_2020(d, output_2019=None):
                 self.push_to_dict('8', forms_state[k_1040s1]['9'])
                 self.push_to_dict('10_a', forms_state[k_1040s1].get('22', 0))
 
-            self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7', '8'])  # total income
+            self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
 
             # 10_b charitable contributions
 
@@ -201,13 +201,13 @@ def fill_taxes_2020(d, output_2019=None):
                 self.push_to_dict('34', overpaid)
                 # all refunded
                 self.push_to_dict('35a_value', overpaid)
-                self.d['21b'] = d['routing_number']
+                self.d['35b'] = d['routing_number']
                 if d['checking']:
-                    self.d['21c_checking'] = True
+                    self.d['35c_checking'] = True
                 else:
-                    self.d['21c_savings'] = True
-                self.d['21d'] = d['account_number']
-                self.d['22'] = "-0-"
+                    self.d['35c_savings'] = True
+                self.d['35d'] = d['account_number']
+                self.d['36'] = "-0-"
             else:
                 self.push_to_dict('37', -overpaid)
                 self.push_to_dict('38', 0)
