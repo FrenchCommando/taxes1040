@@ -75,6 +75,7 @@ def gather_inputs(input_year_folder):
         'address_city': next(iter(j['W2']))['Address_city'],
         'address_state': next(iter(j['W2']))['Address_state'],
         'address_zip': next(iter(j['W2']))['Address_zip'],
+        'ssn': '222222222'
     }
 
     # update_dict(additional_info)
