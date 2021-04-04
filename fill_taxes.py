@@ -98,7 +98,7 @@ def main():
     merge_pdfs(pdf_files2019, outfile2019)
 
     data2020 = gather_inputs(input_year_folder="2020")
-    states2020, worksheets_all2020 = fill_taxes_2020(data2020, (states2018, worksheets_all2018))
+    states2020, worksheets_all2020 = fill_taxes_2020(data2020, (states2019, worksheets_all2019))
     pdf_files2020 = fill_pdfs(states2020, "2020")
     outfile2020 = "forms" + "2020" + pdf_extension
     merge_pdfs(pdf_files2020, outfile2020)
