@@ -294,8 +294,9 @@ def fill_fields_files():
                     f.write("31a" + dollar_cents + "\n")
                     for i in range(32, 37):
                         f.write(str(i) + dollar_cents + "\n")
-                elif year_folder == "2019":
-                    f.write("virtual_currency y n\n")
+                elif year_folder == "2019" or year_folder == "2020":
+                    if year_folder == "2019":
+                        f.write("virtual_currency y n\n")
                     f.write("1\n")
                     f.write("2 a b\n")
                     for i in range(3, 8):
@@ -306,6 +307,18 @@ def fill_fields_files():
                     f.write("18 a b c\n")
                     for i in range(19, 23):
                         f.write(f"{i}\n")
+            elif "f1040s2" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                if year_folder == "2020":
+                    for i in range(1, 5):
+                        f.write(f"{i}\n")
+                    f.write("5 a b value\n")
+                    f.write("6\n")
+                    f.write("7 a b\n")
+                    f.write("8 a b c code value\n")
+                    f.write("9\n")
+                    f.write("10\n")
             elif "f1040s3" in u:
                 f.write("name\n")
                 f.write("ssn\n")
@@ -325,6 +338,14 @@ def fill_fields_files():
                     f.write("13 a b c d d_value\n")
                     for i in range(13, 15):
                         f.write(f"{i}\n")
+                elif year_folder == "2020":
+                    for i in range(1, 6):
+                        f.write(f"{i}\n")
+                    f.write("6 a b c c_value\n")
+                    for i in range(6, 12):
+                        f.write(f"{i}\n")
+                    f.write("12 a b c d d_value e f\n")
+                    f.write("13\n")
             elif "f1040sb" in u:
                 f.write("name\n")
                 f.write("ssn\n")
@@ -383,6 +404,18 @@ def fill_fields_files():
                 for i in range(14):
                     f.write("II_1_" + str(i + 1) + full_trade + "\n")
                 f.write("II_2" + trade + "\n")
+            elif "f8889" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                f.write("1 self family\n")
+                for i in range(2, 14):
+                    f.write(f"{i}\n")
+                f.write("14 a b c\n")
+                f.write("15\n")
+                f.write("16\n")
+                f.write("17 a b\n")
+                for i in range(18, 22):
+                    f.write(f"{i}\n")
             else:
                 logger.error("Fields File not defined %s", u)
 
