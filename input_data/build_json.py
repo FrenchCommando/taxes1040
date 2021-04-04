@@ -264,8 +264,8 @@ def parse_1099_pdf(path):
         # 1099-DIV
 
         d = dict()
-        d["Total Qualified Dividends  (Box 1b included in Box 1a)"] = try_float_dollar(x=u[133])
-        d["Total Ordinary Dividends (Box 1a)"] = try_float_dollar(x=u[134])
+        d["Qualified Dividends"] = try_float_dollar(x=u[133])
+        d["Ordinary Dividends"] = try_float_dollar(x=u[134])
 
         # 1099-B
         # only covered / short-term
