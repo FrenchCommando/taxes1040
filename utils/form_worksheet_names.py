@@ -5,6 +5,7 @@ k_1040s3 = 'Federal/f1040s3'
 k_1040sb = 'Federal/f1040sb'
 k_1040sd = 'Federal/f1040sd'
 k_8949 = 'Federal/f8949'
+k_8889 = 'Federal/f8889'
 
 k_1040s2 = 'Federal/f1040s2'
 k_1040sa = 'Federal/f1040sa'

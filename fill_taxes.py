@@ -62,6 +62,9 @@ def gather_inputs(input_year_folder):
         'foreign_account': 'FRANCE',
         'phone': '6465555555',
         'email': 'martialren@gmail.com',
+        'health_savings_account': True,
+        'health_savings_account_contributions': 3550,
+        'health_savings_account_distributions': 3550,
     }
 
     override_stuff = {

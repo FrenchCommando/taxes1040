@@ -19,6 +19,7 @@ def fill_taxes_2020(d, output_2019=None):
     has_1099 = '1099' in d
     dividends_qualified = None
     additional_income = None
+    health_savings_account = d.get('health_savings_account', False)
 
     if has_1099:
         n_trades = sum(len(i['Trades']) for i in d['1099'] if 'Trades' in i)
@@ -105,15 +106,14 @@ def fill_taxes_2020(d, output_2019=None):
                 else:
                     self.push_to_dict('7_value', forms_state[k_1040sd]['16'])
 
-            # if additional_income:
-                # need line 22 from schedule 1
-                # Form1040s1().build()
-                # self.push_to_dict('6_from_s1_22', forms_state[k_1040s1]['22_dollar'])
+            if health_savings_account or additional_income:
+                # fill 8889 and schedule 1
+                Form8889().build()
+                Form1040s1().build()
+                self.push_to_dict('8', forms_state[k_1040s1]['9'])
+                self.push_to_dict('10_a', forms_state[k_1040s1].get('22', 0))
 
             self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7', '8'])  # total income
-
-            if additional_income:
-                self.push_to_dict('10_a', forms_state[k_1040s1].get('22', 0))
 
             # 10_b charitable contributions
 
@@ -207,24 +207,20 @@ def fill_taxes_2020(d, output_2019=None):
 
         def build(self):
             self.push_name_ssn()
-            # capital gains
-            if n_trades > 0:
-                if not d['scheduleD']:
-                    self.push_to_dict('13_not_d', False)
-                if k_1040sd not in forms_state:
-                    Form8949().build()  # build 8949 first
-                    Form1040sd().build()
+            if k_8889 in forms_state:
+                hsa_deduction = forms_state[k_8889]['13']
+                if hsa_deduction > 0:
+                    self.push_to_dict('12', hsa_deduction)
+                hsa_taxable_distribution = forms_state[k_8889].get('16', 0)
+                if hsa_taxable_distribution > 0:
+                    self.push_to_dict('8_amount', hsa_taxable_distribution)
+                    self.push_to_dict('8_type1', "HSA")
+            self.push_sum('9', ['1', '2_a', '3', '4', '5', '6', '7', '8_amount'])
+            # to 1040 line 8
 
-            gains = forms_state[k_1040sd]['16']
-            if gains >= 0:
-                self.push_to_dict('13_dollar', gains)
-            else:
-                self.push_to_dict('13_dollar', -forms_state[k_1040sd]['21'])
-            self.push_sum('22_dollar',
-                          ['1_9b_dollar',
-                           *[str(i) + "_dollar"
-                             for i in range(10, 22)]
-                           ])
+            self.push_sum('22', ['10', '11', '12', '13', '14', '15', '16', '17'
+                                 '18_a', '19', '20', '21'])
+            # to 1040 line 10a
 
     class Form1040s2(Form):
         def __init__(self):
@@ -319,6 +315,38 @@ def fill_taxes_2020(d, output_2019=None):
 
         def build(self):
             self.push_name_ssn()
+
+    class Form8889(Form):
+        def __init__(self):
+            Form.__init__(self, k_8889)
+
+        def build(self):
+            self.push_name_ssn()
+
+            self.d['1_single'] = True
+
+            self.push_to_dict('2', d['health_savings_account_contributions'])
+            self.push_to_dict('3', 3550)
+            self.push_to_dict('4', 0)
+            self.push_to_dict('5', self.d['3'] - self.d.get('4', 0))
+            self.push_to_dict('6', self.d['5'])  # except if you have separate for spouse
+            self.push_to_dict('7', 0)
+            self.push_sum('8', ['6', '7'])
+            self.push_to_dict('9', 0)
+            self.push_to_dict('10', 0)
+            self.push_sum('11', ['9', '10'])
+            self.push_to_dict('12', self.d['8'] - self.d['11'])
+            self.push_to_dict('13', min(self.d['2'], self.d['12']))  # to Schedule 1-II-12
+
+            self.push_to_dict('14_a', d['health_savings_account_distributions'])
+            self.push_to_dict('14_b', 0)  # distribution rolled over
+            self.push_to_dict('14_c', self.d['14_a'] - self.d.get('14_b', 0))
+            self.push_to_dict('15', self.d['14_c'])  # I don't assume it to be different
+
+            self.push_to_dict('16', self.d['14_c'] - self.d['15'])
+            # if positive, Schedule 1-I-8 HSA
+
+            # Then is part III, not implemented
 
     class Form8949(Form):  # may need several of them when many transactions
         def __init__(self):
