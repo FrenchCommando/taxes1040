@@ -26,7 +26,7 @@ def fill_taxes_2020(d, output_2019=None):
         sum_trades = {"SHORT": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0},
                       "LONG": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0}}  # from 8949 to fill 1040sd
 
-    standard_deduction = 12200  # if single or married filing separately
+    standard_deduction = 12400  # if single or married filing separately
     qualified_business_deduction = 0
 
     forms_state = {}  # mapping name of forms with content
@@ -96,35 +96,42 @@ def fill_taxes_2020(d, output_2019=None):
                 dividends_qualified = sum(i.get('Qualified Dividends', 0) for i in d['1099'])
                 self.push_to_dict('3_a', dividends_qualified)
 
-            self.d["6_n"] = not d['scheduleD']
+            self.d["7_n"] = not d['scheduleD']
             if d['scheduleD']:
                 Form8949().build()  # build 8949 first
                 Form1040sd().build()
-                self.push_to_dict('6_value', -forms_state[k_1040sd]['21'])
+                if '21' in forms_state[k_1040sd]:
+                    self.push_to_dict('7_value', -forms_state[k_1040sd]['21'])
+                else:
+                    self.push_to_dict('7_value', forms_state[k_1040sd]['16'])
 
             # if additional_income:
                 # need line 22 from schedule 1
                 # Form1040s1().build()
                 # self.push_to_dict('6_from_s1_22', forms_state[k_1040s1]['22_dollar'])
 
-            self.push_sum('7_b', ['1', '2_b', '3_b', '4_b', '4_d', '5_b', '6_value', '7_a'])  # total income
+            self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7', '8'])  # total income
 
             if additional_income:
-                self.push_to_dict('8_a', forms_state[k_1040s1].get('22', 0))
+                self.push_to_dict('10_a', forms_state[k_1040s1].get('22', 0))
 
-            self.push_to_dict('8_b', self.d['7_b'] - self.d.get('8_a', 0))  # Adjusted Gross Income
+            # 10_b charitable contributions
 
-            self.push_to_dict('9', standard_deduction)
-            self.push_to_dict('10', qualified_business_deduction)
-            self.push_sum('11_a', ['9', '10'])
-            self.push_to_dict('11_b', max(0, self.d.get('8_b', 0) - self.d.get('11_a', 0)))  # Taxable income
+            self.push_sum('10_c', ['10_a', '10_b'])  # total adjustments to income
+
+            self.push_to_dict('11', self.d['9'] - self.d.get('10_c', 0))  # Adjusted Gross Income
+
+            self.push_to_dict('12', standard_deduction)
+            self.push_to_dict('13', qualified_business_deduction)
+            self.push_sum('14', ['12', '13'])
+            self.push_to_dict('15', max(0, self.d.get('11', 0) - self.d.get('14', 0)))  # Taxable income
 
             if dividends_qualified:
                 qualified_dividend_worksheet = QualifiedDividendsCapitalGainTaxWorksheet()
                 qualified_dividend_worksheet.build()
-                self.push_to_dict('12_a', worksheets[w_qualified_dividends_and_capital_gains][27])
+                self.push_to_dict('16', worksheets[w_qualified_dividends_and_capital_gains][25])
             else:
-                self.push_to_dict('12_a', computation(self.d['11_b']))
+                self.push_to_dict('16', computation(self.d['15']))
 
             # # add from 11b
             # should_fill = ShouldFill6251Worksheet()
@@ -148,28 +155,37 @@ def fill_taxes_2020(d, output_2019=None):
             #     else:
             #         del forms_state[k_1040s3]
 
-            self.push_sum('12_b', ['12_a'])  # plus schedule 2 line 3
-            self.push_to_dict('13_a', 0)  # child tax credit
-            self.push_sum('13_b', ['13_a'])  # plus schedule 3 line 7
-            self.push_to_dict('14', max(0, self.d.get('12_b', 0) - self.d.get('13_b', 0)))
-            self.push_to_dict('15', 0)  # other taxes from Schedule 2 line 10
-            self.push_sum('16', ['14', '15'])  # total tax
-            self.push_to_dict('17', federal_tax)
+            self.push_to_dict('17', 0)  # schedule 2 line 3
+            self.push_sum('18', ['16', '17'])  # plus schedule 2 line 3
+            self.push_to_dict('19', 0)  # child tax credit
+            self.push_to_dict('20', 0)  # schedule 3 line 7
+            self.push_sum('21', ['19', '20'])
+            self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
+            self.push_to_dict('23', 0)  # other taxes from Schedule 2 line 10
+            self.push_sum('24', ['22', '23'])  # total tax
 
-            self.push_to_dict('18_a', 0)  # Earned Income Credit
-            self.push_to_dict('18_b', 0)  # Additional child tax Credit
-            self.push_to_dict('18_c', 0)  # American opportunity credit Form 8863, line 8
-            self.push_to_dict('18_d', 0)  # Schedule 3, line 14
-            self.push_sum('18_e', ['18_a', '18_b', '18_c', '18_d'])  # total other payments and refundable credit
+            self.push_to_dict('25_a', federal_tax)  # from W2
+            self.push_to_dict('25_b', 0)  # from 1099
+            self.push_to_dict('25_c', 0)  # from other
+            self.push_sum('25_d', ['25_a', '25_b', '25_c'])
 
-            self.push_sum('19', ['17', '18_e'])  # total payments
+            self.push_to_dict('26', 0)  # estimated payments
+
+            self.push_to_dict('27', 0)  # Earned Income Credit
+            self.push_to_dict('28', 0)  # Additional child tax Credit
+            self.push_to_dict('29', 0)  # American opportunity credit Form 8863, line 8
+            self.push_to_dict('30', 0)  # Recovery rebate credit
+            self.push_to_dict('31', 0)  # Schedule 3, line 13
+            self.push_sum('32', ['27', '28', '29', '30', '31'])  # total other payments and refundable credit
+
+            self.push_sum('33', ['25_d', '26', '32'])  # total payments
 
             # refund
-            overpaid = self.d['19'] - self.d['16']
+            overpaid = self.d['24'] - self.d['33']
             if overpaid > 0:
-                self.push_to_dict('20', overpaid)
+                self.push_to_dict('34', overpaid)
                 # all refunded
-                self.push_to_dict('21a_value', overpaid)
+                self.push_to_dict('35a_value', overpaid)
                 self.d['21b'] = d['routing_number']
                 if d['checking']:
                     self.d['21c_checking'] = True
@@ -178,8 +194,8 @@ def fill_taxes_2020(d, output_2019=None):
                 self.d['21d'] = d['account_number']
                 self.d['22'] = "-0-"
             else:
-                self.push_to_dict('23', -overpaid)
-                self.push_to_dict('24', 0)
+                self.push_to_dict('37', -overpaid)
+                self.push_to_dict('38', 0)
 
     class Form1040NR(Form):
         def __init__(self):
@@ -432,36 +448,34 @@ def fill_taxes_2020(d, output_2019=None):
             Worksheet.__init__(self, w_qualified_dividends_and_capital_gains, 27)
 
         def build(self):
-            self.d[1] = forms_state[k_1040]['10_dollar']
-            self.d[2] = forms_state[k_1040]['3a_dollar']
+            self.d[1] = forms_state[k_1040]['15']
+            self.d[2] = forms_state[k_1040]['3_a']
             if d['scheduleD']:
                 self.d[3] = max(0, min(forms_state[k_1040sd]['15'], forms_state[k_1040sd]['16']))
             else:
-                self.d[3] = forms_state[k_1040s1]['13_dollar']
+                self.d[3] = forms_state[k_1040s1]['7']
             self.d[4] = self.d[2] + self.d[3]
-            self.d[5] = 0  # form 4952
-            self.d[6] = max(0, self.d[4] - self.d[5])
-            self.d[7] = max(0, self.d[1] - self.d[6])
-            self.d[8] = 38600 if d['single'] else 77200
-            self.d[9] = min(self.d[1], self.d[8])
-            self.d[10] = min(self.d[7], self.d[9])
-            self.d[11] = self.d[9] - self.d[10]  # taxed at 0%
-            self.d[12] = min(self.d[1], self.d[6])
-            self.d[13] = self.d[11]
-            self.d[14] = self.d[12] - self.d[13]
-            self.d[15] = 425800  # for single
-            self.d[16] = min(self.d[1], self.d[15])
-            self.d[17] = self.d[7] + self.d[11]
-            self.d[18] = max(0, self.d[16] - self.d[17])
-            self.d[19] = min(self.d[14], self.d[18])
-            self.d[20] = self.d[19] * 0.15
-            self.d[21] = self.d[11] + self.d[19]
-            self.d[22] = self.d[12] - self.d[21]
-            self.d[23] = self.d[22] * 0.2
-            self.d[24] = computation(self.d[7])
-            self.d[25] = self.d[20] + self.d[23] + self.d[24]
-            self.d[26] = computation(self.d[1])
-            self.d[27] = min(self.d[25], self.d[26])
+            self.d[5] = max(0, self.d[1] - self.d[4])
+            self.d[6] = 40000  # single
+            self.d[7] = min(self.d[1], self.d[6])
+            self.d[8] = min(self.d[5], self.d[7])
+            self.d[9] = self.d[7] - self.d[8]  # taxed 0%
+            self.d[10] = min(self.d[1], self.d[4])
+            self.d[11] = self.d[9]
+            self.d[12] = self.d[11] - self.d[10]
+            self.d[13] = 441450  # single
+            self.d[14] = min(self.d[1], self.d[13])
+            self.d[15] = self.d[5] + self.d[9]
+            self.d[16] = max(0, self.d[14] - self.d[15])
+            self.d[17] = min(self.d[12], self.d[16])
+            self.d[18] = self.d[17] * 0.15
+            self.d[19] = self.d[9] + self.d[17]
+            self.d[20] = self.d[10] - self.d[19]
+            self.d[21] = self.d[20] * 0.2
+            self.d[22] = computation(amount=self.d[5])
+            self.d[23] = self.d[18] + self.d[21] + self.d[22]
+            self.d[24] = computation(self.d[1])
+            self.d[25] = min(self.d[23], self.d[24])
 
     class ShouldFill6251Worksheet(Worksheet):
         def __init__(self):
