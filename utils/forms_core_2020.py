@@ -371,7 +371,7 @@ def fill_taxes_2020(d, output_2019=None):
         def build(self):
             self.push_name_ssn()
 
-            self.d['1_single'] = True
+            self.d['1_self'] = True
 
             self.push_to_dict('2', d.get('health_savings_account_contributions', 0))
             self.push_to_dict('3', 3550)
