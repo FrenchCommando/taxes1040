@@ -87,6 +87,15 @@ def gather_inputs(input_year_folder):
     data.update(additional_info)
     data[override_keyword] = override_stuff
 
+    if '1099' not in data:
+        data['1099'] = []
+    data['1099'].extend(
+        [
+            {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 3.11},
+            {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 10.29},
+        ]
+    )
+
     return data
 
 
