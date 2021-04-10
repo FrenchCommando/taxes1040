@@ -223,7 +223,7 @@ def fill_taxes_2020(d, output_2019=None):
         def build(self):
             self.push_name_ssn()
             if k_8889 in forms_state:
-                hsa_deduction = forms_state[k_8889]['13']
+                hsa_deduction = forms_state[k_8889].get('13', 0)
                 if hsa_deduction > 0:
                     self.push_to_dict('12', hsa_deduction)
                 hsa_taxable_distribution = forms_state[k_8889].get('16', 0)
@@ -380,11 +380,11 @@ def fill_taxes_2020(d, output_2019=None):
             self.push_to_dict('6', self.d['5'])  # except if you have separate for spouse
             self.push_to_dict('7', 0)
             self.push_sum('8', ['6', '7'])
-            self.push_to_dict('9', d.get('health_savings_account_contributions', 0))
+            self.push_to_dict('9', d.get('health_savings_account_employer_contributions', 0))
             self.push_to_dict('10', 0)
             self.push_sum('11', ['9', '10'])
             self.push_to_dict('12', max(0, self.d['8'] - self.d['11']))
-            self.push_to_dict('13', min(self.d['2'], self.d['12']))  # to Schedule 1-II-12
+            self.push_to_dict('13', min(self.d.get('2', 0), self.d['12']))  # to Schedule 1-II-12
 
             self.push_to_dict('14_a', d.get('health_savings_account_distributions', 0))
             self.push_to_dict('14_b', 0)  # distribution rolled over
