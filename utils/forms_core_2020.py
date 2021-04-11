@@ -196,7 +196,7 @@ def fill_taxes_2020(d, output_2019=None):
             self.push_sum('33', ['25_d', '26', '32'])  # total payments
 
             # refund
-            overpaid = self.d['24'] - self.d['33']
+            overpaid = self.d['33'] - self.d['24']
             if overpaid > 0:
                 self.push_to_dict('34', overpaid)
                 # all refunded
