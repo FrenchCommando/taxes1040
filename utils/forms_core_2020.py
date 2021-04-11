@@ -348,6 +348,15 @@ def fill_taxes_2020(d, output_2019=None):
             self.revert_sign('6')
             self.revert_sign('14')
 
+            if self.d['15'] < 0 or self.d['16'] < 0:
+                self.d['17_y'] = False
+            else:
+                self.d['17_y'] = True
+
+            # 18 is '28% Rate Gain Worksheet'
+            # 19 is `Unrecaptured Section 1250 Gain Worksheet`
+            # 20 more worksheet and 4952
+
             if self.d['16'] < 0:
                 capital_loss_limit = 3000 if d['single'] else 1500
                 self.push_to_dict('21', min(capital_loss_limit, -self.d['16']))
