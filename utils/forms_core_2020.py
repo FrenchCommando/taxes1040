@@ -326,6 +326,8 @@ def fill_taxes_2020(d, output_2019=None):
         def build(self):
             self.push_name_ssn()
 
+            self.d['dispose_opportunity_n'] = True
+
             # short / long term gains
             def fill_gains(ls_key, index):
                 self.push_to_dict('{}b_proceeds'.format(index), sum_trades[ls_key]['Proceeds'], 2)
