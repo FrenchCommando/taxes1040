@@ -74,7 +74,7 @@ def parse_xml(path, print_tag=False):
 
 
 def parse_w2(path):
-    u = parse_pdf(path=path, print_lines=True)
+    u = parse_pdf(path=path, print_lines=False)
 
     if "SG-W2-2018" in path:
         name_overflow = True
@@ -252,17 +252,20 @@ def parse_1099(path):
 
 
 def parse_1099_pdf(path):
-    u = parse_pdf(path=path, print_lines=True)
+    u = parse_pdf(path=path, print_lines=False)
 
     def try_float(x):
         try:
-            return float(x)
+            no_comma = x.replace(",", "").strip()
+            if (no_comma[0], no_comma[-1]) == ("(", ")"):
+                return -1 * float(no_comma[1:-1])
+            return float(no_comma)
         except ValueError:
             return x.strip()
 
     def try_float_dollar(x):
-        if x.strip()[0] == "$":
-            return try_float(x=x.strip()[1:])
+        if x.strip()[0] == "$" or x.strip()[1] == "$":
+            return try_float(x=x.replace("$", "").strip())
 
     if "etrade" in path:
         if "etrade-1099-2020.pdf" in path:
@@ -560,7 +563,7 @@ def parse_1099_pdf(path):
             logger.error(f"Input not parsed parse_1099_pdf\t{path}")
     elif "Marcus" in path:
         d = {
-            "Interest": try_float(x=u[81]),
+            "Interest": try_float(x=u[82]),
             "Institution": u[0],
         }
     else:
