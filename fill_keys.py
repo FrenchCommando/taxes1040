@@ -42,7 +42,7 @@ def fill_fields_files():
     if year_folder == "2018":
         dollar_cents = " dollar cents"
         payer_dollar_cents = " payer" + dollar_cents
-    if year_folder == "2019" or year_folder == "2020":
+    if year_folder == "2019" or year_folder == "2020" or year_folder == "2021":
         payer_dollar_cents = " payer value"
         dollar_cents = " value"
 
