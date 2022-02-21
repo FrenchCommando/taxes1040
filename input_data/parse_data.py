@@ -1,6 +1,7 @@
 import os
 import glob
 from collections import defaultdict
+import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as eTree
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
@@ -705,6 +706,65 @@ def parse_1099_xml(path):
     return d
 
 
+def parse_transaction(path):
+    table = pd.read_excel(path)
+    table = table.loc[table["Date"] < np.datetime64("2022-01-01")]
+    table = table.loc[np.datetime64("2021-01-01") <= table["Date"]]
+    table = table.loc[table["Type"].isin(["Buy", "Sell"])]
+
+    proceeds_table = table.loc[table["Type"] == "Sell"].groupby(["Symbol"]).sum()
+    cost_table = table.loc[table["Type"] == "Buy"].groupby(["Symbol"]).sum()
+
+    currency_to_pair = defaultdict(list)
+    for pair in proceeds_table.index:
+        currency = pair.replace("GUSD", "").replace("USD", "")
+        # print(pair, "  \t", currency)
+        currency_to_pair[currency].append(pair)
+
+    # print(currency_to_pair)
+    d_transactions = []
+    for currency, pair_list in currency_to_pair.items():
+        shares_value = 0
+        proceed_value = 0
+        cost_value = 0
+        for pair in pair_list:
+            # print(pair)
+            shares_value -= proceeds_table.loc[pair, f"{currency} Amount {currency}"]
+
+            proceed_value += proceeds_table.loc[pair, "USD Amount USD"]
+            proceed_value += proceeds_table.loc[pair, "GUSD Amount GUSD"]
+            proceed_value += proceeds_table.loc[pair, "Fee (USD) USD"]
+
+            cost_value -= cost_table.loc[pair, "USD Amount USD"]
+            cost_value -= cost_table.loc[pair, "GUSD Amount GUSD"]
+            cost_value -= cost_table.loc[pair, "Fee (USD) USD"]
+        d_currency = dict(
+            SalesDescription=currency,
+            Shares=shares_value,
+            Proceeds=proceed_value,
+            Cost=cost_value,
+        )
+        d_transactions.append(d_currency)
+
+    # print(pd.concat([proceeds_table.iloc[0], cost_table.iloc[0]], axis=1))
+    # print(pd.concat([proceeds_table.iloc[3], cost_table.iloc[3]], axis=1))
+    # print(pd.concat([proceeds_table.iloc[4], cost_table.iloc[4]], axis=1))
+
+    for dd in d_transactions:
+        dd.update({
+            "DateAcquired": "Various",
+            "DateSold": "Various",
+            "WashSaleCode": "",
+            "WashSaleValue": 0,
+            "LongShort": "SHORT",
+            "FormCode": "C",
+        })
+    d = dict(Trades=d_transactions)
+    logger.info("Parsed transaction %s", path)
+
+    return d
+
+
 def read_data(folder):
     data = defaultdict(list)
 
@@ -720,6 +780,9 @@ def read_data(folder):
         elif form == '1099':
             data_1099 = parse_1099(f)  # there may be several 1099
             data['1099'].append(data_1099)
+        elif form == "transaction_history":
+            data_transaction = parse_transaction(f)
+            data['transaction'].append(data_transaction)
         else:
             logger.error(f"Input not parsed read_data\t{name}")
     return data

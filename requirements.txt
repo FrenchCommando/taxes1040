@@ -1,5 +1,6 @@
 chardet
 numpy
+openpyxl
 pandas
 pdfminer.six
 pdfrw
