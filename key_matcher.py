@@ -21,14 +21,15 @@ def process_pdf(file):
         i = 0
         template_pdf = pdfrw.PdfReader(file)
         for annotations in template_pdf.pages:
-            for annotation in annotations[ANNOT_KEY]:
-                if annotation[SUBTYPE_KEY] == WIDGET_SUBTYPE_KEY:
-                    if annotation[ANNOT_FIELD_KEY]:
-                        key = annotation[ANNOT_FIELD_KEY][1:-1]
-                        fields_type = annotation[ANNOT_FIELD_TYPE_KEY]
-                        d[key] = str(i)
-                        d_type[key] = fields_type
-                        i += 1
+            if ANNOT_KEY in annotations:
+                for annotation in annotations[ANNOT_KEY]:
+                    if annotation[SUBTYPE_KEY] == WIDGET_SUBTYPE_KEY:
+                        if annotation[ANNOT_FIELD_KEY]:
+                            key = annotation[ANNOT_FIELD_KEY][1:-1]
+                            fields_type = annotation[ANNOT_FIELD_TYPE_KEY]
+                            d[key] = str(i)
+                            d_type[key] = fields_type
+                            i += 1
 
         k_file_map = os.path.join(year_name, os.path.relpath(k_file, forms_year_folder))
         with open(k_file_map, 'w+') as f:
@@ -46,10 +47,7 @@ def process_all():
     for u in glob.glob(os.path.join(forms_year_folder, "*", "", "*")):
         if os.path.splitext(u)[1] == pdf_extension and os.path.basename(u).startswith("f"):
             logger.info("Processing file %s", u)
-            try:
-                process_pdf(u)
-            except Exception as e:
-                logger.error(e)
+            process_pdf(u)
         else:
             logger.info("File ignored %s", u)
     # for u in glob.glob(os.path.join(key_mapping_folder, "*", "")):

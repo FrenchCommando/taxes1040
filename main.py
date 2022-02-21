@@ -39,10 +39,10 @@ if __name__ == '__main__':
         fill_keys.year_folder = form_filing_year
         fill_keys.main()
 
-    for input_filing_year in ["2021"]:
-        input_data.build_json.build_input(year_folder=input_filing_year)
+    # for input_filing_year in ["2020", "2021"]:
+    #     input_data.build_json.build_input(year_folder=input_filing_year)
 
     # fill_taxes.main()
 
-    for form_filing_year in ["2018", "2019", "2020", "2021"]:
+    for form_filing_year in ["2020", "2021"]:
         utils.forms_clean.clean(form_filing_year)

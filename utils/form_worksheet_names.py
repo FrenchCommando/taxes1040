@@ -10,6 +10,7 @@ k_8889 = 'Federal/f8889'
 k_1040s2 = 'Federal/f1040s2'
 k_1040sa = 'Federal/f1040sa'
 k_6251 = 'Federal/f6251'
+k_6781 = 'Federal/f6781'
 
 
 w_simplified_method = 'SimplifiedMethod'  # for 4a, 4b
