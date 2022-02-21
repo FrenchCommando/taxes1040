@@ -706,10 +706,10 @@ def parse_1099_xml(path):
     return d
 
 
-def parse_transaction(path):
-    table = pd.read_excel(path)
-    table = table.loc[table["Date"] < np.datetime64("2022-01-01")]
-    table = table.loc[np.datetime64("2021-01-01") <= table["Date"]]
+def parse_transaction(path, year):
+    table = pd.read_excel(path, engine='openpyxl')
+    table = table.loc[table["Date"] < np.datetime64(f"{year+1}-01-01")]
+    table = table.loc[np.datetime64(f"{year}-01-01") <= table["Date"]]
     table = table.loc[table["Type"].isin(["Buy", "Sell"])]
 
     proceeds_table = table.loc[table["Type"] == "Sell"].groupby(["Symbol"]).sum()
@@ -781,7 +781,7 @@ def read_data(folder):
             data_1099 = parse_1099(f)  # there may be several 1099
             data['1099'].append(data_1099)
         elif form == "transaction_history":
-            data_transaction = parse_transaction(f)
+            data_transaction = parse_transaction(f, int(year))
             data['transaction'].append(data_transaction)
         else:
             logger.error(f"Input not parsed read_data\t{name}")
