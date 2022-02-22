@@ -63,11 +63,11 @@ def gather_inputs(input_year_folder):
         'phone': '6465555555',
         'email': 'martialren@gmail.com',
         'health_savings_account': True,
-        'health_savings_account_contributions': 500 + 500,
-        'health_savings_account_employer_contributions': 500 + 500,
-        'health_savings_account_distributions': 409 + 1210.60,
-        'medical_expenses': 20000,
-        'virtual_currency': False
+        'health_savings_account_contributions': 3600,
+        'health_savings_account_employer_contributions': 0,
+        'health_savings_account_distributions': 57.80,
+        'medical_expenses': 0,
+        'virtual_currency': True
     }
 
     override_stuff = {
@@ -76,7 +76,7 @@ def gather_inputs(input_year_folder):
         'address_city': next(iter(j['W2']))['Address_city'],
         'address_state': next(iter(j['W2']))['Address_state'],
         'address_zip': next(iter(j['W2']))['Address_zip'],
-        'ssn': '222222222'
+        'ssn': '200112222'
     }
 
     # update_dict(additional_info)
@@ -92,8 +92,8 @@ def gather_inputs(input_year_folder):
         data['1099'] = []
     data['1099'].extend(
         [
-            {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 3.11},
-            {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 10.29},
+            # {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 3.11},
+            # {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 10.29},
         ]
     )
 

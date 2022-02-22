@@ -1,5 +1,5 @@
-from itertools import islice
-from utils.forms_functions import get_main_info, computation_2020 as computation
+from itertools import islice, chain
+from utils.forms_functions import get_main_info, computation_2021 as computation
 from utils.form_worksheet_names import *
 from utils.forms_constants import logger
 
@@ -22,13 +22,23 @@ def fill_taxes_2021(d, output_2020=None):
     health_savings_account = d.get('health_savings_account', False)
 
     if has_1099:
-        n_trades = sum(len(i['Trades']) for i in d['1099'] if 'Trades' in i)
-        # additional_income = n_trades > 0
-        sum_trades = {"SHORT": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0},
-                      "LONG": {"Proceeds": 0, "Cost": 0, "Adjustment": 0, "Gain": 0}}  # from 8949 to fill 1040sd
+        sum_trades = dict(
+            SHORT=dict(
+                A=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
+                B=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
+                C=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
+            ),
+            LONG=dict(
+                D=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
+                E=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
+                F=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
+            ),
+        ) # from 8949 to fill 1040sd
+        foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
 
-    standard_deduction = 12400  # if single or married filing separately
+    standard_deduction = 12550  # if single or married filing separately
     qualified_business_deduction = 0
+    health_savings_account_max_contribution = 3600
 
     forms_state = {}  # mapping name of forms with content
     worksheets = {}  # worksheets need not be printed
@@ -108,6 +118,7 @@ def fill_taxes_2021(d, output_2020=None):
 
             self.d["7_n"] = not d['scheduleD']
             if d['scheduleD']:
+                # for Box A, without corrections skip 8949
                 Form8949().build()  # build 8949 first
                 Form1040sd().build()
                 if '21' in forms_state[k_1040sd]:
@@ -119,26 +130,28 @@ def fill_taxes_2021(d, output_2020=None):
                 # fill 8889 and schedule 1
                 Form8889().build()
                 Form1040s1().build()
-                self.push_to_dict('8', forms_state[k_1040s1]['9'])
-                self.push_to_dict('10_a', forms_state[k_1040s1].get('22', 0))
+                self.push_to_dict('8', forms_state[k_1040s1]['10'])
+                self.push_to_dict('10_a', forms_state[k_1040s1].get('26', 0))
 
             self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
 
-            # 10_b charitable contributions
+            self.push_to_dict('10', forms_state[k_1040s1].get('26', 0))
 
-            self.push_sum('10_c', ['10_a', '10_b'])  # total adjustments to income
+            self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
 
-            self.push_to_dict('11', self.d['9'] - self.d.get('10_c', 0))  # Adjusted Gross Income
-
-            Form1040sa().build()
-            itemized_deduction = forms_state[k_1040sa].get('17', 0)
+            # Form1040sa().build()
+            # itemized_deduction = forms_state[k_1040sa].get('17', 0)
+            itemized_deduction = 0
             if itemized_deduction > standard_deduction:
-                self.push_to_dict('12', itemized_deduction)
+                self.push_to_dict('12_a', itemized_deduction)
             else:
-                self.push_to_dict('12', standard_deduction)
+                self.push_to_dict('12_a', standard_deduction)
+            charitable_contributions = 0
+            self.push_to_dict('12_b', charitable_contributions)
+            self.push_sum('12_c', ['12_a', '12_b'])
 
             self.push_to_dict('13', qualified_business_deduction)
-            self.push_sum('14', ['12', '13'])
+            self.push_sum('14', ['12_c', '13'])
             self.push_to_dict('15', max(0, self.d.get('11', 0) - self.d.get('14', 0)))  # Taxable income
 
             if dividends_qualified:
@@ -148,35 +161,18 @@ def fill_taxes_2021(d, output_2020=None):
             else:
                 self.push_to_dict('16', computation(self.d['15']))
 
-            # # add from 11b
-            # should_fill = ShouldFill6251Worksheet()
-            # should_fill.build()
-            # awt = 0
-            # if should_fill.fill6251:
-            #     Form1040s2().build()
-            #     Form6251().build()
-            #     awt = forms_state[k_6251]['11_dollar']
-            # if awt > 0:
-            #     self.d['11b'] = True
-            #     self.push_to_dict('11_dollar', self.d['11a_tax'] + awt)
-            # else:
-            #     self.push_sum('11_dollar', ['11a_tax'])
-            # if has_1099:
-            #     Form1040s3().build()
-            #     foreign_tax = forms_state[k_1040s3]['55_dollar']
-            #     if foreign_tax != 0:
-            #         self.d['12b'] = True
-            #         self.push_to_dict('12_dollar', forms_state[k_1040s3]['55_dollar'])
-            #     else:
-            #         del forms_state[k_1040s3]
-
             self.push_to_dict('17', 0)  # schedule 2 line 3
             self.push_sum('18', ['16', '17'])  # plus schedule 2 line 3
             self.push_to_dict('19', 0)  # child tax credit
-            self.push_to_dict('20', 0)  # schedule 3 line 7
+
+            if foreign_tax > 0:
+                Form1040s3().build()
+                self.push_to_dict('20', forms_state[k_1040s3]['8'])
+            else:
+                self.push_to_dict('20', 0)  # schedule 3 line 8
             self.push_sum('21', ['19', '20'])
             self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
-            self.push_to_dict('23', 0)  # other taxes from Schedule 2 line 10
+            self.push_to_dict('23', 0)  # other taxes from Schedule 2 line 21
             self.push_sum('24', ['22', '23'])  # total tax
 
             self.push_to_dict('25_a', federal_tax)  # from W2
@@ -186,12 +182,15 @@ def fill_taxes_2021(d, output_2020=None):
 
             self.push_to_dict('26', 0)  # estimated payments
 
-            self.push_to_dict('27', 0)  # Earned Income Credit
+            self.push_to_dict('27_a', 0)  # Earned Income Credit
+            self.push_to_dict('27_b', 0)  # Nontaxable combat pay election
+            self.push_to_dict('27_c', 0)  # Prior year Earned Income
             self.push_to_dict('28', 0)  # Additional child tax Credit
             self.push_to_dict('29', 0)  # American opportunity credit Form 8863, line 8
             self.push_to_dict('30', 0)  # Recovery rebate credit
-            self.push_to_dict('31', 0)  # Schedule 3, line 13
-            self.push_sum('32', ['27', '28', '29', '30', '31'])  # total other payments and refundable credit
+            self.push_to_dict('31', 0)  # Schedule 3, line 15
+            self.push_sum('32', ['27_a', '27_b', '27_c', '28', '29', '30', '31'])
+            # total other payments and refundable credit
 
             self.push_sum('33', ['25_d', '26', '32'])  # total payments
 
@@ -212,9 +211,7 @@ def fill_taxes_2021(d, output_2020=None):
                 self.push_to_dict('37', -overpaid)
                 self.push_to_dict('38', 0)
 
-    class Form1040NR(Form):
-        def __init__(self):
-            Form.__init__(self, k_1040nr)
+            self.push_to_dict('other_designee_n', True)
 
     class Form1040s1(Form):
         def __init__(self):
@@ -225,16 +222,36 @@ def fill_taxes_2021(d, output_2020=None):
             if k_8889 in forms_state:
                 hsa_deduction = forms_state[k_8889].get('13', 0)
                 if hsa_deduction > 0:
-                    self.push_to_dict('12', hsa_deduction)
+                    self.push_to_dict('13', hsa_deduction)
                 hsa_taxable_distribution = forms_state[k_8889].get('16', 0)
                 if hsa_taxable_distribution > 0:
-                    self.push_to_dict('8_amount', hsa_taxable_distribution)
-                    self.push_to_dict('8_type1', "HSA")
-            self.push_sum('9', ['1', '2_a', '3', '4', '5', '6', '7', '8_amount'])
+                    self.push_to_dict('8_e', hsa_taxable_distribution)
+            self.push_to_dict('9',
+                              - self.d.get('8_a', 0)
+                              + self.d.get('8_b', 0)
+                              + self.d.get('8_c', 0)
+                              - self.d.get('8_d', 0)
+                              + self.d.get('8_e', 0)
+                              + self.d.get('8_f', 0)
+                              + self.d.get('8_g', 0)
+                              + self.d.get('8_h', 0)
+                              + self.d.get('8_i', 0)
+                              + self.d.get('8_j', 0)
+                              + self.d.get('8_k', 0)
+                              + self.d.get('8_l', 0)
+                              + self.d.get('8_m', 0)
+                              + self.d.get('8_n', 0)
+                              + self.d.get('8_o', 0)
+                              + self.d.get('8_p', 0)
+                              + self.d.get('8_z', 0)
+                              )
+            self.push_sum('10', ['1', '2_a', '3', '4', '5', '6', '7', '9'])
             # to 1040 line 8
 
-            self.push_sum('22', ['10', '11', '12', '13', '14', '15', '16', '17'
-                                 '18_a', '19', '20', '21'])
+            self.push_sum('25', ['24_a', '24_b', '24_c', '24_d', '24_e', '24_f',
+                                 '24_g', '24_h', '24_i', '24_j', '24_k', '24_z', ])
+            self.push_sum('26', ['11', '12', '13', '14', '15',
+                                 '16', '17', '18', '19_a', '20', '21', '23', '25'])
             # to 1040 line 10a
 
     class Form1040s2(Form):
@@ -252,9 +269,8 @@ def fill_taxes_2021(d, output_2020=None):
             self.push_name_ssn()
             # I don't need the 1116
             # https://turbotax.intuit.com/tax-tips/military/filing-irs-form-1116-to-claim-the-foreign-tax-credit/L2ODfqp89
-            foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
-            self.push_to_dict('48_dollar', foreign_tax)
-            self.push_sum('55_dollar', [str(i) + "_dollar" for i in range(48, 55)])
+            self.push_to_dict('1', foreign_tax)
+            self.push_sum('8', ['1', '2', '3', '4', '5', '7'])  # 1040 line 20
 
     class Form1040sa(Form):
         def __init__(self):
@@ -329,19 +345,24 @@ def fill_taxes_2021(d, output_2020=None):
             self.d['dispose_opportunity_n'] = True
 
             # short / long term gains
-            def fill_gains(ls_key, index):
-                self.push_to_dict('{}b_proceeds'.format(index), sum_trades[ls_key]['Proceeds'], 2)
-                self.push_to_dict('{}b_cost'.format(index), sum_trades[ls_key]['Cost'], 2)
-                self.push_to_dict('{}b_adjustments'.format(index), sum_trades[ls_key]['Adjustment'], 2)
-                self.push_to_dict('{}b_gain'.format(index), sum_trades[ls_key]['Gain'], 2)
-            fill_gains("SHORT", "1")
-            fill_gains("LONG", "8")
+            def fill_gains(ls_key, box_index, number_index):
+                self.push_to_dict(f'{number_index}_proceeds', sum_trades[ls_key][box_index]['Proceeds'], 2)
+                self.push_to_dict(f'{number_index}_cost', sum_trades[ls_key][box_index]['Cost'], 2)
+                if not('a' in number_index or 'b' in number_index):
+                    self.push_to_dict(f'{number_index}_adjustments', sum_trades[ls_key][box_index]['Adjustment'], 2)
+                self.push_to_dict(f'{number_index}_gain', sum_trades[ls_key][box_index]['Gain'], 2)
+            fill_gains("SHORT", "A", "1a")  # b if need adjustments
+            fill_gains("SHORT", "B", "2")
+            fill_gains("SHORT", "C", "3")
+            fill_gains("LONG", "D", "8a")
+            fill_gains("LONG", "E", "9")
+            fill_gains("LONG", "F", "10")
 
             # fill capital loss carryover worksheet
-            capital_loss = CapitalLossCarryoverWorksheet()
-            capital_loss.build()
-            self.push_to_dict('6', -worksheets[w_capital_loss_carryover][8])
-            self.push_to_dict('14', -worksheets[w_capital_loss_carryover][13])
+            # capital_loss = CapitalLossCarryoverWorksheet()
+            # capital_loss.build()
+            # self.push_to_dict('6', -worksheets[w_capital_loss_carryover][8])
+            # self.push_to_dict('14', -worksheets[w_capital_loss_carryover][13])
 
             self.push_sum('7', ['1a_gain', '1b_gain', '2_gain', '3_gain', '4', '5', '6'])
             self.push_sum('15', ['8a_gain', '8b_gain', '9_gain', '10_gain', '11', '12', '13', '14'])
@@ -393,7 +414,7 @@ def fill_taxes_2021(d, output_2020=None):
             self.d['1_self'] = True
 
             self.push_to_dict('2', d.get('health_savings_account_contributions', 0))
-            self.push_to_dict('3', 3550)
+            self.push_to_dict('3', health_savings_account_max_contribution)
             self.push_to_dict('4', 0)
             self.push_to_dict('5', self.d['3'] - self.d.get('4', 0))
             self.push_to_dict('6', self.d['5'])  # except if you have separate for spouse
@@ -421,9 +442,11 @@ def fill_taxes_2021(d, output_2020=None):
 
         def build(self):
             def yield_trades(long_short, form_code):
-                for uu in d['1099']:
+                for uu in chain(d['1099'], d['transaction']):
                     if 'Trades' in uu:
                         for tt in uu['Trades']:
+                            if "ProfitOrLoss" in tt:
+                                continue
                             if long_short in tt['LongShort'] and form_code == tt['FormCode']:
                                 yield tt
 
@@ -466,7 +489,7 @@ def fill_taxes_2021(d, output_2020=None):
                     self.d[check_key] = True
                     s_proceeds, s_cost, s_adj, s_gain = 0, 0, 0, 0
                     for i, t in enumerate(trades[ls_key], 1):
-                        self.d['{}_1_{}_description'.format(index, str(i))] = t['SalesDescription']
+                        self.d['{}_1_{}_description'.format(index, str(i))] = f"{t['Shares']} {t['SalesDescription']}"
                         self.d['{}_1_{}_date_acq'.format(index, str(i))] = t['DateAcquired']
                         self.d['{}_1_{}_date_sold'.format(index, str(i))] = t['DateSold']
 
@@ -495,10 +518,10 @@ def fill_taxes_2021(d, output_2020=None):
                     self.push_to_dict('{}_2_adjustment'.format(index), s_adj, 2)
                     self.push_to_dict('{}_2_gain'.format(index), s_gain, 2)
 
-                    sum_trades[ls_key]['Proceeds'] += s_proceeds
-                    sum_trades[ls_key]['Cost'] += s_cost
-                    sum_trades[ls_key]['Adjustment'] += s_adj
-                    sum_trades[ls_key]['Gain'] += s_gain
+                    sum_trades[ls_key][code]['Proceeds'] += s_proceeds
+                    sum_trades[ls_key][code]['Cost'] += s_cost
+                    sum_trades[ls_key][code]['Adjustment'] += s_adj
+                    sum_trades[ls_key][code]['Gain'] += s_gain
 
             # code is A, B, or C
 
@@ -523,17 +546,17 @@ def fill_taxes_2021(d, output_2020=None):
             ddd = d
             fff = forms_state
             www = worksheets
-            self.d[1] = states_2019[k_1040]['11_b']
-            self.d[2] = max(0, states_2019[k_1040sd]['21'])
+            self.d[1] = states_2020[k_1040]['11_b']
+            self.d[2] = max(0, states_2020[k_1040sd]['21'])
             self.d[3] = max(0, self.d[1] + self.d[2])
             self.d[4] = min(self.d[2], self.d[3])
-            self.d[5] = max(0, -states_2019[k_1040sd]['7'])
-            self.d[6] = max(0, states_2019[k_1040sd]['15'])
+            self.d[5] = max(0, -states_2020[k_1040sd]['7'])
+            self.d[6] = max(0, states_2020[k_1040sd]['15'])
             self.d[7] = self.d[4] + self.d[6]
             self.d[8] = max(0, self.d[5] - self.d[7])
             if self.d[6] == 0:
-                self.d[9] = max(0, -states_2019[k_1040sd]['15'])
-                self.d[10] = max(0, states_2019[k_1040sd]['7'])
+                self.d[9] = max(0, -states_2020[k_1040sd]['15'])
+                self.d[10] = max(0, states_2020[k_1040sd]['7'])
                 self.d[11] = max(0, self.d[4] - self.d[5])
                 self.d[12] = self.d[10] + self.d[11]
                 self.d[13] = max(0, self.d[9] - self.d[12])
