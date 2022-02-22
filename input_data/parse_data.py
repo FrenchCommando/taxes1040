@@ -253,7 +253,7 @@ def parse_1099(path):
 
 
 def parse_1099_pdf(path):
-    u = parse_pdf(path=path, print_lines=False)
+    u = parse_pdf(path=path, print_lines=True)
 
     def try_float(x):
         try:
@@ -275,8 +275,8 @@ def parse_1099_pdf(path):
             # 1099-DIV
 
             d = dict()
-            d["Qualified Dividends"] = try_float_dollar(x=u[1609])
-            d["Ordinary Dividends"] = try_float_dollar(x=u[1593])
+            d["Qualified Dividends"] = try_float_dollar(x=u[133])
+            d["Ordinary Dividends"] = try_float_dollar(x=u[134])
             d["Institution"] = u[87]
 
             # 1099-B
@@ -315,8 +315,8 @@ def parse_1099_pdf(path):
             # 1099-DIV
 
             d = dict()
-            d["Qualified Dividends"] = try_float_dollar(x=u[140])
-            d["Ordinary Dividends"] = try_float_dollar(x=u[141])
+            d["Qualified Dividends"] = try_float_dollar(x=u[1609])
+            d["Ordinary Dividends"] = try_float_dollar(x=u[1593])
             d["Capital Gain Distributions"] = try_float_dollar(x=u[142])
             d["Foreign Tax Paid"] = try_float_dollar(x=u[152])
             d["Foreign Country"] = u[153]
