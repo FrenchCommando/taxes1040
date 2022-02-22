@@ -20,6 +20,7 @@ def fill_taxes_2021(d, output_2020=None):
     dividends_qualified = None
     additional_income = None
     health_savings_account = d.get('health_savings_account', False)
+    capital_gains = None
 
     if has_1099:
         sum_trades = dict(
@@ -33,7 +34,7 @@ def fill_taxes_2021(d, output_2020=None):
                 E=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
                 F=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
             ),
-        ) # from 8949 to fill 1040sd
+        )  # from 8949 to fill 1040sd
         foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
 
     standard_deduction = 12550  # if single or married filing separately
@@ -115,6 +116,9 @@ def fill_taxes_2021(d, output_2020=None):
                 nonlocal dividends_qualified
                 dividends_qualified = sum(i.get('Qualified Dividends', 0) for i in d['1099'])
                 self.push_to_dict('3_a', dividends_qualified)
+
+                nonlocal capital_gains
+                capital_gains = sum(i.get('Capital Gain Distributions', 0) for i in d['1099'])
 
             self.d["7_n"] = not d['scheduleD']
             if d['scheduleD']:
@@ -365,6 +369,10 @@ def fill_taxes_2021(d, output_2020=None):
             # self.push_to_dict('14', -worksheets[w_capital_loss_carryover][13])
 
             self.push_sum('7', ['1a_gain', '1b_gain', '2_gain', '3_gain', '4', '5', '6'])
+
+            if capital_gains:
+                self.push_to_dict('13', capital_gains)
+
             self.push_sum('15', ['8a_gain', '8b_gain', '9_gain', '10_gain', '11', '12', '13', '14'])
             self.push_sum('16', ['7', '15'])
 

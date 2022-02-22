@@ -63,7 +63,7 @@ def gather_inputs(input_year_folder):
         'phone': '6465555555',
         'email': 'martialren@gmail.com',
         'health_savings_account': True,
-        'health_savings_account_contributions': 3600,
+        'health_savings_account_contributions': 0,
         'health_savings_account_employer_contributions': 0,
         'health_savings_account_distributions': 57.80,
         'medical_expenses': 0,

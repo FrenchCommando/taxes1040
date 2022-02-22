@@ -275,8 +275,8 @@ def parse_1099_pdf(path):
             # 1099-DIV
 
             d = dict()
-            d["Qualified Dividends"] = try_float_dollar(x=u[133])
-            d["Ordinary Dividends"] = try_float_dollar(x=u[134])
+            d["Qualified Dividends"] = try_float_dollar(x=u[1609])
+            d["Ordinary Dividends"] = try_float_dollar(x=u[1593])
             d["Institution"] = u[87]
 
             # 1099-B
