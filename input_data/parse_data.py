@@ -253,7 +253,7 @@ def parse_1099(path):
 
 
 def parse_1099_pdf(path):
-    u = parse_pdf(path=path, print_lines=True)
+    u = parse_pdf(path=path, print_lines=False)
 
     def try_float(x):
         try:

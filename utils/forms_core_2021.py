@@ -484,7 +484,7 @@ def fill_taxes_2021(d, output_2020=None):
             else:
                 # if many -> use a list of content dictionaries
                 ll = [self.build_one(l) for l in trades_subsets]
-                forms_state[k_8949] = ll
+                forms_state[k_8949] = [l for l in ll if l is not None]
 
         def build_one(self, code_trades):
             code, trades = code_trades
@@ -535,7 +535,7 @@ def fill_taxes_2021(d, output_2020=None):
 
             fill_trades('SHORT', f'short_{code.lower()}', 'I')
             fill_trades('LONG', f'long_{code.lower()}', 'II')
-            return self.d.copy()
+            return self.d.copy() if not (code in ["A", "D"]) else None
 
     class Worksheet:
         def __init__(self, key, n):
