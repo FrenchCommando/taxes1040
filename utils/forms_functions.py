@@ -85,11 +85,10 @@ def computation_2020(amount):
 def computation_2021(amount):
     if amount == 0:
         return 0
-    return -1111
-    if amount <= 163300:
-        return amount * 0.24 - 5920.50
-    if amount <= 207350:
-        return amount * 0.32 - 18984.50
-    if amount <= 518400:
-        return amount * 0.35 - 25205
-    return amount * 0.37 - 35573
+    if amount <= 164925:
+        return amount * 0.24 - 5979.00
+    if amount <= 209425:
+        return amount * 0.32 - 19173.00
+    if amount <= 523600:
+        return amount * 0.35 - 25455.75
+    return amount * 0.37 - 35927.75
