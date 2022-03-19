@@ -619,7 +619,7 @@ def fill_taxes_2021(d, output_2020=None):
 
     class QualifiedDividendsCapitalGainTaxWorksheet(Worksheet):
         def __init__(self):
-            Worksheet.__init__(self, w_qualified_dividends_and_capital_gains, 27)
+            Worksheet.__init__(self, w_qualified_dividends_and_capital_gains, 25)
 
         def build(self):
             self.d[1] = forms_state[k_1040]['15']
@@ -630,14 +630,14 @@ def fill_taxes_2021(d, output_2020=None):
                 self.d[3] = forms_state[k_1040s1]['7']
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0, self.d[1] - self.d[4])
-            self.d[6] = 40000  # single
+            self.d[6] = 40400  # single
             self.d[7] = min(self.d[1], self.d[6])
             self.d[8] = min(self.d[5], self.d[7])
             self.d[9] = self.d[7] - self.d[8]  # taxed 0%
             self.d[10] = min(self.d[1], self.d[4])
             self.d[11] = self.d[9]
             self.d[12] = self.d[11] - self.d[10]
-            self.d[13] = 441450  # single
+            self.d[13] = 445850  # single
             self.d[14] = min(self.d[1], self.d[13])
             self.d[15] = self.d[5] + self.d[9]
             self.d[16] = max(0, self.d[14] - self.d[15])
