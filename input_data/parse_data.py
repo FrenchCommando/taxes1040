@@ -310,6 +310,7 @@ def parse_1099_pdf(path):
 
             d["Trades"] = d_trades
         elif "etrade-1099-2021.pdf" in path:
+            # corrected didn't have corrections
             # didn't get 1099-INT that year
 
             # 1099-DIV
@@ -549,16 +550,19 @@ def parse_1099_pdf(path):
                 })
             d_trades.extend(covered_short_net)
 
+            d["Trades"] = d_trades
+
             # futures - foreign - 1256
+            d_contract = []
             futures_foreign = [
                 {
                     "SalesDescription": u[1354],
                     "ProfitOrLoss": try_float_dollar(x=u[1380]),
                 },
             ]
-            d_trades.extend(futures_foreign)
+            d_contract.extend(futures_foreign)
+            d["Contract1256"] = d_contract
 
-            d["Trades"] = d_trades
         else:
             d = dict()
             logger.error(f"Input not parsed parse_1099_pdf\t{path}")

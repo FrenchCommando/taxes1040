@@ -21,6 +21,7 @@ def fill_taxes_2021(d, output_2020=None):
     additional_income = None
     health_savings_account = d.get('health_savings_account', False)
     capital_gains = None
+    contract1256 = None
 
     if has_1099:
         sum_trades = dict(
@@ -120,9 +121,12 @@ def fill_taxes_2021(d, output_2020=None):
                 nonlocal capital_gains
                 capital_gains = sum(i.get('Capital Gain Distributions', 0) for i in d['1099'])
 
-            self.d["7_n"] = not d['scheduleD']
-            if d['scheduleD']:
+                nonlocal contract1256
+                contract1256 = any(i.get('Contract1256', False) for i in d['1099'])
+
                 # for Box A, without corrections skip 8949
+                if contract1256:
+                    Form6781().build()
                 Form8949().build()  # build 8949 first
                 Form1040sd().build()
                 if '21' in forms_state[k_1040sd]:
@@ -130,16 +134,19 @@ def fill_taxes_2021(d, output_2020=None):
                 else:
                     self.push_to_dict('7_value', forms_state[k_1040sd]['16'])
 
+            self.d["7_n"] = not d['scheduleD']
+
             if health_savings_account or additional_income:
                 # fill 8889 and schedule 1
                 Form8889().build()
                 Form1040s1().build()
-                self.push_to_dict('8', forms_state[k_1040s1]['10'])
-                self.push_to_dict('10_a', forms_state[k_1040s1].get('26', 0))
+                self.push_to_dict('8', forms_state[k_1040s1].get('10', 0))
+                self.push_to_dict('10', forms_state[k_1040s1].get('26', 0))
+                if forms_state[k_1040s1].get('10', 0) == 0 \
+                        and forms_state[k_1040s1].get('26', 0) == 0:
+                    del forms_state[k_1040s1]
 
             self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
-
-            self.push_to_dict('10', forms_state[k_1040s1].get('26', 0))
 
             self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
 
@@ -230,6 +237,8 @@ def fill_taxes_2021(d, output_2020=None):
                 hsa_taxable_distribution = forms_state[k_8889].get('16', 0)
                 if hsa_taxable_distribution > 0:
                     self.push_to_dict('8_e', hsa_taxable_distribution)
+                if forms_state[k_8889].get('13', 0) == 0 and forms_state[k_8889].get('13', 0) == 0:
+                    del forms_state[k_8889]
             self.push_to_dict('9',
                               - self.d.get('8_a', 0)
                               + self.d.get('8_b', 0)
@@ -412,6 +421,36 @@ def fill_taxes_2021(d, output_2020=None):
         def build(self):
             self.push_name_ssn()
 
+    class Form6781(Form):
+        def __init__(self):
+            Form.__init__(self, k_6781)
+
+        def build(self):
+            def yield_contracts():
+                for u in d["1099"]:
+                    if "Institution" in u:
+                        institution = u["Institution"]
+                        if "Contract1256" in u:
+                            for contract_item in u["Contract1256"]:
+                                yield contract_item | dict(Institution=institution)
+            for i, item in enumerate(yield_contracts(), 1):
+                if i > 3:
+                    raise ValueError("Form6781 more than 3 contracts need a new page")
+                self.d[f"1_{i}_a"] = f"Form 1099-B {item['Institution']}"
+                if item["ProfitOrLoss"] < 0:
+                    self.push_to_dict(f"1_{i}_b", - item["ProfitOrLoss"])
+                else:
+                    self.push_to_dict(f"1_{i}_c", item["ProfitOrLoss"])
+
+            self.push_name_ssn()
+            self.push_sum('2_b', ['1_1_b', '1_2_b', '1_3_b'])
+            self.push_sum('2_c', ['1_1_c', '1_2_c', '1_3_c'])
+            self.push_to_dict('3', self.d.get('2_c', 0) - self.d.get('2_b', 0))
+            self.push_sum('5', ['3', '4'])
+            self.push_sum('7', ['5', '6'])
+            self.push_to_dict('8', self.d.get('7', 0) * 0.4)
+            self.push_to_dict('9', self.d.get('7', 0) * 0.6)
+
     class Form8889(Form):
         def __init__(self):
             Form.__init__(self, k_8889)
@@ -453,10 +492,13 @@ def fill_taxes_2021(d, output_2020=None):
                 for uu in chain(d['1099'], d['transaction']):
                     if 'Trades' in uu:
                         for tt in uu['Trades']:
-                            if "ProfitOrLoss" in tt:
-                                continue
                             if long_short in tt['LongShort'] and form_code == tt['FormCode']:
                                 yield tt
+                if contract1256:
+                    if (long_short == "SHORT") and (form_code == "B") and ('8' in forms_state[k_6781]):
+                        yield dict(a="Form 6781, Part I", h=forms_state[k_6781]["8"])
+                    if (long_short == "LONG") and (form_code == "E") and ('9' in forms_state[k_6781]):
+                        yield dict(a="Form 6781, Part I", h=forms_state[k_6781]["9"])
 
             # need a-b-c granularity here
             # a means "Covered/Uncovered" == 'COVERED' --  "FormCode" == "A"
@@ -483,8 +525,8 @@ def fill_taxes_2021(d, output_2020=None):
                 forms_state[k_8949] = self.build_one(trades_subsets[0])
             else:
                 # if many -> use a list of content dictionaries
-                ll = [self.build_one(l) for l in trades_subsets]
-                forms_state[k_8949] = [l for l in ll if l is not None]
+                ll = [self.build_one(lll) for lll in trades_subsets]
+                forms_state[k_8949] = [lll for lll in ll if lll is not None]
 
         def build_one(self, code_trades):
             code, trades = code_trades
@@ -497,24 +539,30 @@ def fill_taxes_2021(d, output_2020=None):
                     self.d[check_key] = True
                     s_proceeds, s_cost, s_adj, s_gain = 0, 0, 0, 0
                     for i, t in enumerate(trades[ls_key], 1):
-                        self.d['{}_1_{}_description'.format(index, str(i))] = f"{t['Shares']} {t['SalesDescription']}"
-                        self.d['{}_1_{}_date_acq'.format(index, str(i))] = t['DateAcquired']
-                        self.d['{}_1_{}_date_sold'.format(index, str(i))] = t['DateSold']
-
-                        proceeds = t['Proceeds']
-                        self.push_to_dict('{}_1_{}_proceeds'.format(index, str(i)), proceeds, 2)
-                        cost = t['Cost']
-                        self.push_to_dict('{}_1_{}_cost'.format(index, str(i)), cost, 2)
-
-                        if 'WashSaleValue' in t:
-                            adj = t['WashSaleValue']
-                            self.push_to_dict('{}_1_{}_adjustment'.format(index, str(i)), adj, 2)
-                            self.d['{}_1_{}_code'.format(index, str(i))] = t['WashSaleCode']
+                        if "a" in t:  # form 6781 stuff
+                            self.d['{}_1_{}_description'.format(index, str(i))] = t["a"]
+                            proceeds, cost, adj = 0, 0, 0
+                            gain = t["h"]
+                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain, 2)
                         else:
-                            adj = 0
+                            self.d['{}_1_{}_description'.format(index, str(i))] = f"{t['Shares']} {t['SalesDescription']}"
+                            self.d['{}_1_{}_date_acq'.format(index, str(i))] = t['DateAcquired']
+                            self.d['{}_1_{}_date_sold'.format(index, str(i))] = t['DateSold']
 
-                        gain = proceeds - cost + adj
-                        self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain, 2)
+                            proceeds = t['Proceeds']
+                            self.push_to_dict('{}_1_{}_proceeds'.format(index, str(i)), proceeds, 2)
+                            cost = t['Cost']
+                            self.push_to_dict('{}_1_{}_cost'.format(index, str(i)), cost, 2)
+
+                            if 'WashSaleValue' in t:
+                                adj = t['WashSaleValue']
+                                self.push_to_dict('{}_1_{}_adjustment'.format(index, str(i)), adj, 2)
+                                self.d['{}_1_{}_code'.format(index, str(i))] = t['WashSaleCode']
+                            else:
+                                adj = 0
+
+                            gain = proceeds - cost + adj
+                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain, 2)
 
                         s_proceeds += proceeds
                         s_cost += cost

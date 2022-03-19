@@ -92,6 +92,7 @@ def gather_inputs(input_year_folder):
         data['1099'] = []
     data['1099'].extend(
         [
+            # for banks that give you a 1099-INT (but you didn't bother include the file)
             # {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 3.11},
             # {"Institution": "JPMORGAN CHASE BANK NA", "Interest": 10.29},
         ]
