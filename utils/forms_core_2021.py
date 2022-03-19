@@ -588,7 +588,7 @@ def fill_taxes_2021(d, output_2020=None):
     class Worksheet:
         def __init__(self, key, n):
             self.key = key
-            self.d = [0 for i in range(n + 1)]
+            self.d = [0. for i in range(n + 1)]
             worksheets[self.key] = self.d
 
         def build(self):
@@ -603,19 +603,19 @@ def fill_taxes_2021(d, output_2020=None):
             fff = forms_state
             www = worksheets
             self.d[1] = states_2020[k_1040]['11_b']
-            self.d[2] = max(0, states_2020[k_1040sd]['21'])
-            self.d[3] = max(0, self.d[1] + self.d[2])
+            self.d[2] = max(0., states_2020[k_1040sd]['21'])
+            self.d[3] = max(0., self.d[1] + self.d[2])
             self.d[4] = min(self.d[2], self.d[3])
             self.d[5] = max(0, -states_2020[k_1040sd]['7'])
             self.d[6] = max(0, states_2020[k_1040sd]['15'])
             self.d[7] = self.d[4] + self.d[6]
-            self.d[8] = max(0, self.d[5] - self.d[7])
+            self.d[8] = max(0., self.d[5] - self.d[7])
             if self.d[6] == 0:
-                self.d[9] = max(0, -states_2020[k_1040sd]['15'])
-                self.d[10] = max(0, states_2020[k_1040sd]['7'])
-                self.d[11] = max(0, self.d[4] - self.d[5])
+                self.d[9] = max(0., -states_2020[k_1040sd]['15'])
+                self.d[10] = max(0., states_2020[k_1040sd]['7'])
+                self.d[11] = max(0., self.d[4] - self.d[5])
                 self.d[12] = self.d[10] + self.d[11]
-                self.d[13] = max(0, self.d[9] - self.d[12])
+                self.d[13] = max(0., self.d[9] - self.d[12])
 
     class QualifiedDividendsCapitalGainTaxWorksheet(Worksheet):
         def __init__(self):
@@ -629,7 +629,7 @@ def fill_taxes_2021(d, output_2020=None):
             else:
                 self.d[3] = forms_state[k_1040s1]['7']
             self.d[4] = self.d[2] + self.d[3]
-            self.d[5] = max(0, self.d[1] - self.d[4])
+            self.d[5] = max(0., self.d[1] - self.d[4])
             self.d[6] = 40400  # single
             self.d[7] = min(self.d[1], self.d[6])
             self.d[8] = min(self.d[5], self.d[7])
@@ -637,10 +637,10 @@ def fill_taxes_2021(d, output_2020=None):
             self.d[10] = min(self.d[1], self.d[4])
             self.d[11] = self.d[9]
             self.d[12] = self.d[11] - self.d[10]
-            self.d[13] = 445850  # single
+            self.d[13] = 445850.  # single
             self.d[14] = min(self.d[1], self.d[13])
             self.d[15] = self.d[5] + self.d[9]
-            self.d[16] = max(0, self.d[14] - self.d[15])
+            self.d[16] = max(0., self.d[14] - self.d[15])
             self.d[17] = min(self.d[12], self.d[16])
             self.d[18] = self.d[17] * 0.15
             self.d[19] = self.d[9] + self.d[17]
