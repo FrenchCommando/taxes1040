@@ -51,7 +51,7 @@ def fill_taxes_2021(d, output_2020=None):
             self.d = {}
             forms_state[self.key] = self.d
 
-        def push_to_dict(self, key, value, round_i=2):
+        def push_to_dict(self, key, value, round_i=0):
             if value != 0:
                 self.d[key] = round(value, round_i)
 
@@ -157,7 +157,7 @@ def fill_taxes_2021(d, output_2020=None):
                 self.push_to_dict('12_a', itemized_deduction)
             else:
                 self.push_to_dict('12_a', standard_deduction)
-            charitable_contributions = 0
+            charitable_contributions = 300
             self.push_to_dict('12_b', charitable_contributions)
             self.push_sum('12_c', ['12_a', '12_b'])
 
@@ -183,12 +183,15 @@ def fill_taxes_2021(d, output_2020=None):
                 self.push_to_dict('20', 0)  # schedule 3 line 8
             self.push_sum('21', ['19', '20'])
             self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
-            self.push_to_dict('23', 0)  # other taxes from Schedule 2 line 21
+
+            medicare_tax_stuff = 608  # need schedule 2 and 8959
+
+            self.push_to_dict('23', medicare_tax_stuff)  # other taxes from Schedule 2 line 21
             self.push_sum('24', ['22', '23'])  # total tax
 
             self.push_to_dict('25_a', federal_tax)  # from W2
             self.push_to_dict('25_b', 0)  # from 1099
-            self.push_to_dict('25_c', 0)  # from other
+            self.push_to_dict('25_c', medicare_tax_stuff)  # from other
             self.push_sum('25_d', ['25_a', '25_b', '25_c'])
 
             self.push_to_dict('26', 0)  # estimated payments
@@ -359,11 +362,11 @@ def fill_taxes_2021(d, output_2020=None):
 
             # short / long term gains
             def fill_gains(ls_key, box_index, number_index):
-                self.push_to_dict(f'{number_index}_proceeds', sum_trades[ls_key][box_index]['Proceeds'], 2)
-                self.push_to_dict(f'{number_index}_cost', sum_trades[ls_key][box_index]['Cost'], 2)
+                self.push_to_dict(f'{number_index}_proceeds', sum_trades[ls_key][box_index]['Proceeds'])
+                self.push_to_dict(f'{number_index}_cost', sum_trades[ls_key][box_index]['Cost'])
                 if not('a' in number_index or 'b' in number_index):
-                    self.push_to_dict(f'{number_index}_adjustments', sum_trades[ls_key][box_index]['Adjustment'], 2)
-                self.push_to_dict(f'{number_index}_gain', sum_trades[ls_key][box_index]['Gain'], 2)
+                    self.push_to_dict(f'{number_index}_adjustments', sum_trades[ls_key][box_index]['Adjustment'])
+                self.push_to_dict(f'{number_index}_gain', sum_trades[ls_key][box_index]['Gain'])
             fill_gains("SHORT", "A", "1a")  # b if need adjustments
             fill_gains("SHORT", "B", "2")
             fill_gains("SHORT", "C", "3")
@@ -543,41 +546,41 @@ def fill_taxes_2021(d, output_2020=None):
                             self.d['{}_1_{}_description'.format(index, str(i))] = t["a"]
                             proceeds, cost, adj = 0, 0, 0
                             gain = t["h"]
-                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain, 2)
+                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain)
                         else:
                             self.d['{}_1_{}_description'.format(index, str(i))] = f"{t['Shares']} {t['SalesDescription']}"
                             self.d['{}_1_{}_date_acq'.format(index, str(i))] = t['DateAcquired']
                             self.d['{}_1_{}_date_sold'.format(index, str(i))] = t['DateSold']
 
                             proceeds = t['Proceeds']
-                            self.push_to_dict('{}_1_{}_proceeds'.format(index, str(i)), proceeds, 2)
+                            self.push_to_dict('{}_1_{}_proceeds'.format(index, str(i)), proceeds)
                             cost = t['Cost']
-                            self.push_to_dict('{}_1_{}_cost'.format(index, str(i)), cost, 2)
+                            self.push_to_dict('{}_1_{}_cost'.format(index, str(i)), cost)
 
                             if 'WashSaleValue' in t:
                                 adj = t['WashSaleValue']
-                                self.push_to_dict('{}_1_{}_adjustment'.format(index, str(i)), adj, 2)
+                                self.push_to_dict('{}_1_{}_adjustment'.format(index, str(i)), adj)
                                 self.d['{}_1_{}_code'.format(index, str(i))] = t['WashSaleCode']
                             else:
                                 adj = 0
 
-                            gain = proceeds - cost + adj
-                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain, 2)
+                            gain = round(proceeds) - round(cost) + round(adj)
+                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain)
 
-                        s_proceeds += proceeds
-                        s_cost += cost
-                        s_adj += adj
-                        s_gain += gain
+                        s_proceeds += round(proceeds)
+                        s_cost += round(cost)
+                        s_adj += round(adj)
+                        s_gain += round(gain)
 
-                    self.push_to_dict('{}_2_proceeds'.format(index), s_proceeds, 2)
-                    self.push_to_dict('{}_2_cost'.format(index), s_cost, 2)
-                    self.push_to_dict('{}_2_adjustment'.format(index), s_adj, 2)
-                    self.push_to_dict('{}_2_gain'.format(index), s_gain, 2)
+                    self.push_to_dict('{}_2_proceeds'.format(index), s_proceeds)
+                    self.push_to_dict('{}_2_cost'.format(index), s_cost)
+                    self.push_to_dict('{}_2_adjustment'.format(index), s_adj)
+                    self.push_to_dict('{}_2_gain'.format(index), s_gain)
 
-                    sum_trades[ls_key][code]['Proceeds'] += s_proceeds
-                    sum_trades[ls_key][code]['Cost'] += s_cost
-                    sum_trades[ls_key][code]['Adjustment'] += s_adj
-                    sum_trades[ls_key][code]['Gain'] += s_gain
+                    sum_trades[ls_key][code]['Proceeds'] += round(s_proceeds)
+                    sum_trades[ls_key][code]['Cost'] += round(s_cost)
+                    sum_trades[ls_key][code]['Adjustment'] += round(s_adj)
+                    sum_trades[ls_key][code]['Gain'] += round(s_gain)
 
             # code is A, B, or C
 
