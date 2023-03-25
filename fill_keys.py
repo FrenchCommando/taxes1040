@@ -42,9 +42,11 @@ def fill_fields_files():
     if year_folder == "2018":
         dollar_cents = " dollar cents"
         payer_dollar_cents = " payer" + dollar_cents
-    if year_folder == "2019" or year_folder == "2020" or year_folder == "2021":
+    elif year_folder in ["2019", "2020", "2021", "2022"]:
         payer_dollar_cents = " payer value"
         dollar_cents = " value"
+    else:
+        raise ValueError("year folder not defined for fill keys")
 
     for u in glob.glob(os.path.join(year_fields_name, "*", "*" + fields_extension)):
         logger.info("Filling fields %s", u)
@@ -365,6 +367,96 @@ def fill_fields_files():
                     f.write("firm_phone\n")
                     f.write("firm_address\n")
                     f.write("firm_ein\n")
+                elif year_folder == "2022":
+                    f.write("single\n")
+                    f.write("married_filling_jointly\n")
+                    f.write("married_filling_separately\n")
+                    f.write("head_of_household\n")
+                    f.write("qualifying_widower\n")
+                    f.write("qualifying_name\n")
+                    f.write("self" + first_last_ssn + "\n")
+                    f.write("spouse" + first_last_ssn + "\n")
+                    f.write("address\n")
+                    f.write("apt\n")
+
+                    f.write("city\n")
+                    f.write("state\n")
+                    f.write("zip\n")
+
+                    f.write("foreign country province postal\n")
+
+                    # f.write("full_year_health_coverage_or_exempt\n")
+                    f.write("presidential_election self spouse\n")
+                    f.write("virtual_currency y n\n")
+
+                    f.write("can_be_claimed_as_dependent self spouse\n")
+                    f.write("spouse_itemizes_on_separate_or_dual_status_alien\n")
+
+                    f.write("self born_before_19560102 blind\n")
+                    f.write("spouse born_before_19560102 blind\n")
+
+                    f.write("more_than_four_dependents\n")
+
+                    for i in range(1, 5):
+                        f.write("dependent_" + str(i) + dependents + "\n")
+
+                    f.write("1 a b c d e f g h i z\n")
+                    f.write("2 a b\n")
+                    f.write("3 a b\n")
+                    f.write("4 a b\n")
+                    f.write("5 a b\n")
+                    f.write("6 a b c\n")
+                    f.write("7 n value\n")
+                    f.write("8\n")
+                    f.write("9\n")
+                    f.write("10\n")
+                    f.write("11\n")
+                    f.write("12\n")
+                    f.write("13\n")
+                    f.write("14\n")
+                    f.write("15\n")
+                    f.write("16 1 2 3 3_value\n")
+                    f.write("16\n")
+                    f.write("17\n")
+                    f.write("18\n")
+                    f.write("19\n")
+                    f.write("20\n")
+                    f.write("21\n")
+                    f.write("22\n")
+                    f.write("23\n")
+                    f.write("24\n")
+                    f.write("25 a b c d\n")
+                    f.write("26\n")
+                    f.write("27\n")
+                    f.write("28\n")
+                    f.write("29\n")
+                    f.write("30\n")
+                    f.write("31\n")
+                    f.write("32\n")
+                    f.write("33\n")
+                    f.write("34\n")
+                    f.write("35a 8888 value\n")
+                    f.write("35b\n")
+                    f.write("35c checking savings\n")
+                    f.write("35d\n")
+                    f.write("36\n")
+                    f.write("37\n")
+                    f.write("38\n")
+
+                    f.write("other_designee y n name phone pin\n")
+
+                    f.write("self" + occupation_pin + "\n")
+                    f.write("spouse" + occupation_pin + "\n")
+                    f.write("phone\n")
+                    f.write("email\n")
+
+                    f.write("preparer_name\n")
+                    f.write("ptin\n")
+                    f.write("self_employed\n")
+                    f.write("firm_name\n")
+                    f.write("firm_phone\n")
+                    f.write("firm_address\n")
+                    f.write("firm_ein\n")
                 else:
                     logger.error(f"Fillkeys  keys not defined for {u}")
             elif "f1040s1" in u:
@@ -411,6 +503,20 @@ def fill_fields_files():
                     f.write("24 a b c d e f g h i j k z_type z_amount z\n")
                     f.write("25\n")
                     f.write("26\n")
+                elif year_folder == "2022":
+                    f.write("1\n")
+                    f.write("2 a b\n")
+                    for i in range(3, 8):
+                        f.write(f"{i}\n")
+                    f.write("8 a b c d e f g h i j k l m n o p q r s t u z_type1 z_type2 z_amount\n")
+                    for i in range(9, 19):
+                        f.write(f"{i}\n")
+                    f.write("19 a b c\n")
+                    for i in range(20, 24):
+                        f.write(f"{i}\n")
+                    f.write("24 a b c d e f g h i j k z_type z_amount z\n")
+                    f.write("25\n")
+                    f.write("26\n")
             elif "f1040s2" in u:
                 f.write("name\n")
                 f.write("ssn\n")
@@ -425,6 +531,15 @@ def fill_fields_files():
                     f.write("10\n")
                 elif year_folder == "2021":
                     for i in range(1, 17):
+                        f.write(f"{i}\n")
+                    f.write("17 a_value a b c d e f g h i j k l m n o p q z_type1 z_type2 z_amount\n")
+                    for i in range(18, 22):
+                        f.write(f"{i}\n")
+                elif year_folder == "2022":
+                    for i in range(1, 8):
+                        f.write(f"{i}\n")
+                    f.write("8 check value\n")
+                    for i in range(9, 17):
                         f.write(f"{i}\n")
                     f.write("17 a_value a b c d e f g h i j k l m n o p q z_type1 z_type2 z_amount\n")
                     for i in range(18, 22):
@@ -465,6 +580,15 @@ def fill_fields_files():
                     f.write("13 a b c d e f g h z_type1 z_type2 z_amount\n")
                     f.write("14\n")
                     f.write("15\n")
+                elif year_folder == "2022":
+                    for i in range(1, 6):
+                        f.write(f"{i}\n")
+                    f.write("6 a b c d e f g h i j k l z_type1 z_type2 z_amount\n")
+                    for i in range(7, 13):
+                        f.write(f"{i}\n")
+                    f.write("13 a b c d e f g h z_type z_amount\n")
+                    f.write("14\n")
+                    f.write("15\n")
             elif "f1040sa" in u:
                 f.write("name\n")
                 f.write("ssn\n")
@@ -480,24 +604,39 @@ def fill_fields_files():
                 f.write("17\n")
                 f.write("18\n")
             elif "f1040sb" in u:
-                f.write("name\n")
-                f.write("ssn\n")
-                for i in range(1, 15):
-                    f.write("1_" + str(i) + payer_dollar_cents + "\n")
-                for i in range(2, 5):
-                    f.write(str(i) + dollar_cents + "\n")
-                for i in range(1, 17):
-                    f.write("5_" + str(i) + payer_dollar_cents + "\n")
-                f.write("6" + dollar_cents + "\n")
-                for i in ["7a", "7a_yes"]:
-                    f.write(i + yes_no + "\n")
-                f.write("7b\n")
-                f.write("8" + yes_no + "\n")
+                if int(year_folder) < 2022:
+                    f.write("name\n")
+                    f.write("ssn\n")
+                    for i in range(1, 15):
+                        f.write("1_" + str(i) + payer_dollar_cents + "\n")
+                    for i in range(2, 5):
+                        f.write(str(i) + dollar_cents + "\n")
+                    for i in range(1, 17):
+                        f.write("5_" + str(i) + payer_dollar_cents + "\n")
+                    f.write("6" + dollar_cents + "\n")
+                    for i in ["7a", "7a_yes"]:
+                        f.write(i + yes_no + "\n")
+                    f.write("7b\n")
+                    f.write("8" + yes_no + "\n")
+                elif year_folder == "2022":
+                    f.write("name\n")
+                    f.write("ssn\n")
+                    for i in range(1, 15):
+                        f.write("1_" + str(i) + payer_dollar_cents + "\n")
+                    for i in range(2, 5):
+                        f.write(str(i) + dollar_cents + "\n")
+                    for i in range(1, 16):
+                        f.write("5_" + str(i) + payer_dollar_cents + "\n")
+                    f.write("6" + dollar_cents + "\n")
+                    for i in ["7a", "7a_yes"]:
+                        f.write(i + yes_no + "\n")
+                    f.write("7b 1 2\n")
+                    f.write("8" + yes_no + "\n")
             elif "f1040sd" in u:
                 f.write("name\n")
                 f.write("ssn\n")
 
-                if year_folder == "2019" or year_folder == "2020" or year_folder == "2021":
+                if year_folder in ["2019", "2020", "2021", "2022"]:
                     f.write("dispose_opportunity y n\n")
 
                 for i in ['1a', '1b', '2', '3']:
@@ -570,6 +709,11 @@ def fill_fields_files():
                 f.write("16\n")
                 f.write("17 a b\n")
                 for i in range(18, 22):
+                    f.write(f"{i}\n")
+            elif "f8959" in u:
+                f.write("name\n")
+                f.write("ssn\n")
+                for i in range(1, 25):
                     f.write(f"{i}\n")
             else:
                 logger.error("Fields File not defined %s", u)

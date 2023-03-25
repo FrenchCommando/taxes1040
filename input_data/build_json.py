@@ -25,7 +25,7 @@ def build_input(year_folder):
 
 
 def main():
-    build_input(year_folder="2021")
+    build_input(year_folder="2022")
 
 
 if __name__ == "__main__":
