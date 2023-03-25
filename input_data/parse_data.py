@@ -156,6 +156,19 @@ def parse_w2(path):
         local_tax_index = 96
         locality_index = 98
 
+    if "MS-W2-2022" in path:
+        name_overflow = False
+        company_index = 28
+        company_title_length = 2
+        name_index = 32
+        ssn_index = 39
+        wages_index = 41
+        federal_index = 47
+        state_index = 53
+        state_tax_index = 59
+        local_tax_index = 98
+        locality_index = 100
+
     def city_state_zip(line, name):
         ll = line.split(" ")
         return {
@@ -773,6 +786,8 @@ def read_data(folder):
     data = defaultdict(list)
 
     for f in glob.glob(os.path.join(folder, "*")):
+        if os.path.isdir(f):
+            continue
         name = os.path.basename(f)
         name_sub, extension = name.split(".")
         if extension == 'json':
