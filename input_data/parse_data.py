@@ -575,14 +575,87 @@ def parse_1099_pdf(path):
             ]
             d_contract.extend(futures_foreign)
             d["Contract1256"] = d_contract
+        elif "etrade8" in path and "-1099-2022.pdf" in path:
+            # didn't get 1099-INT that year
 
+            # 1099-DIV
+
+            d = dict()
+            d["Qualified Dividends"] = try_float_dollar(x=u[140])
+            d["Ordinary Dividends"] = try_float_dollar(x=u[139])
+            d["Foreign Tax Paid"] = try_float_dollar(x=u[151])
+            d["Foreign Country"] = u[152]
+            d["Institution"] = u[88]
+
+            # 1099-B
+            # covered / short-term
+            d_trades = [
+                {
+                    "Proceeds": try_float_dollar(x=u[303]),
+                    "Cost": try_float_dollar(x=u[305]),
+                    "WashSaleValue": try_float_dollar(x=u[307]),
+                    "LongShort": "SHORT",
+                    "FormCode": "A",
+                }
+            ]
+            # uncovered / short-term - Box B, code X
+            # unknown
+            unknown_gross = [
+                {
+                    "SalesDescription": " ".join(u[1547:1550]),
+                    "Shares": try_float(x=u[1557]),
+                    "DateAcquired": "01/26/2022",  # u[1168],  # replace with real value
+                    "DateSold": u[1567],
+                    "Proceeds": try_float_dollar(x=u[1574]),
+                    "Cost": 10500 + 5310,  # try_float_dollar(x=u[1191]),  # replace
+                },
+                {
+                    "SalesDescription": " ".join(u[1547:1550]),
+                    "Shares": try_float(x=u[1558]),
+                    "DateAcquired": "04/29/2022",  # u[1168],  # replace with real value
+                    "DateSold": u[1568],
+                    "Proceeds": try_float_dollar(x=u[1575]),
+                    "Cost": 49000 + 52994.7,  # try_float_dollar(x=u[1191]),  # replace
+                },
+            ]
+            for dd in unknown_gross:
+                dd.update({
+                    "WashSaleCode": "",
+                    "WashSaleValue": 0,
+                    "LongShort": "SHORT",
+                    "FormCode": "B",
+                })
+            d_trades.extend(unknown_gross)
+
+            d["Trades"] = d_trades
+        elif "etrade9" in path and "-1099-2022.pdf" in path:
+            # ESPP Morgan
+            # didn't get 1099-INT
+            # 1099-DIV
+            d = dict()
+            d["Qualified Dividends"] = try_float_dollar(x=u[137])
+            d["Ordinary Dividends"] = try_float_dollar(x=u[136])
+            d["Institution"] = u[85]
         else:
             d = dict()
             logger.error(f"Input not parsed parse_1099_pdf\t{path}")
     elif "Marcus" in path:
+        if "2020" in path:
+            d = {
+                "Interest": try_float(x=u[81]),
+                "Institution": u[0],
+            }
+        else:
+            d = {
+                "Interest": try_float(x=u[82]),
+                "Institution": u[0],
+            }
+    elif "MS-" in path:
         d = {
-            "Interest": try_float(x=u[82]),
-            "Institution": u[0],
+            "Interest": try_float_dollar(x=u[321]),
+            "Institution": u[189],
+            "Other Income": try_float_dollar(x=u[348]),
+            "Other Other Description": u[523],
         }
     else:
         d = dict()
