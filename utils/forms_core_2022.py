@@ -39,7 +39,7 @@ def fill_taxes_2022(d, output_2021=None):
         )  # from 8949 to fill 1040sd
         foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
 
-    standard_deduction = 12550  # if single or married filing separately
+    standard_deduction = 12950  # if single or married filing separately
     qualified_business_deduction = 0
     health_savings_account_max_contribution = 3600
 
@@ -161,7 +161,7 @@ def fill_taxes_2022(d, output_2021=None):
                 self.push_to_dict('12_a', itemized_deduction)
             else:
                 self.push_to_dict('12_a', standard_deduction)
-            charitable_contributions = 300
+            charitable_contributions = 0
             self.push_to_dict('12_b', charitable_contributions)
             self.push_sum('12_c', ['12_a', '12_b'])
 
