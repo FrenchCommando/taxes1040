@@ -660,7 +660,7 @@ def parse_1099_pdf(path):
             "Interest": try_float_dollar(x=u[321]),
             "Institution": u[189],
             "Other Income": try_float_dollar(x=u[348]),
-            "Other Other Description": u[523],
+            "Other Description": u[523],
         }
     else:
         d = dict()

@@ -13,6 +13,7 @@ def fill_taxes_2022(d, output_2021=None):
     federal_tax = sum(w['Federal_tax'] for w in d['W2'])
     social_security_tax = sum(w['SocialSecurity_tax'] for w in d['W2'])
     medicare_tax = sum(w['Medicare_tax'] for w in d['W2'])
+    medicare_wages = sum(w['Medicare_wages'] for w in d['W2'])
     state_tax = sum(w['State_tax'] for w in d['W2'])
     local_tax = sum(w['Local_tax'] for w in d['W2'])
 
@@ -102,7 +103,10 @@ def fill_taxes_2022(d, output_2021=None):
                 self.push_to_dict('virtual_currency_y', False)
                 self.push_to_dict('virtual_currency_n', True)
 
-            self.push_to_dict('1', wages)
+            self.push_to_dict('1_a', wages)
+            self.push_sum('1_z', [
+                '1_a', '1_b', '1_c', '1_d', '1_e', '1_f', '1_g', '1_h', '1_i'
+            ])
 
             if has_1099:
                 Form1040sb().build()
@@ -146,7 +150,7 @@ def fill_taxes_2022(d, output_2021=None):
                         and forms_state[k_1040s1].get('26', 0) == 0:
                     del forms_state[k_1040s1]
 
-            self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
+            self.push_sum('9', ['1_z', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
 
             self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
 
@@ -184,7 +188,10 @@ def fill_taxes_2022(d, output_2021=None):
             self.push_sum('21', ['19', '20'])
             self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
 
-            medicare_tax_stuff = 608  # need schedule 2 and 8959
+            # from AMT 8959
+            # need schedule 2 and 8959
+            amt_final = medicare_tax - medicare_wages * 0.0145
+            medicare_tax_stuff = max(amt_final, 0)
 
             self.push_to_dict('23', medicare_tax_stuff)  # other taxes from Schedule 2 line 21
             self.push_sum('24', ['22', '23'])  # total tax
@@ -338,6 +345,12 @@ def fill_taxes_2022(d, output_2021=None):
                         self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
                         self.push_to_dict("{}_{}_value".format(index, str(i)), f[key])
                         i += 1
+                    other_key = "Other Income"
+                    if other_key in f and f[other_key] != 0:
+                        self.d["{}_{}_payer".format(index, str(i))] = \
+                            " ".join((f['Institution'], f['Other Description']))
+                        self.push_to_dict("{}_{}_value".format(index, str(i)), f[other_key])
+                        i += 1
             fill_value("1", "Interest")
             fill_value("5", "Ordinary Dividends")
 
@@ -349,6 +362,9 @@ def fill_taxes_2022(d, output_2021=None):
                 self.d['7a_y'] = True
                 self.d['7a_yes_y'] = True
                 self.d['7b'] = d['foreign_account']
+                self.d['8_n'] = True
+            else:
+                self.d['7a_n'] = True
                 self.d['8_n'] = True
 
     class Form1040sd(Form):
@@ -634,14 +650,14 @@ def fill_taxes_2022(d, output_2021=None):
                 self.d[3] = forms_state[k_1040s1]['7']
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
-            self.d[6] = 40400  # single
+            self.d[6] = 41675  # single
             self.d[7] = min(self.d[1], self.d[6])
             self.d[8] = min(self.d[5], self.d[7])
             self.d[9] = self.d[7] - self.d[8]  # taxed 0%
             self.d[10] = min(self.d[1], self.d[4])
             self.d[11] = self.d[9]
             self.d[12] = self.d[11] - self.d[10]
-            self.d[13] = 445850.  # single
+            self.d[13] = 459750.  # single
             self.d[14] = min(self.d[1], self.d[13])
             self.d[15] = self.d[5] + self.d[9]
             self.d[16] = max(0., self.d[14] - self.d[15])

@@ -63,10 +63,10 @@ def gather_inputs(input_year_folder):
         'foreign_account': 'FRANCE',
         'phone': '6465555555',
         'email': 'martialren@gmail.com',
-        'health_savings_account': True,
+        'health_savings_account': False,
         'health_savings_account_contributions': 0,
         'health_savings_account_employer_contributions': 0,
-        'health_savings_account_distributions': 57.80,
+        'health_savings_account_distributions': 0,
         'medical_expenses': 0,
         'virtual_currency': True
     }
