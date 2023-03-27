@@ -8,6 +8,7 @@ from utils.forms_core_2018 import fill_taxes_2018
 from utils.forms_core_2019 import fill_taxes_2019
 from utils.forms_core_2020 import fill_taxes_2020
 from utils.forms_core_2021 import fill_taxes_2021
+from utils.forms_core_2022 import fill_taxes_2022
 
 
 logger = logging.getLogger('fill_taxes')
@@ -125,6 +126,12 @@ def main():
     pdf_files2021 = fill_pdfs(states2021, "2021")
     outfile2021 = "forms" + "2021" + pdf_extension
     merge_pdfs(pdf_files2021, outfile2021)
+
+    data2022 = gather_inputs(input_year_folder="2022")
+    states2022, worksheets_all2022 = fill_taxes_2022(d=data2022, output_2021=(states2021, worksheets_all2021))
+    pdf_files2022 = fill_pdfs(states2022, "2022")
+    outfile2022 = "forms" + "2022" + pdf_extension
+    merge_pdfs(pdf_files2022, outfile2022)
 
 
 if __name__ == "__main__":
