@@ -591,6 +591,11 @@ def parse_1099_pdf(path):
             # covered / short-term
             d_trades = [
                 {
+                    "SalesDescription": "Aggregated",
+                    "Shares": "Aggregated",
+                    "DateAcquired": "Aggregated",
+                    "DateSold": "Aggregated",
+                    "WashSaleCode": "Aggregated",
                     "Proceeds": try_float_dollar(x=u[303]),
                     "Cost": try_float_dollar(x=u[305]),
                     "WashSaleValue": try_float_dollar(x=u[307]),
