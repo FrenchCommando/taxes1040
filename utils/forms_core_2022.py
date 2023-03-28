@@ -346,7 +346,7 @@ def fill_taxes_2022(d, output_2021=None):
                         self.push_to_dict("{}_{}_value".format(index, str(i)), f[key])
                         i += 1
                     other_key = "Other Income"
-                    if other_key in f and f[other_key] != 0:
+                    if key == "Interest" and other_key in f and f[other_key] != 0:
                         self.d["{}_{}_payer".format(index, str(i))] = \
                             " ".join((f['Institution'], f['Other Description']))
                         self.push_to_dict("{}_{}_value".format(index, str(i)), f[other_key])
