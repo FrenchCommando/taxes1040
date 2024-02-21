@@ -1,0 +1,77 @@
+{
+    "1099": [
+        {
+            "Qualified Dividends": 150.00,
+            "Ordinary Dividends": 1000.50,
+            "Foreign Tax Paid": 50.0,
+            "Foreign Country": "Various",
+            "Institution": "Big Bank HOLDINGS, INC.",
+            "Trades": [
+                {
+                    "SalesDescription": "Aggregated",
+                    "Shares": "Aggregated",
+                    "DateAcquired": "Aggregated",
+                    "DateSold": "Aggregated",
+                    "WashSaleCode": "Aggregated",
+                    "Proceeds": "",
+                    "Cost": "",
+                    "WashSaleValue": "",
+                    "LongShort": "SHORT",
+                    "FormCode": "A"
+                },
+                {
+                    "SalesDescription": "BIG ETF",
+                    "Shares": 300.0,
+                    "DateAcquired": "04/29/2022",
+                    "DateSold": "03/30/2022",
+                    "Proceeds": 16885.37,
+                    "Cost": 101994.7,
+                    "WashSaleCode": "",
+                    "WashSaleValue": 0,
+                    "LongShort": "SHORT",
+                    "FormCode": "B"
+                }
+            ]
+        },
+        {
+            "Qualified Dividends": 460.11,
+            "Ordinary Dividends": 460.11,
+            "Institution": "Small bank HOLDINGS, INC."
+        },
+        {
+            "Interest": 2.0,
+            "Institution": "Medium BANK USA",
+            "Other Income": 600,
+            "Other Description": "CASHPLUS"
+        },
+        {}
+    ],
+    "W2": [
+        {
+            "Company": "Good Company & CO LLC",
+            "Company_address": "100 100TH AVE 100TH FLOOR",
+            "Company_city": "NEW YORK",
+            "Company_state": "NY",
+            "Company_zip": "10000",
+            "FullName": "Commando French",
+            "FirstName": "French",
+            "LastName": "Commando",
+            "Address": "111 111TH ST",
+            "Address_apt": "11A",
+            "Address_city": "BROOKLYN",
+            "Address_state": "NY",
+            "Address_zip": "11111",
+            "SSN": "XXXXX5555",
+            "Wages": 999999.99,
+            "SocialSecurity_wages": 147000.0,
+            "Medicare_wages": 333333.33,
+            "Federal_tax": 66666.66,
+            "SocialSecurity_tax": 9999.0,
+            "Medicare_tax": 9999.99,
+            "State": "NY",
+            "State_tax": 11111.11,
+            "Local_tax": 44444.44,
+            "Locality": "NEW YORK CITY"
+        }
+    ]
+}

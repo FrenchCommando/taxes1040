@@ -1,3 +1,6 @@
+# giving up this part
+# parsing is sensitive to the version of the package
+# maintaining this is nonsense
 import os
 import glob
 from collections import defaultdict
@@ -274,10 +277,12 @@ def parse_1099_pdf(path):
             if (no_comma[0], no_comma[-1]) == ("(", ")"):
                 return -1 * float(no_comma[1:-1])
             return float(no_comma)
-        except ValueError:
+        except (ValueError, IndexError):
             return x.strip()
 
     def try_float_dollar(x):
+        if not x:
+            return x
         if x.strip()[0] == "$" or x.strip()[1] == "$":
             return try_float(x=x.replace("$", "").strip())
 

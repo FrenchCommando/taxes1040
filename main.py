@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#    Copyright (C) 2021 FrenchCommando
+#    Copyright (C) 2024 FrenchCommando
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -31,9 +31,8 @@ import input_data.build_json
 import utils.forms_clean
 
 
-if __name__ == '__main__':
-
-    for form_filing_year in ["2020", "2021", "2022"]:
+def main():
+    for form_filing_year in ["2020", "2021", "2022", "2023"]:
         key_matcher.year_folder = form_filing_year
         key_matcher.main()
         fill_keys.year_folder = form_filing_year
@@ -46,3 +45,7 @@ if __name__ == '__main__':
 
     for form_filing_year in ["2020", "2021", "2022"]:
         utils.forms_clean.clean(form_filing_year)
+
+
+if __name__ == '__main__':
+    main()
