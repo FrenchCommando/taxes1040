@@ -46,6 +46,11 @@ def merge_pdfs(files, out):
     writer.write(out)
 
 
+def save_json(data, out):
+    with open(out, 'w+') as f:
+        json.dump(data, f, indent=4)
+
+
 def gather_inputs(input_year_folder):
     input_folder = os.path.join("input_data", input_year_folder)
     j = json.load(open(os.path.join(input_folder, 'input.json'), 'rb'))
@@ -136,6 +141,7 @@ def main():
 
     data2023 = gather_inputs(input_year_folder="2023")
     states2023, worksheets_all2023 = fill_taxes_2023(d=data2023, output_2022=(states2022, worksheets_all2022))
+    save_json(data=states2023, out="data" + "2023" + json_extension)
     pdf_files2023 = fill_pdfs(states2023, "2023")
     outfile2023 = "forms" + "2023" + pdf_extension
     merge_pdfs(pdf_files2023, outfile2023)
