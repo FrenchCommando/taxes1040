@@ -104,3 +104,15 @@ def computation_2022(amount):
     if amount <= 539900:
         return amount * 0.35 - 26247.00
     return amount * 0.37 - 37045.00
+
+
+def computation_2023(amount):
+    if amount == 0:
+        return 0  # not actually zero, but use the tables
+    if amount <= 182_100:
+        return amount * 0.24 - 6600.00
+    if amount <= 231_250:
+        return amount * 0.32 - 21168.00
+    if amount <= 578_125:
+        return amount * 0.35 - 28105.50
+    return amount * 0.37 - 39668.00
