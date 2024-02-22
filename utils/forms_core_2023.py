@@ -39,9 +39,9 @@ def fill_taxes_2023(d, output_2022=None):
         )  # from 8949 to fill 1040sd
         foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
 
-    standard_deduction = 12950  # if single or married filing separately
+    standard_deduction = 13850  # if single or married filing separately
     qualified_business_deduction = 0
-    health_savings_account_max_contribution = 3600
+    health_savings_account_max_contribution = 0
 
     forms_state = {}  # mapping name of forms with content
     worksheets = {}  # worksheets need not be printed
@@ -391,10 +391,10 @@ def fill_taxes_2023(d, output_2022=None):
             fill_gains("LONG", "F", "10")
 
             # fill capital loss carryover worksheet
-            # capital_loss = CapitalLossCarryoverWorksheet()
-            # capital_loss.build()
-            # self.push_to_dict('6', -worksheets[w_capital_loss_carryover][8])
-            # self.push_to_dict('14', -worksheets[w_capital_loss_carryover][13])
+            capital_loss = CapitalLossCarryoverWorksheet()
+            capital_loss.build()
+            self.push_to_dict('6', -worksheets[w_capital_loss_carryover][8])
+            self.push_to_dict('14', -worksheets[w_capital_loss_carryover][13])
 
             self.push_sum('7', ['1a_gain', '1b_gain', '2_gain', '3_gain', '4', '5', '6'])
 
@@ -650,14 +650,14 @@ def fill_taxes_2023(d, output_2022=None):
                 self.d[3] = forms_state[k_1040s1]['7']
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
-            self.d[6] = 41675  # single
+            self.d[6] = 44625  # single
             self.d[7] = min(self.d[1], self.d[6])
             self.d[8] = min(self.d[5], self.d[7])
             self.d[9] = self.d[7] - self.d[8]  # taxed 0%
             self.d[10] = min(self.d[1], self.d[4])
             self.d[11] = self.d[9]
             self.d[12] = self.d[11] - self.d[10]
-            self.d[13] = 459750.  # single
+            self.d[13] = 492300.  # single
             self.d[14] = min(self.d[1], self.d[13])
             self.d[15] = self.d[5] + self.d[9]
             self.d[16] = max(0., self.d[14] - self.d[15])
@@ -678,19 +678,21 @@ def fill_taxes_2023(d, output_2022=None):
 
         def build(self):
             if k_1040sa in forms_state:
-                self.d[1] = forms_state[k_1040]['10_dollar']
+                self.d[1] = forms_state[k_1040]['15_dollar']
                 self.d[2] = forms_state[k_1040sa]['7']
                 self.d[3] = self.d[1] + self.d[2]
-            self.d[4] = forms_state[k_1040s1].get('10_dollar', 0) \
-                + forms_state[k_1040s1].get('21_dollar', 0) \
+            else:
+                self.d[3] = forms_state[k_1040]['13_dollar']
+            self.d[4] = forms_state[k_1040s1].get('1_dollar', 0) \
+                + forms_state[k_1040s1].get('8z_dollar', 0) \
                 if k_1040s1 in forms_state else 0
             self.d[5] = self.d[3] - self.d[4]
-            self.d[6] = 70300  # single
+            self.d[6] = 81300  # single
             if self.d[5] <= self.d[6]:
                 self.fill6251 = False
                 return
             self.d[7] = self.d[5] - self.d[6]
-            self.d[8] = 500000  # single
+            self.d[8] = 578150  # single
             if self.d[5] <= self.d[8]:
                 self.d[9] = 0
                 self.d[11] = self.d[7]
@@ -698,7 +700,7 @@ def fill_taxes_2023(d, output_2022=None):
                 self.d[9] = self.d[5] - self.d[8]
                 self.d[10] = min(self.d[9] * 0.25, self.d[6])
                 self.d[11] = self.d[7] + self.d[10]
-            if self.d[11] >= 191100:  # single
+            if self.d[11] >= 220700:  # single
                 self.fill6251 = True
                 return
             self.d[12] = self.d[11] * 0.26

@@ -142,6 +142,7 @@ def main():
     data2023 = gather_inputs(input_year_folder="2023")
     states2023, worksheets_all2023 = fill_taxes_2023(d=data2023, output_2022=(states2022, worksheets_all2022))
     save_json(data=states2023, out="data" + "2023" + json_extension)
+    save_json(data=worksheets_all2023, out="worksheet" + "2023" + json_extension)
     pdf_files2023 = fill_pdfs(states2023, "2023")
     outfile2023 = "forms" + "2023" + pdf_extension
     merge_pdfs(pdf_files2023, outfile2023)
