@@ -22,7 +22,7 @@ def clean(filing_year):
     # remove log files
     remove_by_extension(log_extension)  # log files are in use, haha
     # remove json files
-    remove_by_extension(json_extension)
+    # remove_by_extension(json_extension)
     # remove keys files
     remove_by_extension(keys_extension)
 

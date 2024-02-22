@@ -60,7 +60,7 @@ def gather_inputs(input_year_folder):
         'dependents': False,  # same if you have dependents
         'occupation': "Analyst",
         'full_year_health_coverage_or_exempt': True,  # ignored starting 2019
-        'presidential_election_self': True,
+        'presidential_election_self': False,
         'resident': True,  # if you're not it's not done yet
         'scheduleD': True,
         'checking': True,
@@ -74,7 +74,7 @@ def gather_inputs(input_year_folder):
         'health_savings_account_employer_contributions': 0,
         'health_savings_account_distributions': 0,
         'medical_expenses': 0,
-        'virtual_currency': True
+        'virtual_currency': False,
     }
 
     override_stuff = {
