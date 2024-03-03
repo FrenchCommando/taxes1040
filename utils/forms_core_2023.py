@@ -45,12 +45,16 @@ def fill_taxes_2023(d, output_2022=None):
 
     forms_state = {}  # mapping name of forms with content
     worksheets = {}  # worksheets need not be printed
+    summary_info = {}  # fields with custom labels
 
     class Form:
-        def __init__(self, key):
+        def __init__(self, key, get_existing=False):
             self.key = key
-            self.d = {}
-            forms_state[self.key] = self.d
+            if not get_existing:
+                self.d = {}
+                forms_state[self.key] = self.d
+            else:
+                self.d = forms_state[self.key]
 
         def push_to_dict(self, key, value, round_i=0):
             if value != 0:
@@ -393,8 +397,6 @@ def fill_taxes_2023(d, output_2022=None):
             # fill capital loss carryover worksheet
             capital_loss = CapitalLossCarryoverWorksheet()
             capital_loss.build()
-            self.push_to_dict('6', -worksheets[w_capital_loss_carryover][8])
-            self.push_to_dict('14', -worksheets[w_capital_loss_carryover][13])
 
             self.push_sum('7', ['1a_gain', '1b_gain', '2_gain', '3_gain', '4', '5', '6'])
 
@@ -619,23 +621,25 @@ def fill_taxes_2023(d, output_2022=None):
             Worksheet.__init__(self, w_capital_loss_carryover, 13)
 
         def build(self):
-            ddd = d
-            fff = forms_state
-            www = worksheets
-            self.d[1] = states_2022[k_1040]['11_b']
-            self.d[2] = max(0., states_2022[k_1040sd]['21'])
+            self.d[1] = states_2022[k_1040]['15']  # this has been different for many years, fix if
+            self.d[2] = max(0., -states_2022[k_1040sd]['21'])  # sign flip
             self.d[3] = max(0., self.d[1] + self.d[2])
             self.d[4] = min(self.d[2], self.d[3])
-            self.d[5] = max(0, -states_2022[k_1040sd]['7'])
-            self.d[6] = max(0, states_2022[k_1040sd]['15'])
-            self.d[7] = self.d[4] + self.d[6]
-            self.d[8] = max(0., self.d[5] - self.d[7])
-            if self.d[6] == 0:
+            if states_2022[k_1040sd]['7'] < 0:
+                self.d[5] = max(0, -states_2022[k_1040sd]['7'])
+                self.d[6] = max(0, states_2022[k_1040sd]['15'])
+                self.d[7] = self.d[4] + self.d[6]
+                self.d[8] = max(0., self.d[5] - self.d[7])  # enter this in D 6
+                summary_info["Short-term capital loss carryover for 2023"] = self.d[8]
+            if states_2022[k_1040sd]['15'] < 0:  # it's ok to repeat
                 self.d[9] = max(0., -states_2022[k_1040sd]['15'])
                 self.d[10] = max(0., states_2022[k_1040sd]['7'])
                 self.d[11] = max(0., self.d[4] - self.d[5])
                 self.d[12] = self.d[10] + self.d[11]
-                self.d[13] = max(0., self.d[9] - self.d[12])
+                self.d[13] = max(0., self.d[9] - self.d[12])  # enter in D 14
+                summary_info["Long-term capital loss carryover for 2023"] = self.d[13]
+            Form(k_1040sd, get_existing=True).push_to_dict('6', self.d[8])
+            Form(k_1040sd, get_existing=True).push_to_dict('14', self.d[13])
 
     class QualifiedDividendsCapitalGainTaxWorksheet(Worksheet):
         def __init__(self):
@@ -713,4 +717,4 @@ def fill_taxes_2023(d, output_2022=None):
     else:
         logger.error("Non-resident not yet implemented")
         # Form1040NR().build()  # one other version for NR
-    return forms_state, worksheets
+    return forms_state, worksheets, summary_info
