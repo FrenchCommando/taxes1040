@@ -1,16 +1,16 @@
 k_1040 = 'Federal/f1040'
 k_1040nr = 'Federal/f1040nr'
 k_1040s1 = 'Federal/f1040s1'
+k_1040s2 = 'Federal/f1040s2'
 k_1040s3 = 'Federal/f1040s3'
+k_1040sa = 'Federal/f1040sa'
 k_1040sb = 'Federal/f1040sb'
 k_1040sd = 'Federal/f1040sd'
-k_8949 = 'Federal/f8949'
-k_8889 = 'Federal/f8889'
-
-k_1040s2 = 'Federal/f1040s2'
-k_1040sa = 'Federal/f1040sa'
 k_6251 = 'Federal/f6251'
 k_6781 = 'Federal/f6781'
+k_8889 = 'Federal/f8889'
+k_8949 = 'Federal/f8949'
+k_8959 = 'Federal/f8959'
 
 
 w_simplified_method = 'SimplifiedMethod'  # for 4a, 4b

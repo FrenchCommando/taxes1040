@@ -1,4 +1,4 @@
-from itertools import islice, chain
+from itertools import islice
 from utils.forms_functions import get_main_info, computation_2023 as computation
 from utils.form_worksheet_names import *
 from utils.forms_constants import logger
@@ -608,6 +608,49 @@ def fill_taxes_2023(d, output_2022=None):
             fill_trades('SHORT', f'short_{code.lower()}', 'I')
             fill_trades('LONG', f'long_{code.lower()}', 'II')
             return self.d.copy() if not (code in ["A", "D"]) else None
+
+    class Form8959(Form):
+        def __init__(self):
+            Form.__init__(self, k_8959)
+
+        def build(self):
+            self.push_name_ssn()
+
+            # Part I
+            self.push_to_dict('1', medicare_wages)
+            self.push_sum('4', ['1', '2', '3'])
+            self.push_to_dict('5', 200000)  # single
+            self.push_to_dict('6', self.d['5'] - self.d['4'])
+            self.push_to_dict('7', self.d['6'] * 0.009)
+            summary_info["Additional Medicare Tax on Medicare wages"] = self.d[7]
+
+            # Part II
+            # 8 self-employment income
+            self.push_to_dict('9', 200000)  # single
+            self.push_sum('10', ['4'])
+            self.push_to_dict('11', max(0, self.d['9'] - self.d['10']))
+            self.push_to_dict('12', max(0, self.d['8'] - self.d['11']))
+            self.push_to_dict('13', self.d['12'] * 0.009)
+            summary_info["Additional Medicare Tax on self-employment income"] = self.d[13]
+
+            # Part III - Railroad Retirement Tax Act
+
+            # Part IV
+            self.push_sum('18', ['7', '13', '17'])
+            summary_info["Total Additional Medicare Tax"] = self.d[18]
+            Form(k_1040s2, get_existing=True).push_to_dict('11', self.d[18])
+
+            # Part V
+            self.push_to_dict('19', medicare_tax)
+            self.push_sum('20', ['1'])
+            self.push_to_dict('21', self.d['20'] * 0.0145)
+            summary_info["Regular Medicare Tax withholding on Medicare wages"] = self.d[21]
+            self.push_to_dict('22', max(0, self.d['19'] - self.d['21']))
+            summary_info["Additional Medicare Tax withholding on Medicare wages"] = self.d[22]
+
+            self.push_sum('24', ['22', '23'])
+            summary_info["Total Additional Medicare Tax withholding"] = self.d[24]
+            Form(k_1040, get_existing=True).push_to_dict('25c', self.d[24])
 
     class Worksheet:
         def __init__(self, key, n):
