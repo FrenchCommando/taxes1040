@@ -111,15 +111,17 @@ def fill_taxes_2023(d, output_2022=None):
 
             self.push_to_dict('1_a', wages)
             self.push_sum('1_z', [
-                '1_a', '1_b', '1_c', '1_d', '1_e', '1_f', '1_g', '1_h', '1_i'
+                '1_a', '1_b', '1_c', '1_d', '1_e', '1_f', '1_g', '1_h',
+                # '1_i' not i
             ])
 
             Form1040s2().build()
+            if forms_state[k_1040s2].get('3', 0) == 0 \
+                    and forms_state[k_1040s2].get('21', 0) == 0:
+                del forms_state[k_1040s2]
 
             if has_1099:
                 Form1040sb().build()
-                self.push_to_dict('2_b', forms_state[k_1040sb]['4_value'])
-                self.push_to_dict('3_b', forms_state[k_1040sb]['6_value'])
 
                 if forms_state[k_1040sb]['4_value'] == 0 \
                         and forms_state[k_1040sb]['6_value'] == 0 \
@@ -141,10 +143,6 @@ def fill_taxes_2023(d, output_2022=None):
                     Form6781().build()
                 Form8949().build()  # build 8949 first
                 Form1040sd().build()
-                if '21' in forms_state[k_1040sd]:
-                    self.push_to_dict('7_value', -forms_state[k_1040sd]['21'])
-                else:
-                    self.push_to_dict('7_value', forms_state[k_1040sd]['16'])
 
             self.d["7_n"] = not d['scheduleD']
 
@@ -391,6 +389,9 @@ def fill_taxes_2023(d, output_2022=None):
             self.push_to_dict('4_value', self.d.get('2_value', 0) - self.d.get('3_value', 0))
             self.push_sum('6_value', ['5_{}_value'.format(str(i)) for i in range(1, 17)])
 
+            Form(k_1040, get_existing=True).push_to_dict('2_b', self.d['4_value'])
+            Form(k_1040, get_existing=True).push_to_dict('3_b', self.d['6_value'])
+
             if 'foreign_account' in d:
                 self.d['7a_y'] = True
                 self.d['7a_yes_y'] = True
@@ -427,21 +428,27 @@ def fill_taxes_2023(d, output_2022=None):
             capital_loss = CapitalLossCarryoverWorksheet()
             capital_loss.build()
 
+            # '6' and '14' are filled by CapitalLossCarryoverWorksheet
+            # loss as positive number, flip sign for the sum
+            self.revert_sign('6')
             self.push_sum('7', ['1a_gain', '1b_gain', '2_gain', '3_gain', '4', '5', '6'])
+            self.revert_sign('6')
+            summary_info[f"{self.key} 7 Net short-term capital gain or (loss)"] = self.d['7']
 
             if capital_gains:
                 self.push_to_dict('13', capital_gains)
-
-            self.push_sum('15', ['8a_gain', '8b_gain', '9_gain', '10_gain', '11', '12', '13', '14'])
-            self.push_sum('16', ['7', '15'])
-
-            self.revert_sign('6')
+            # '6' and '14' are filled by CapitalLossCarryoverWorksheet
+            # loss as positive number, flip sign for the sum
             self.revert_sign('14')
+            self.push_sum('15', ['8a_gain', '8b_gain', '9_gain', '10_gain', '11', '12', '13', '14'])
+            self.revert_sign('14')
+            summary_info[f"{self.key} 15 Net long-term capital gain or (loss)"] = self.d['15']
 
+            self.push_sum('16', ['7', '15'])
             if self.d['16'] > 0:
+                Form(k_1040, get_existing=True).push_to_dict('7_value', self.d['16'])
                 if self.d['15'] < 0 or self.d['16'] < 0:
                     self.d['17_n'] = True
-
                 else:
                     self.d['17_y'] = True
 
@@ -458,6 +465,7 @@ def fill_taxes_2023(d, output_2022=None):
             elif self.d['16'] < 0:
                 capital_loss_limit = 3000 if d['single'] else 1500
                 self.push_to_dict('21', min(capital_loss_limit, -self.d['16']))
+                Form(k_1040, get_existing=True).push_to_dict('7_value', self.d['21'])
 
             if dividends_qualified > 0:
                 self.d['22_y'] = True
@@ -707,6 +715,7 @@ def fill_taxes_2023(d, output_2022=None):
                 self.d[6] = max(0, states_2022[k_1040sd]['15'])
                 self.d[7] = self.d[4] + self.d[6]
                 self.d[8] = max(0., self.d[5] - self.d[7])  # enter this in D 6
+                # loss as positive number
                 summary_info[f"{self.key} 8 Short-term capital loss carryover for 2023"] = self.d[8]
             if states_2022[k_1040sd]['15'] < 0:  # it's ok to repeat
                 self.d[9] = max(0., -states_2022[k_1040sd]['15'])
@@ -714,6 +723,7 @@ def fill_taxes_2023(d, output_2022=None):
                 self.d[11] = max(0., self.d[4] - self.d[5])
                 self.d[12] = self.d[10] + self.d[11]
                 self.d[13] = max(0., self.d[9] - self.d[12])  # enter in D 14
+                # loss as positive number
                 summary_info[f"{self.key} 13 Long-term capital loss carryover for 2023"] = self.d[13]
             Form(k_1040sd, get_existing=True).push_to_dict('6', self.d[8])
             Form(k_1040sd, get_existing=True).push_to_dict('14', self.d[13])
