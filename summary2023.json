@@ -3,5 +3,8 @@
     "Federal/f8959 21 Regular Medicare Tax withholding on Medicare wages": 4833.0,
     "Federal/f8959 Additional Medicare Tax withholding on Medicare wages": 5167.0,
     "Federal/f8959 24 Total Additional Medicare Tax withholding": 5167.0,
-    "Federal/f1040s2 21 Total Other Taxes": 0
+    "Federal/f1040s2 21 Total Other Taxes": 0,
+    "Federal/f1040sd 7 Net short-term capital gain or (loss)": -85110,
+    "Federal/f1040sd 15 Net long-term capital gain or (loss)": 0,
+    "QualifiedDividendsAndCapitalGains 25 Tax on all taxable income": 324787.24
 }

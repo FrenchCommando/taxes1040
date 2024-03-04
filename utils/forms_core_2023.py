@@ -177,34 +177,25 @@ def fill_taxes_2023(d, output_2022=None):
 
             if dividends_qualified:
                 qualified_dividend_worksheet = QualifiedDividendsCapitalGainTaxWorksheet()
-                qualified_dividend_worksheet.build()
-                self.push_to_dict('16', worksheets[w_qualified_dividends_and_capital_gains][25])
+                qualified_dividend_worksheet.build()  # enters value in 16
             else:
                 self.push_to_dict('16', computation(self.d['15']))
 
-            self.push_to_dict('17', 0)  # schedule 2 line 3
-            self.push_sum('18', ['16', '17'])  # plus schedule 2 line 3
+            # self.push_to_dict('17', 0)  # schedule 2 line 3
+            self.push_sum('18', ['16', '17'])
             self.push_to_dict('19', 0)  # child tax credit
 
             if foreign_tax > 0:
-                Form1040s3().build()
-                self.push_to_dict('20', forms_state[k_1040s3]['8'])
-            else:
-                self.push_to_dict('20', 0)  # schedule 3 line 8
+                Form1040s3().build()  # fills 20
             self.push_sum('21', ['19', '20'])
             self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
 
-            # from AMT 8959
-            # need schedule 2 and 8959
-            amt_final = medicare_tax - medicare_wages * 0.0145
-            medicare_tax_stuff = max(amt_final, 0)
-
-            self.push_to_dict('23', medicare_tax_stuff)  # other taxes from Schedule 2 line 21
+            # self.push_to_dict('23', medicare_tax_stuff)  # other taxes from Schedule 2 line 21
             self.push_sum('24', ['22', '23'])  # total tax
 
             self.push_to_dict('25_a', federal_tax)  # from W2
             self.push_to_dict('25_b', 0)  # from 1099
-            self.push_to_dict('25_c', medicare_tax_stuff)  # from other
+            # self.push_to_dict('25_c', medicare_tax_stuff)  # from other
             self.push_sum('25_d', ['25_a', '25_b', '25_c'])
 
             self.push_to_dict('26', 0)  # estimated payments
@@ -294,6 +285,7 @@ def fill_taxes_2023(d, output_2022=None):
             Form6251().build()  # AMT fills 1
             # Form8962().build()  # Excess advance premium tax credit repayment - fills 2
             self.push_sum(key='3', it=['1', '2'])
+            Form(k_1040, get_existing=True).push_to_dict('17', self.d['3'])
 
             # Part II - Other Taxes
             self.push_sum(key='7', it=['5', '6'])
@@ -325,6 +317,7 @@ def fill_taxes_2023(d, output_2022=None):
             # https://turbotax.intuit.com/tax-tips/military/filing-irs-form-1116-to-claim-the-foreign-tax-credit/L2ODfqp89
             self.push_to_dict('1', foreign_tax)
             self.push_sum('8', ['1', '2', '3', '4', '5', '7'])  # 1040 line 20
+            Form(k_1040, get_existing=True).push_to_dict('20', self.d.get('8', 0))
 
     class Form1040sa(Form):
         def __init__(self):
@@ -464,10 +457,11 @@ def fill_taxes_2023(d, output_2022=None):
 
             elif self.d['16'] < 0:
                 capital_loss_limit = 3000 if d['single'] else 1500
-                self.push_to_dict('21', min(capital_loss_limit, -self.d['16']))
+                self.push_to_dict('21', - min(capital_loss_limit, -self.d['16']))
                 Form(k_1040, get_existing=True).push_to_dict('7_value', self.d['21'])
+                self.revert_sign(key='21')  # show amount as positive
 
-            if dividends_qualified > 0:
+            if dividends_qualified is not None and dividends_qualified > 0:
                 self.d['22_y'] = True
             else:
                 self.d['22_n'] = True
@@ -733,12 +727,12 @@ def fill_taxes_2023(d, output_2022=None):
             Worksheet.__init__(self, w_qualified_dividends_and_capital_gains, 25)
 
         def build(self):
-            self.d[1] = forms_state[k_1040]['15']
+            self.d[1] = forms_state[k_1040]['15']  # except if foreign earned income
             self.d[2] = forms_state[k_1040]['3_a']
             if d['scheduleD']:
                 self.d[3] = max(0, min(forms_state[k_1040sd]['15'], forms_state[k_1040sd]['16']))
             else:
-                self.d[3] = forms_state[k_1040s1]['7']
+                self.d[3] = forms_state[k_1040]['7']
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
             self.d[6] = 44625  # single
@@ -756,11 +750,14 @@ def fill_taxes_2023(d, output_2022=None):
             self.d[18] = self.d[17] * 0.15
             self.d[19] = self.d[9] + self.d[17]
             self.d[20] = self.d[10] - self.d[19]
-            self.d[21] = self.d[20] * 0.2
+            self.d[21] = self.d[20] * 0.20
             self.d[22] = computation(amount=self.d[5])
             self.d[23] = self.d[18] + self.d[21] + self.d[22]
             self.d[24] = computation(self.d[1])
             self.d[25] = min(self.d[23], self.d[24])
+            summary_info[f"{self.key} 25 Tax on all taxable income"] = self.d[25]
+            Form(k_1040, get_existing=True).push_to_dict('16', self.d[25])
+            # also 2555 if foreign earned income
 
     class ShouldFill6251Worksheet(Worksheet):
         def __init__(self):
