@@ -7,6 +7,8 @@ from utils.forms_constants import logger
 def fill_taxes_2023(d, output_2022=None):
     if output_2022 is not None:
         states_2022, worksheets_all_2022 = output_2022
+    else:
+        states_2022, worksheets_all_2022 = None, None
 
     main_info = get_main_info(d)
     wages = sum(w['Wages'] for w in d['W2'])
@@ -621,6 +623,8 @@ def fill_taxes_2023(d, output_2022=None):
             Worksheet.__init__(self, w_capital_loss_carryover, 13)
 
         def build(self):
+            if states_2022 is None:
+                return
             self.d[1] = states_2022[k_1040]['15']  # this has been different for many years, fix if
             self.d[2] = max(0., -states_2022[k_1040sd]['21'])  # sign flip
             self.d[3] = max(0., self.d[1] + self.d[2])

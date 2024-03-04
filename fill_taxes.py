@@ -133,16 +133,18 @@ def main():
     # outfile2021 = "forms" + "2021" + pdf_extension
     # merge_pdfs(pdf_files2021, outfile2021)
 
-    data2022 = gather_inputs(input_year_folder="2022")
-    states2022, worksheets_all2022 = fill_taxes_2022(d=data2022, output_2021=None)
-    save_json(data=states2022, out="data" + "2022" + json_extension)
-    save_json(data=worksheets_all2022, out="worksheet" + "2022" + json_extension)
-    pdf_files2022 = fill_pdfs(states2022, "2022")
-    outfile2022 = "forms" + "2022" + pdf_extension
-    merge_pdfs(pdf_files2022, outfile2022)
+    # data2022 = gather_inputs(input_year_folder="2022")
+    # states2022, worksheets_all2022 = fill_taxes_2022(d=data2022, output_2021=None)
+    # save_json(data=states2022, out="data" + "2022" + json_extension)
+    # save_json(data=worksheets_all2022, out="worksheet" + "2022" + json_extension)
+    # pdf_files2022 = fill_pdfs(states2022, "2022")
+    # outfile2022 = "forms" + "2022" + pdf_extension
+    # merge_pdfs(pdf_files2022, outfile2022)
 
     data2023 = gather_inputs(input_year_folder="2023")
-    states2023, worksheets_2023, summary_2023 = fill_taxes_2023(d=data2023, output_2022=(states2022, worksheets_all2022))
+    # states2023, worksheets_2023, summary_2023 =
+    # fill_taxes_2023(d=data2023, output_2022=(states2022, worksheets_all2022))
+    states2023, worksheets_2023, summary_2023 = fill_taxes_2023(d=data2023, output_2022=None)
     save_json(data=states2023, out="data" + "2023" + json_extension)
     save_json(data=worksheets_2023, out="worksheet" + "2023" + json_extension)
     save_json(data=summary_2023, out="summary" + "2023" + json_extension)
