@@ -157,29 +157,31 @@ def fill_taxes_2023(d, output_2022=None):
                     del forms_state[k_1040s1]
 
             self.push_sum('9', ['1_z', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
+            summary_info[f"{self.key} 9 Total income"] = self.d['9']
 
             self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
+            summary_info[f"{self.key} 11 adjusted gross income"] = self.d['11']
 
             # Form1040sa().build()
             # itemized_deduction = forms_state[k_1040sa].get('17', 0)
             itemized_deduction = 0
             if itemized_deduction > standard_deduction:
-                self.push_to_dict('12_a', itemized_deduction)
+                self.push_to_dict('12', itemized_deduction)
             else:
-                self.push_to_dict('12_a', standard_deduction)
-            charitable_contributions = 0
-            self.push_to_dict('12_b', charitable_contributions)
-            self.push_sum('12_c', ['12_a', '12_b'])
+                self.push_to_dict('12', standard_deduction)
+            summary_info[f"{self.key} 12 Standard deduction or itemized deductions"] = self.d['12']
 
             self.push_to_dict('13', qualified_business_deduction)
-            self.push_sum('14', ['12_c', '13'])
+            self.push_sum('14', ['12', '13'])
             self.push_to_dict('15', max(0, self.d.get('11', 0) - self.d.get('14', 0)))  # Taxable income
+            summary_info[f"{self.key} 15 Taxable income"] = self.d['15']
 
             if dividends_qualified:
                 qualified_dividend_worksheet = QualifiedDividendsCapitalGainTaxWorksheet()
                 qualified_dividend_worksheet.build()  # enters value in 16
             else:
                 self.push_to_dict('16', computation(self.d['15']))
+            summary_info[f"{self.key} 16 Tax"] = self.d['16']
 
             # self.push_to_dict('17', 0)  # schedule 2 line 3
             self.push_sum('18', ['16', '17'])
@@ -192,6 +194,7 @@ def fill_taxes_2023(d, output_2022=None):
 
             # self.push_to_dict('23', medicare_tax_stuff)  # other taxes from Schedule 2 line 21
             self.push_sum('24', ['22', '23'])  # total tax
+            summary_info[f"{self.key} 24 Total Tax"] = self.d['24']
 
             self.push_to_dict('25_a', federal_tax)  # from W2
             self.push_to_dict('25_b', 0)  # from 1099
@@ -211,11 +214,13 @@ def fill_taxes_2023(d, output_2022=None):
             # total other payments and refundable credit
 
             self.push_sum('33', ['25_d', '26', '32'])  # total payments
+            summary_info[f"{self.key} 33 Total Payments"] = self.d['33']
 
             # refund
             overpaid = self.d['33'] - self.d['24']
             if overpaid > 0:
                 self.push_to_dict('34', overpaid)
+                summary_info[f"{self.key} 34 Overpaid"] = self.d['34']
                 # all refunded
                 self.push_to_dict('35a_value', overpaid)
                 self.d['35b'] = d['routing_number']
@@ -228,6 +233,7 @@ def fill_taxes_2023(d, output_2022=None):
             else:
                 self.push_to_dict('37', -overpaid)
                 self.push_to_dict('38', 0)
+                summary_info[f"{self.key} 37 amount you owe"] = self.d['37']
 
             self.push_to_dict('other_designee_n', True)
 
@@ -678,10 +684,12 @@ def fill_taxes_2023(d, output_2022=None):
             if '21' in self.d:
                 summary_info[f"{self.key} 21 Regular Medicare Tax withholding on Medicare wages"] = self.d['21']
             self.push_to_dict('22', max(0, self.d['19'] - self.d['21']))
-            summary_info[f"{self.key} Additional Medicare Tax withholding on Medicare wages"] = self.d['22']
+            if '22' in self.d:
+                summary_info[f"{self.key} Additional Medicare Tax withholding on Medicare wages"] = self.d['22']
 
             self.push_sum('24', ['22', '23'])
-            summary_info[f"{self.key} 24 Total Additional Medicare Tax withholding"] = self.d['24']
+            if '24' in self.d:
+                summary_info[f"{self.key} 24 Total Additional Medicare Tax withholding"] = self.d['24']
             Form(k_1040, get_existing=True).push_to_dict('25_c', self.d['24'])
 
     class Worksheet:
