@@ -1,10 +1,19 @@
 {
+    "Federal/f1040sd 7 Net short-term capital gain or (loss)": -85110,
+    "Federal/f1040sd 15 Net long-term capital gain or (loss)": 0,
+    "Federal/f1040 9 Total income": 999062.0,
+    "Federal/f1040 11 adjusted gross income": 999062.0,
+    "Federal/f1040 12 Standard deduction or itemized deductions": 13850,
+    "Federal/f1040 15 Taxable income": 985212.0,
+    "QualifiedDividendsAndCapitalGains 25 Tax on all taxable income": 324787.24,
+    "Federal/f1040 16 Tax": 324787.0,
+    "Federal/f6251 4 Alternative minimum taxable income": 985212.0,
     "Federal/f8959 18 Total Additional Medicare Tax": 0,
     "Federal/f8959 21 Regular Medicare Tax withholding on Medicare wages": 4833.0,
     "Federal/f8959 Additional Medicare Tax withholding on Medicare wages": 5167.0,
     "Federal/f8959 24 Total Additional Medicare Tax withholding": 5167.0,
     "Federal/f1040s2 21 Total Other Taxes": 0,
-    "Federal/f1040sd 7 Net short-term capital gain or (loss)": -85110,
-    "Federal/f1040sd 15 Net long-term capital gain or (loss)": 0,
-    "QualifiedDividendsAndCapitalGains 25 Tax on all taxable income": 324787.24
+    "Federal/f1040 24 Total Tax": 324787.0,
+    "Federal/f1040 33 Total Payments": 71834.0,
+    "Federal/f1040 37 amount you owe": 252953.0
 }

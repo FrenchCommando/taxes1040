@@ -43,7 +43,7 @@ def main():
 
     fill_taxes.main()
 
-    for form_filing_year in []:
+    for form_filing_year in ["2023"]:
         utils.forms_clean.clean(form_filing_year)
 
 
