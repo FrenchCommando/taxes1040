@@ -115,11 +115,6 @@ def fill_taxes_2023(d, output_2022=None):
                 # '1_i' not i
             ])
 
-            Form1040s2().build()
-            if forms_state[k_1040s2].get('3', 0) == 0 \
-                    and forms_state[k_1040s2].get('21', 0) == 0:
-                del forms_state[k_1040s2]
-
             if has_1099:
                 Form1040sb().build()
 
@@ -182,6 +177,12 @@ def fill_taxes_2023(d, output_2022=None):
             else:
                 self.push_to_dict('16', computation(self.d['15']))
             summary_info[f"{self.key} 16 Tax"] = self.d['16']
+
+            Form1040s2().build()
+            if forms_state[k_1040s2].get('3', 0) == 0 \
+                    and forms_state[k_1040s2].get('21', 0) == 0:
+                del forms_state[k_1040s2]
+                del forms_state[k_6251]
 
             # self.push_to_dict('17', 0)  # schedule 2 line 3
             self.push_sum('18', ['16', '17'])
@@ -286,6 +287,7 @@ def fill_taxes_2023(d, output_2022=None):
 
         def build(self):
             self.push_name_ssn()
+            # Additional Taxes
 
             # Part I - Tax
             Form6251().build()  # AMT fills 1
@@ -478,6 +480,54 @@ def fill_taxes_2023(d, output_2022=None):
 
         def build(self):
             self.push_name_ssn()
+
+            # Part I
+            self.push_to_dict('1_value', forms_state[k_1040]['15'])
+            # 2a if itemized
+            self.push_sum(key='4_value', it=[
+                '1_value',
+                '2a_value', '2b_value', '2c_value', '2d_value',
+                '2e_value', '2f_value', '2g_value', '2h_value',
+                '2i_value', '2j_value', '2k_value', '2l_value',
+                '2m_value', '2n_value', '2o_value', '2p_value',
+                '2q_value', '2r_value', '2s_value', '2t_value',
+                '3_value',
+            ])
+            if '4_value' in self.d:
+                summary_info[f"{self.key} 4 Alternative minimum taxable income"] = self.d['4_value']
+
+            # Part II
+            self.push_to_dict('5_value', 81_300)  # see exceptions
+            self.push_to_dict('6_value', max(0, self.d.get('4_value', 0) - self.d.get('5_value', 0)))
+            if self.d.get('6_value') > 0:
+                # line 7
+                self.push_to_dict(
+                    '7_value',
+                    self.d['6_value'] * 0.26 if self.d['6_value'] < 220_700 else
+                    self.d['6_value'] * 0.28 - 4_414
+                )
+
+                # alternative minimum tax foreign tax credit
+                self.push_to_dict('8_value', 0)
+                # tentative minimum tax
+                self.push_to_dict('9_value', self.d.get('7_value', 0) - self.d.get('8_value', 0))
+
+                self.push_to_dict(
+                    '10_value',
+                    max(0, forms_state[k_1040]['16'] + forms_state[k_1040s2].get('2', 0))
+                    # minus 4972
+                    # subtract S3 line 1
+                    # form 8978 line 14 positive
+                )
+            else:
+                self.push_to_dict('7_value', 0)
+                self.push_to_dict('9_value', 0)
+                self.push_to_dict('11_value', 0)
+
+            self.push_to_dict('11_value', max(0, self.d.get('9_value', 0) - self.d.get('10_value', 0)))
+            if '11_value' in self.d:
+                summary_info[f"{self.key} 11 AMT"] = self.d['11_value']
+                Form(k_1040s2, get_existing=True).push_to_dict('1', self.d['11_value'])
 
     class Form6781(Form):
         def __init__(self):
