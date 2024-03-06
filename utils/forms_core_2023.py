@@ -298,6 +298,9 @@ def fill_taxes_2023(d, output_2022=None):
             # Part II - Other Taxes
             self.push_sum(key='7', it=['5', '6'])
             Form8959().build()  # Additional Medicare Tax - fills 11
+            if forms_state[k_8959]['18'] == 0 \
+                    and forms_state[k_8959]['24'] == 0:
+                del forms_state[k_8959]
 
             self.push_sum(key='18', it=[
                 f'17_{letter}' for letter in [
