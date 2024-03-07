@@ -12,6 +12,8 @@ k_8889 = 'Federal/f8889'
 k_8949 = 'Federal/f8949'
 k_8959 = 'Federal/f8959'
 
+k_it201 = 'ny/it201'
+
 
 w_simplified_method = 'SimplifiedMethod'  # for 4a, 4b
 w_social_security_benefits = 'SocialSecurityBenefits'  # for 5a, 5b

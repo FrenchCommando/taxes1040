@@ -15,5 +15,12 @@
     "Federal/f1040s2 21 Total Other Taxes": 0,
     "Federal/f1040 24 Total Tax": 324787.0,
     "Federal/f1040 33 Total Payments": 71834.0,
-    "Federal/f1040 37 amount you owe": 252953.0
+    "Federal/f1040 37 amount you owe": 252953.0,
+    "ny/it201 33 New York adjusted gross income": 999062.0,
+    "ny/it201 34 Standard/Itemized deduction": 8000,
+    "ny/it201 37 Taxable income": 991062.0,
+    "ny/it201 46 Total New York State taxes": 64001.0,
+    "ny/it201 58 Total New York City and Yonkers taxes / surcharges and MCTMT": 38189.0,
+    "ny/it201 76 Total Payments": 55845.0,
+    "ny/it201 80 owe": 46345.0
 }

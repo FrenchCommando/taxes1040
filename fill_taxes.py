@@ -23,6 +23,8 @@ def fill_pdfs(forms_state, forms_year_folder):
 
     all_out_files = []
     for f, d_contents in forms_state.items():
+        if not f.startswith("Federal"):
+            continue
         d_mapping = load_keys(os.path.join(form_year_folder, f + keys_extension))
 
         def fill_one_pdf(contents, suffix=""):

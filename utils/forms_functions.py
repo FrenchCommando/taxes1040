@@ -116,3 +116,33 @@ def computation_2023(amount):
     if amount <= 578_125:
         return amount * 0.35 - 28105.50
     return amount * 0.37 - 39668.00
+
+
+def computation_2023_ny(amount):
+    if amount <= 17_150:
+        return amount * 0.04
+    if amount <= 23_600:
+        return 686 + (amount - 17_150) * 0.045
+    if amount <= 27_900:
+        return 976 + (amount - 23_600) * 0.0525
+    if amount <= 161_550:
+        return 1_202 + (amount - 27_900) * 0.0550
+    if amount <= 323_200:
+        return 8_553 + (amount - 161_550) * 0.06
+    if amount <= 2_155_350:
+        return 18_252 + (amount - 323_200) * 0.0685
+    if amount <= 5_000_000:
+        return 143_754 + (amount - 2_155_350) * 0.0965
+    if amount <= 25_000_000:
+        return 418_263 + (amount - 5_000_000) * 0.1030
+    return 2_478_263 + (amount - 25_000_000) * 0.1090
+
+
+def computation_2023_nyc(amount):
+    if amount <= 21_600:
+        return amount * 0.03078
+    if amount <= 45_000:
+        return 665 + (amount - 21_600) * 0.03762
+    if amount <= 90_000:
+        return 1_545 + (amount - 45_000) * 0.03819
+    return 3_264 + (amount - 90_000) * 0.03876

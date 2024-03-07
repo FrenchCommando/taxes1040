@@ -1,5 +1,10 @@
 from itertools import islice
-from utils.forms_functions import get_main_info, computation_2023 as computation
+from utils.forms_functions import (
+    get_main_info,
+    computation_2023 as computation,
+    computation_2023_ny as computation_ny,
+    computation_2023_nyc as computation_nyc,
+)
 from utils.form_worksheet_names import *
 from utils.forms_constants import logger
 
@@ -857,9 +862,97 @@ def fill_taxes_2023(d, output_2022=None):
                 + forms_state[k_1040s2]['46']
             self.fill6251 = (self.d[13] < self.d[12])
 
+    class FormIT201(Form):
+        def __init__(self):
+            Form.__init__(self, k_it201)
+
+        def build(self):
+            self.push_to_dict('1', forms_state[k_1040]['1_z'])
+            self.push_to_dict('2', forms_state[k_1040]['2_b'])
+            self.push_to_dict('3', forms_state[k_1040]['3_b'])
+            self.push_to_dict('7', forms_state[k_1040]['7_value'])
+            self.push_sum('17', ['1', '2', '3', '7'])
+            self.push_to_dict('19', self.d.get('17', 0) - self.d.get('18', 0))
+            self.push_sum('24', ['19', '20', '21', '22', '23'])
+            self.push_to_dict('33', self.d.get('24', 0) - self.d.get('32', 0))
+            if '33' in self.d:
+                summary_info[f"{self.key} 33 New York adjusted gross income"] = self.d['33']
+            self.push_to_dict('34', 8000)
+            if '34' in self.d:
+                summary_info[f"{self.key} 34 Standard/Itemized deduction"] = self.d['34']
+            self.push_to_dict('35', self.d.get('33', 0) - self.d.get('34', 0))
+            self.push_to_dict('37', self.d.get('35', 0) - self.d.get('36', 0))
+            if '37' in self.d:
+                summary_info[f"{self.key} 37 Taxable income"] = self.d['37']
+            self.push_sum('38', ['37'])
+            self.push_to_dict('39', computation_ny(amount=self.d.get('38', 0)))
+            self.push_sum('43', ['40', '41', '42'])
+            self.push_to_dict('44', self.d.get('39', 0) - self.d.get('43', 0))
+            self.push_sum('46', ['44', '45'])
+            if '46' in self.d:
+                summary_info[f"{self.key} 46 Total New York State taxes"] = self.d['46']
+
+            self.push_sum('47', ['38'])
+            self.push_to_dict('47a', computation_nyc(amount=self.d.get('47', 0)))
+            self.push_to_dict('49', max(0, self.d.get('47a', 0) - self.d.get('48', 0)))
+            self.push_sum('52', ['49', '50', '51'])
+            self.push_to_dict('54', max(0, self.d.get('52', 0) - self.d.get('53', 0)))
+            self.push_sum('58', ['54', '54e', '55', '56', '57'])
+            if '58' in self.d:
+                summary_info[
+                    f"{self.key} 58 Total New York City and Yonkers taxes / surcharges and MCTMT"
+                ] = self.d['58']
+            if '59' in self.d:
+                summary_info[f"{self.key} 59 Sales or use tax"] = self.d['59']
+            if '60' in self.d:
+                summary_info[f"{self.key} 60 Voluntary contributions"] = self.d['60']
+            if '61' in self.d:
+                summary_info[
+                    (f"{self.key} 61 "
+                     f"Total New York State, New York City, Yonkers, "
+                     f"and sales or use taxes, MCTMT, and voluntary contributions"
+                     )] = self.d['61']
+            self.push_sum('61', ['46', '58', '59', '60'])
+
+            self.push_sum('62', ['61'])
+
+            # fixed school tax
+            taxable_income = self.d['62']
+            fixed_school_tax = 63 if taxable_income < 250_000 else 0
+            self.push_to_dict('69', fixed_school_tax)
+            # school tax rate reduction
+            school_tax_reduction = taxable_income * 0.00171 \
+                if taxable_income < 12_000 else 21 + (taxable_income - 12_000) * 0.00228 \
+                if taxable_income < 500_000 else 0
+            self.push_to_dict('69a', school_tax_reduction)
+
+            self.push_to_dict('72', state_tax)
+            self.push_to_dict('73', local_tax)
+            self.push_sum('76', [
+                '63', '64', '65', '66', '67', '68', '69', '69a',
+                '70', '71', '72', '73', '74', '75',
+            ])
+            if '76' in self.d:
+                summary_info[f"{self.key} 76 Total Payments"] = self.d['76']
+
+            if self.d.get('76', 0) > self.d.get('62', 0):
+                self.push_to_dict('77', max(0, self.d.get('76', 0) - self.d.get('62', 0)))
+                if '77' in self.d:
+                    summary_info[f"{self.key} 77 overpaid"] = self.d['77']
+                self.push_to_dict('78', max(0, self.d.get('77', 0) - self.d.get('79', 0)))
+                if '78' in self.d:
+                    summary_info[f"{self.key} 78 Refund"] = self.d['78']
+                self.push_to_dict('78b', max(0, self.d.get('78', 0) - self.d.get('78a', 0)))
+            else:
+                self.push_to_dict('80', max(0, self.d.get('62', 0) - self.d.get('76', 0)))
+                if '80' in self.d:
+                    summary_info[f"{self.key} 80 owe"] = self.d['80']
+
     if d['resident']:
         Form1040().build()  # one other version for NR
     else:
         logger.error("Non-resident not yet implemented")
         # Form1040NR().build()  # one other version for NR
+    FormIT201().build()
+
     return forms_state, worksheets, summary_info
