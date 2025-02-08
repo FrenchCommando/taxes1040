@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#    Copyright (C) 2024 FrenchCommando
+#    Copyright (C) 2025 FrenchCommando
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ import utils.forms_clean
 
 
 def main():
-    for form_filing_year in ["2023"]:
+    for form_filing_year in ["2023", "2024"]:
         key_matcher.year_folder = form_filing_year
         key_matcher.main()
         fill_keys.year_folder = form_filing_year
@@ -43,7 +43,7 @@ def main():
 
     fill_taxes.main()
 
-    for form_filing_year in ["2023"]:
+    for form_filing_year in ["2023", "2024"]:
         utils.forms_clean.clean(form_filing_year)
 
 

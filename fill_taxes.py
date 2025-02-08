@@ -169,4 +169,9 @@ if __name__ == "__main__":
     #     # 'output\\2018\\Federal\\f1040sb.pdf',
     #     # 'output\\2018\\Federal\\f1040s3.pdf',
     # ]
+    # path = r"C:\Users\marti\Downloads\docs\rentchecks"
+    # outfile = os.path.join(path, "rentchecks.pdf")
+    # pdf_files = [
+    #     os.path.join(path, f"check{i}.pdf") for i in range(1013, 1025)
+    # ]
     # merge_pdfs(pdf_files, outfile)
