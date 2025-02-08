@@ -139,6 +139,7 @@ def computation_2023_ny(amount):
 
 
 def computation_2023_nyc(amount):
+    # I mistakenly put head-of-household table instead of single
     if amount <= 21_600:
         return amount * 0.03078
     if amount <= 45_000:
@@ -146,3 +147,51 @@ def computation_2023_nyc(amount):
     if amount <= 90_000:
         return 1_545 + (amount - 45_000) * 0.03819
     return 3_264 + (amount - 90_000) * 0.03876
+
+
+def computation_2024(amount):
+    if amount <= 11_600:
+        return amount * 0.10
+    if amount <= 47_150:
+        return 1_160 + (amount - 11_700) * 0.12
+    if amount <= 100_525:
+        return 5_426 + (amount - 47_150) * 0.22
+    if amount <= 191_950:
+        return 17_168.50 + (amount - 100_525) * 0.24
+    if amount <= 243_725:
+        return 39_110.50 + (amount - 191_950) * 0.32
+    if amount <= 609_350:
+        return 55_678.50 + (amount - 243_725) * 0.35
+    return 183_647.25 + (amount - 609_350) * 0.37
+
+
+def computation_2024_ny(amount):
+    # same comment as for NYC
+    if amount <= 8_500:
+        return amount * 0.04
+    if amount <= 11_700:
+        return 340 + (amount - 8_500) * 0.045
+    if amount <= 13_900:
+        return 484 + (amount - 11_700) * 0.05_25
+    if amount <= 80_650:
+        return 600 + (amount - 13_900) * 0.05_50
+    if amount <= 215_400:
+        return 4_271 + (amount - 80_650) * 0.06
+    if amount <= 1_077_550:
+        return 12_356 + (amount - 215_400) * 0.06_85
+    if amount <= 5_000_000:
+        return 71_413 + (amount - 1_077_550) * 0.09_65
+    if amount <= 25_000_000:
+        return 449_929 + (amount - 5_000_000) * 0.10_30
+    return 2_509_929 + (amount - 25_000_000) * 0.10_90
+
+def computation_2024_nyc(amount):
+    # looks like it didn't change from previous year
+    # but was the wrong table
+    if amount <= 12_000:
+        return amount * 0.03_078
+    if amount <= 25_000:
+        return 369 + (amount - 12_000) * 0.03_762
+    if amount <= 50_000:
+        return 858 + (amount - 25_000) * 0.03_819
+    return 1_813 + (amount - 50_000) * 0.03_876

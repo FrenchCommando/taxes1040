@@ -42,7 +42,7 @@ def fill_fields_files():
     if year_folder == "2018":
         dollar_cents = " dollar cents"
         payer_dollar_cents = " payer" + dollar_cents
-    elif year_folder in ["2019", "2020", "2021", "2022", "2023"]:
+    elif year_folder in ["2019", "2020", "2021", "2022", "2023", "2024"]:
         payer_dollar_cents = " payer value"
         dollar_cents = " value"
     else:
@@ -457,7 +457,7 @@ def fill_fields_files():
                     f.write("firm_phone\n")
                     f.write("firm_address\n")
                     f.write("firm_ein\n")
-                elif year_folder == "2023":
+                elif year_folder in ["2023", "2024"]:
                     f.write("beginning\n")
                     f.write("ending\n")
                     f.write("end_year\n")
@@ -599,7 +599,7 @@ def fill_fields_files():
                     f.write("24 a b c d e f g h i j k z_type z_amount z\n")
                     f.write("25\n")
                     f.write("26\n")
-                elif year_folder in ["2022", "2023"]:
+                elif year_folder in ["2022", "2023", "2024"]:
                     f.write("1\n")
                     f.write("2 a b\n")
                     for i in range(3, 8):
@@ -631,7 +631,7 @@ def fill_fields_files():
                     f.write("17 a_value a b c d e f g h i j k l m n o p q z_type1 z_type2 z_amount\n")
                     for i in range(18, 22):
                         f.write(f"{i}\n")
-                elif year_folder in ["2022", "2023"]:
+                elif year_folder in ["2022", "2023", "2024"]:
                     for i in range(1, 8):
                         f.write(f"{i}\n")
                     f.write("8 check value\n")
@@ -685,7 +685,7 @@ def fill_fields_files():
                     f.write("13 a b c d e f g h z_type z_amount\n")
                     f.write("14\n")
                     f.write("15\n")
-                elif year_folder == "2023":
+                elif year_folder in ["2023", "2024"]:
                     for i in range(1, 5):
                         f.write(f"{i}\n")
                     f.write("5 a b\n")
@@ -724,7 +724,7 @@ def fill_fields_files():
                         f.write(i + yes_no + "\n")
                     f.write("7b\n")
                     f.write("8" + yes_no + "\n")
-                elif year_folder in ["2022", "2023"]:
+                elif year_folder in ["2022", "2023", "2024"]:
                     f.write("name\n")
                     f.write("ssn\n")
                     for i in range(1, 15):
@@ -742,7 +742,7 @@ def fill_fields_files():
                 f.write("name\n")
                 f.write("ssn\n")
 
-                if year_folder in ["2019", "2020", "2021", "2022", "2023"]:
+                if year_folder in ["2019", "2020", "2021", "2022", "2023", "2024"]:
                     f.write("dispose_opportunity y n\n")
 
                 for i in ['1a', '1b', '2', '3']:
@@ -908,5 +908,5 @@ def main():
 
 
 if __name__ == "__main__":
-    year_folder = "2023"
+    year_folder = "2024"
     main()

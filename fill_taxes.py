@@ -10,6 +10,7 @@ from utils.forms_core_2020 import fill_taxes_2020
 from utils.forms_core_2021 import fill_taxes_2021
 from utils.forms_core_2022 import fill_taxes_2022
 from utils.forms_core_2023 import fill_taxes_2023
+from utils.forms_core_2024 import fill_taxes_2024
 
 
 logger = logging.getLogger('fill_taxes')
@@ -150,9 +151,18 @@ def main():
     save_json(data=states2023, out="data" + "2023" + json_extension)
     save_json(data=worksheets_2023, out="worksheet" + "2023" + json_extension)
     save_json(data=summary_2023, out="summary" + "2023" + json_extension)
-    pdf_files2023 = fill_pdfs(states2023, "2023")
-    outfile2023 = "forms" + "2023" + pdf_extension
-    merge_pdfs(pdf_files2023, outfile2023)
+    # pdf_files2023 = fill_pdfs(states2023, "2023")
+    # outfile2023 = "forms" + "2023" + pdf_extension
+    # merge_pdfs(pdf_files2023, outfile2023)
+
+    data2024 = gather_inputs(input_year_folder="2024")
+    states2024, worksheets_2024, summary_2024 = fill_taxes_2024(d=data2024, output_2023=(states2023, worksheets_2023))
+    save_json(data=states2024, out="data" + "2024" + json_extension)
+    save_json(data=worksheets_2024, out="worksheet" + "2024" + json_extension)
+    save_json(data=summary_2024, out="summary" + "2024" + json_extension)
+    pdf_files2024 = fill_pdfs(states2024, "2024")
+    outfile2024 = "forms" + "2024" + pdf_extension
+    merge_pdfs(pdf_files2024, outfile2024)
 
 
 if __name__ == "__main__":
