@@ -8,7 +8,7 @@
 from utils.forms_utils import *
 
 
-year_folder = "2019"
+year_folder = "2024"
 
 
 def process_pdf(file):

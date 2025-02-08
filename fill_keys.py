@@ -475,14 +475,22 @@ def fill_fields_files():
 
                     # f.write("full_year_health_coverage_or_exempt\n")
                     f.write("presidential_election self spouse\n")
-
-                    f.write("single\n")
-                    f.write("married_filling_jointly\n")
-                    f.write("married_filling_separately\n")
-                    f.write("head_of_household\n")
-                    f.write("qualifying_widower\n")
-                    f.write("qualifying_name\n")
-
+                    if year_folder in ["2023"]:
+                        f.write("single\n")
+                        f.write("married_filling_jointly\n")
+                        f.write("married_filling_separately\n")
+                        f.write("head_of_household\n")
+                        f.write("qualifying_widower\n")
+                        f.write("qualifying_name\n")
+                    elif year_folder in ["2024"]:
+                        f.write("single\n")
+                        # f.write("married_filling_jointly\n")
+                        f.write("head_of_household\n")
+                        f.write("married_filling_separately\n")
+                        # f.write("qualifying_widower\n")
+                        f.write("qualifying_name\n")
+                        f.write("alien\n")
+                        f.write("alien_name\n")
                     f.write("virtual_currency y n\n")
 
                     f.write("can_be_claimed_as_dependent self spouse\n")
