@@ -33,6 +33,8 @@ w_ira_deduction = "IRADeduction"  # s1 line 32
 w_student_loan_interest_deduction = 'StudentLoanInterestDeduction'  # s1 line 33
 w_should_fill_6251 = 'ShouldFill6251'  # s2 line 45
 
+w_mortgage_interest_deduction = "MortgageInterestDeduction"
+
 # schedule D
 w_capital_loss_carryover = 'CapitalLossCarryover'  # line 6 - 14
 w_28pc_rate_gain = '28pc_rate_gain'  # line 18

@@ -46,7 +46,7 @@ def fill_taxes_2024(d, output_2023=None):
         )  # from 8949 to fill 1040sd
         foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
 
-    standard_deduction = 13850  # if single or married filing separately
+    standard_deduction = 14_600  # if single or married filing separately
     qualified_business_deduction = 0
     health_savings_account_max_contribution = 0
 
@@ -162,9 +162,9 @@ def fill_taxes_2024(d, output_2023=None):
             self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
             summary_info[f"{self.key} 11 adjusted gross income"] = self.d['11']
 
-            # Form1040sa().build()
-            # itemized_deduction = forms_state[k_1040sa].get('17', 0)
-            itemized_deduction = 0
+            Form1040sa().build()
+            itemized_deduction = forms_state[k_1040sa].get('17', 0)
+            # itemized_deduction = 0
             if itemized_deduction > standard_deduction:
                 self.push_to_dict('12', itemized_deduction)
             else:
@@ -358,12 +358,18 @@ def fill_taxes_2024(d, output_2023=None):
             # 6 is other
             self.push_sum('7', ['5_e', '6'])
 
-            # mortgage interest
+            # mortgage interest - 8a
+            mortgage_intest_deduction_worksheet = MortgageInterestDeductionWorksheet()
+            mortgage_intest_deduction_worksheet.build()
+
+            self.push_sum('8e', ['8a', '8b', '8c'])
+            self.push_sum('10', ['8e', '9'])
+
             # charity
             # theft
             # other
 
-            self.push_sum('17', ['4', '7', '10', '14', '15', '16'])
+            self.push_sum('17', ['4', '7', "8a", '10', '14', '15', '16'])
             # to 1040 line 12
 
             # tick 18 if you want to lose money
@@ -758,6 +764,41 @@ def fill_taxes_2024(d, output_2023=None):
 
         def build(self):
             raise NotImplementedError()
+
+    class MortgageInterestDeductionWorksheet(Worksheet):
+        def __init__(self):
+            Worksheet.__init__(self, w_mortgage_interest_deduction, 16)
+
+        def build(self):
+            # Part I - Qualified Loan Limit
+            self.d[1] = 0  # grandfathered
+            self.d[2] = 0  # old
+            self.d[3] = 1_000_000
+            self.d[4] = max(self.d[1], self.d[3])
+            self.d[5] = self.d[1] + self.d[2]
+            self.d[6] = min(self.d[4], self.d[5])
+            self.d[7] = 893_000  # average balance
+            self.d[8] = 750_000
+            self.d[9] = max(self.d[6], self.d[8])
+            self.d[10] = self.d[6] + self.d[7]
+            self.d[11] = min(self.d[9], self.d[10])
+            summary_info[f"{self.key} 11 Qualified loan limit for 2024"] = self.d[11]
+
+            # Part II - Deductible Home Mortgage Interest
+            self.d[12] = self.d[1] + self.d[2] + self.d[7]
+
+            self.d[13] = 10000  # all interest paid
+            if self.d[11] >= self.d[12]:
+                # All interest deductible
+                summary_info[f"{self.key} All Interest Deductible for 2024"] = self.d[13]
+                return
+
+            self.d[14] = round(self.d[11] / self.d[12], 3)
+            self.d[15] = self.d[13] * self.d[14]
+            summary_info[f"{self.key} 15 Deductible Home Mortgage Interest for 2024"] = self.d[15]
+            self.d[16] = self.d[13] + self.d[15]
+            summary_info[f"{self.key} 16 Personal (not Deductible) Interest for 2024"] = self.d[16]
+            Form(k_1040sa, get_existing=True).push_to_dict('8a', self.d[15])
 
     class CapitalLossCarryoverWorksheet(Worksheet):
         def __init__(self):
