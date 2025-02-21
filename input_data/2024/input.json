@@ -1,9 +1,40 @@
 {
+    "1098": [
+        {
+            "Payments": [
+                {
+                    "Date": "2024/09/18",
+                    "InterestAmount": 2000,
+                    "PrincipalAmount": 0
+                },
+                {
+                    "Date": "2024/11/1",
+                    "InterestAmount": 5000,
+                    "PrincipalAmount": 800
+                },
+                {
+                    "Date": "2024/12/1",
+                    "InterestAmount": 5000,
+                    "PrincipalAmount": 800
+                }
+            ],
+            "PrincipalBalance": 1000000,
+            "LoanNumber": "11111111111",
+            "Recipient": "Big Lender Bank Bank N.A."
+        }
+    ],
     "1099": [
         {
-            "Qualified Dividends": 150.00,
-            "Ordinary Dividends": 1000.50,
-            "Foreign Tax Paid": 50.0,
+            "Qualified Dividends": 2000.22,
+            "Ordinary Dividends": 2000.22,
+            "Interest": 10.09,
+            "Institution": "Second Bank Capital Management, LLC"
+        },
+        {
+            "Interest": 13.72,
+            "Qualified Dividends": 168.71,
+            "Ordinary Dividends": 1955.32,
+            "Foreign Tax Paid": 800.99,
             "Foreign Country": "Various",
             "Institution": "Big Bank HOLDINGS, INC.",
             "Trades": [
@@ -20,13 +51,25 @@
                     "FormCode": "A"
                 },
                 {
-                    "SalesDescription": "BIG ETF",
-                    "Shares": 300.0,
-                    "DateAcquired": "04/29/2022",
-                    "DateSold": "03/30/2022",
-                    "Proceeds": 16885.37,
-                    "Cost": 101994.7,
+                    "SalesDescription": "Aggregated",
+                    "Shares": "Aggregated",
+                    "DateAcquired": "Aggregated",
+                    "DateSold": "Aggregated",
+                    "WashSaleCode": "Aggregated",
+                    "Proceeds": 200000,
+                    "Cost": 212000,
+                    "WashSaleValue": 0,
+                    "LongShort": "LONG",
+                    "FormCode": "D"
+                },
+                {
+                    "SalesDescription": "SOME ETF",
+                    "Shares": "500",
+                    "DateAcquired": "2024/04/15",
+                    "DateSold": "2024/07/20",
                     "WashSaleCode": "",
+                    "Proceeds": 36000,
+                    "Cost": 26000,
                     "WashSaleValue": 0,
                     "LongShort": "SHORT",
                     "FormCode": "B"
@@ -34,9 +77,8 @@
             ]
         },
         {
-            "Qualified Dividends": 460.11,
-            "Ordinary Dividends": 460.11,
-            "Institution": "Small bank HOLDINGS, INC."
+            "Interest": 1050.75,
+            "Institution": "Department of the Treasury"
         },
         {
             "Interest": 2.0,
@@ -44,7 +86,22 @@
             "Other Income": 600,
             "Other Description": "CASHPLUS"
         },
-        {}
+        {
+            "Trades": [
+                {
+                    "SalesDescription": "CRYPTO DOLLAR",
+                    "Shares": 50000,
+                    "DateAcquired": "2022/01/01",
+                    "DateSold": "2024/07/04",
+                    "WashSaleCode": "",
+                    "Proceeds": 50000,
+                    "Cost": 50000,
+                    "WashSaleValue": 0,
+                    "LongShort": "LONG",
+                    "FormCode": "F"
+                }
+            ]
+        }
     ],
     "W2": [
         {
@@ -70,8 +127,35 @@
             "Medicare_tax": 9999.99,
             "State": "NY",
             "State_tax": 11111.11,
-            "Local_tax": 44444.44,
-            "Locality": "NEW YORK CITY"
+            "Local_tax": 4444.44,
+            "Locality": "NEW YORK"
         }
-    ]
+    ],
+    "EstimatedIncomeTax": {
+        "Federal": [
+           {
+                "Date": "2024/01/28",
+                "Amount": 5000.00
+           },
+           {
+                "Date": "2024/10/09",
+                "Amount": 10000.00
+           }
+        ],
+        "State": [
+           {
+                "Date": "2024/10/07",
+                "Amount": 4000.00
+           }
+        ]
+    },
+	"Other": [
+		{
+			"PropertyTax": 2500,
+			"CoopStateTaxes": 10
+		},
+        {
+            "DaysInNYC": 365
+        }
+	]
 }
