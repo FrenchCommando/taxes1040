@@ -3,6 +3,7 @@ from utils.forms_functions import (
     get_main_info,
     computation_2024 as computation,
     computation_2024_ny as computation_ny,
+    computation_2024_ny_recapture as computation_ny_recapture,
     computation_2024_nyc as computation_nyc,
 )
 from utils.form_worksheet_names import *
@@ -100,7 +101,7 @@ def fill_taxes_2024(d, output_2023=None):
                 'city': main_info['address_city'],
                 'state': main_info['address_state'],
                 'zip': main_info['address_zip'],
-                'full_year_health_coverage_or_exempt': d['full_year_health_coverage_or_exempt'],
+                # 'full_year_health_coverage_or_exempt': d['full_year_health_coverage_or_exempt'],
                 'presidential_election_self': d['presidential_election_self'],
                 'self_occupation': d['occupation'],
                 'phone': d['phone'],
@@ -207,7 +208,12 @@ def fill_taxes_2024(d, output_2023=None):
             # self.push_to_dict('25_c', medicare_tax_stuff)  # from other
             self.push_sum('25_d', ['25_a', '25_b', '25_c'])
 
-            self.push_to_dict('26', 0)  # estimated payments
+            estimated_payments = 0
+            if "EstimatedIncomeTax" in d:
+                if "Federal" in d["EstimatedIncomeTax"]:
+                    for line in d["EstimatedIncomeTax"]["Federal"]:
+                        estimated_payments += line["Amount"]
+            self.push_to_dict('26', estimated_payments)
 
             self.push_to_dict('27_a', 0)  # Earned Income Credit
             self.push_to_dict('27_b', 0)  # Nontaxable combat pay election
@@ -353,6 +359,14 @@ def fill_taxes_2024(d, output_2023=None):
             else:
                 self.push_to_dict('5_a', state_tax + local_tax)
 
+            # property tax
+            property_tax = 0
+            if "Other" in d:
+                for line in d["Other"]:
+                    property_tax += line.get("PropertyTax", 0)
+            self.push_to_dict('5_c', property_tax)
+
+
             self.push_sum('5_d', ['5_a', '5_b', '5_c'])
             self.push_to_dict('5_e', min(self.d.get('5_d', 0), 10000))
             # 6 is other
@@ -362,14 +376,14 @@ def fill_taxes_2024(d, output_2023=None):
             mortgage_intest_deduction_worksheet = MortgageInterestDeductionWorksheet()
             mortgage_intest_deduction_worksheet.build()
 
-            self.push_sum('8e', ['8a', '8b', '8c'])
-            self.push_sum('10', ['8e', '9'])
+            self.push_sum('8_e', ['8_a', '8_b', '8_c'])
+            self.push_sum('10', ['8_e', '9'])
 
             # charity
             # theft
             # other
 
-            self.push_sum('17', ['4', '7', "8a", '10', '14', '15', '16'])
+            self.push_sum('17', ['4', '7', '10', '14', '15', '16'])
             # to 1040 line 12
 
             # tick 18 if you want to lose money
@@ -388,6 +402,11 @@ def fill_taxes_2024(d, output_2023=None):
                 i = 1
                 for f in d['1099']:
                     if key in f and f[key] != 0:
+                        if "Institution" in f and f['Institution'] == "Department of the Treasury":
+                            summary_info[f"{self.key} Treasury Interest Exempt from Local Tax"] = f[key]
+                            Form(k_it201, get_existing=True).push_to_dict('28', f[key])
+                            # still counted
+                            # continue
                         self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
                         self.push_to_dict("{}_{}_value".format(index, str(i)), f[key])
                         i += 1
@@ -718,15 +737,15 @@ def fill_taxes_2024(d, output_2023=None):
             # Part I
             self.push_to_dict('1', medicare_wages)
             self.push_sum('4', ['1', '2', '3'])
-            self.push_to_dict('5', 200000)  # single
-            self.push_to_dict('6', max(0, self.d['5'] - self.d['4']))
+            self.push_to_dict('5', 200_000)  # single
+            self.push_to_dict('6', max(0, self.d['4'] - self.d['5']))
             self.push_to_dict('7', self.d.get('6', 0) * 0.009)
             if '7' in self.d:
                 summary_info[f"{self.key} 7 Additional Medicare Tax on Medicare wages"] = self.d['7']
 
             # Part II
             # 8 self-employment income
-            self.push_to_dict('9', 200000)  # single
+            self.push_to_dict('9', 200_000)  # single
             self.push_sum('10', ['4'])
             self.push_to_dict('11', max(0, self.d['9'] - self.d['10']))
             self.push_to_dict('12', max(0, self.d.get('8', 0) - self.d.get('11', 0)))
@@ -770,6 +789,15 @@ def fill_taxes_2024(d, output_2023=None):
             Worksheet.__init__(self, w_mortgage_interest_deduction, 16)
 
         def build(self):
+            interest_paid = 0
+            balance_start = 0
+            principal_payments = 0
+            if "1098" in d:
+                for item in d["1098"]:
+                    balance_start += item.get("PrincipalBalance", 0)
+                    for payment in item.get("Payments", []):
+                        interest_paid += payment.get("InterestAmount", 0)
+                        principal_payments += payment.get("PrincipalAmount", 0)
             # Part I - Qualified Loan Limit
             self.d[1] = 0  # grandfathered
             self.d[2] = 0  # old
@@ -777,7 +805,7 @@ def fill_taxes_2024(d, output_2023=None):
             self.d[4] = max(self.d[1], self.d[3])
             self.d[5] = self.d[1] + self.d[2]
             self.d[6] = min(self.d[4], self.d[5])
-            self.d[7] = 893_000  # average balance
+            self.d[7] = balance_start - 0.5 * principal_payments  # average balance
             self.d[8] = 750_000
             self.d[9] = max(self.d[6], self.d[8])
             self.d[10] = self.d[6] + self.d[7]
@@ -787,18 +815,18 @@ def fill_taxes_2024(d, output_2023=None):
             # Part II - Deductible Home Mortgage Interest
             self.d[12] = self.d[1] + self.d[2] + self.d[7]
 
-            self.d[13] = 10000  # all interest paid
+            self.d[13] = interest_paid
             if self.d[11] >= self.d[12]:
                 # All interest deductible
-                summary_info[f"{self.key} All Interest Deductible for 2024"] = self.d[13]
+                summary_info[f"{self.key} 13 All Interest Deductible for 2024"] = self.d[13]
                 return
 
             self.d[14] = round(self.d[11] / self.d[12], 3)
             self.d[15] = self.d[13] * self.d[14]
             summary_info[f"{self.key} 15 Deductible Home Mortgage Interest for 2024"] = self.d[15]
-            self.d[16] = self.d[13] + self.d[15]
+            self.d[16] = self.d[13] - self.d[15]
             summary_info[f"{self.key} 16 Personal (not Deductible) Interest for 2024"] = self.d[16]
-            Form(k_1040sa, get_existing=True).push_to_dict('8a', self.d[15])
+            Form(k_1040sa, get_existing=True).push_to_dict('8_a', self.d[15])
 
     class CapitalLossCarryoverWorksheet(Worksheet):
         def __init__(self):
@@ -808,7 +836,7 @@ def fill_taxes_2024(d, output_2023=None):
             if states_2023 is None:
                 return
             self.d[1] = states_2023[k_1040]['15']  # this has been different for many years, fix if
-            self.d[2] = max(0., -states_2023[k_1040sd]['21'])  # sign flip
+            self.d[2] = max(0., states_2023[k_1040sd]['21'])  # sign flip
             self.d[3] = max(0., self.d[1] + self.d[2])
             self.d[4] = min(self.d[2], self.d[3])
             if states_2023[k_1040sd]['7'] < 0:
@@ -842,14 +870,14 @@ def fill_taxes_2024(d, output_2023=None):
                 self.d[3] = forms_state[k_1040]['7']
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
-            self.d[6] = 44625  # single
+            self.d[6] = 47_025  # single
             self.d[7] = min(self.d[1], self.d[6])
             self.d[8] = min(self.d[5], self.d[7])
             self.d[9] = self.d[7] - self.d[8]  # taxed 0%
             self.d[10] = min(self.d[1], self.d[4])
             self.d[11] = self.d[9]
             self.d[12] = self.d[11] - self.d[10]
-            self.d[13] = 492300.  # single
+            self.d[13] = 518_900  # single
             self.d[14] = min(self.d[1], self.d[13])
             self.d[15] = self.d[5] + self.d[9]
             self.d[16] = max(0., self.d[14] - self.d[15])
@@ -914,11 +942,18 @@ def fill_taxes_2024(d, output_2023=None):
             self.push_to_dict('7', forms_state[k_1040]['7_value'])
             self.push_sum('17', ['1', '2', '3', '7'])
             self.push_to_dict('19', self.d.get('17', 0) - self.d.get('18', 0))
-            self.push_sum('24', ['19', '20', '21', '22', '23'])
+            self.push_sum('24', ['19', '20', '21', '22', '23'])  # additions
+            self.push_sum('32', ['25', '26', '27', '28', '29', '30', '31'])  # subtractions
             self.push_to_dict('33', self.d.get('24', 0) - self.d.get('32', 0))
             if '33' in self.d:
                 summary_info[f"{self.key} 33 New York adjusted gross income"] = self.d['33']
-            self.push_to_dict('34', 8000)
+            standard_deduction_ny = 8000
+            FormIT196().build()
+            itemized_deduction_ny = forms_state[k_it196].get('49', 0)
+            if itemized_deduction_ny > standard_deduction_ny:
+                self.push_to_dict('34', itemized_deduction_ny)
+            else:
+                self.push_to_dict('34', standard_deduction_ny)
             if '34' in self.d:
                 summary_info[f"{self.key} 34 Standard/Itemized deduction"] = self.d['34']
             self.push_to_dict('35', self.d.get('33', 0) - self.d.get('34', 0))
@@ -926,7 +961,12 @@ def fill_taxes_2024(d, output_2023=None):
             if '37' in self.d:
                 summary_info[f"{self.key} 37 Taxable income"] = self.d['37']
             self.push_sum('38', ['37'])
-            self.push_to_dict('39', computation_ny(amount=self.d.get('38', 0)))
+            computed_tax_ny = computation_ny(amount=self.d.get('38', 0))
+            summary_info[f"{self.key} 39 Tax pre-Recapture"] = computed_tax_ny
+            recapture_amount_ny = computation_ny_recapture(amount=self.d['38'], gross=self.d['33'])
+            computed_tax_ny_full = computed_tax_ny + recapture_amount_ny
+            summary_info[f"{self.key} 39 Tax post-Recapture"] = computed_tax_ny_full
+            self.push_to_dict('39', computed_tax_ny_full)
             self.push_sum('43', ['40', '41', '42'])
             self.push_to_dict('44', self.d.get('39', 0) - self.d.get('43', 0))
             self.push_sum('46', ['44', '45'])
@@ -958,7 +998,7 @@ def fill_taxes_2024(d, output_2023=None):
             self.push_sum('62', ['61'])
 
             # fixed school tax
-            taxable_income = self.d['62']
+            taxable_income = self.d['37']
             fixed_school_tax = 63 if taxable_income < 250_000 else 0
             self.push_to_dict('69', fixed_school_tax)
             # school tax rate reduction
@@ -969,10 +1009,19 @@ def fill_taxes_2024(d, output_2023=None):
 
             self.push_to_dict('72', state_tax)
             self.push_to_dict('73', local_tax)
+
+            estimated_payments_ny = 0
+            if "EstimatedIncomeTax" in d:
+                if "State" in d["EstimatedIncomeTax"]:
+                    for line in d["EstimatedIncomeTax"]["State"]:
+                        estimated_payments_ny += line["Amount"]
+            self.push_to_dict('75', estimated_payments_ny)
+
             self.push_sum('76', [
                 '63', '64', '65', '66', '67', '68', '69', '69a',
                 '70', '71', '72', '73', '74', '75',
             ])
+
             if '76' in self.d:
                 summary_info[f"{self.key} 76 Total Payments"] = self.d['76']
 
@@ -989,11 +1038,138 @@ def fill_taxes_2024(d, output_2023=None):
                 if '80' in self.d:
                     summary_info[f"{self.key} 80 owe"] = self.d['80']
 
+    class FormIT196(Form):
+        def __init__(self):
+            Form.__init__(self, k_it196)
+
+        def build(self):
+            self.push_name_ssn()  # ssn not mapped
+
+            # medical and dental
+            # self.push_to_dict('1', 100)
+            self.push_to_dict('2', forms_state[k_it201]['19'])
+            self.push_to_dict('3', self.d['2'] * 0.10)
+            self.push_to_dict('4', max(0, self.d.get('1', 0) - self.d['3']))
+
+            # taxes
+            self.push_to_dict('5', state_tax + local_tax)
+            property_tax_state = 0
+            if "Other" in d:
+                for line in d["Other"]:
+                    property_tax_state += line.get("CoopStateTaxes", 0)
+            self.push_to_dict('7', property_tax_state)
+
+            self.push_sum('9', ['5', '6', '7', '8'])
+
+            # interest
+            if w_mortgage_interest_deduction in worksheets:
+                # cap is 1mil - need to be applied
+                self.push_to_dict('10', worksheets[w_mortgage_interest_deduction][13])
+            self.push_sum('15', ['10', '11', '12', '14'])
+
+            # gifts
+            self.push_sum('19', ['16', '17', '18'])
+
+            # casualty - theft 20
+
+            # line 40
+            NYLine40TotalItemizedDeductionsWorksheet().build()
+
+            # adjustments
+            NYLine41ItemizedDeductionsSubtractionsWorksheet().build()
+            self.push_to_dict('42', self.d['40'] - self.d['41'])
+            # 44
+            self.push_sum('45', ['42', '43', '44'])
+            # 46
+            NYLine46ItemizedDeductionsAdjustmentWorksheet().build()
+            self.push_to_dict('47', self.d['45'] - self.d.get('46', 0))
+            # 48
+            self.push_sum('49', ['47', '48'])
+
+            summary_info[f"{self.key} 49 NY State Itemized Deductions"] = self.d['49']
+
+    class NYLine40TotalItemizedDeductionsWorksheet(Worksheet):
+        def __init__(self):
+            Worksheet.__init__(self, w_ny_line40_itemized_deductions, 10)
+
+        def build(self):
+            line1 = sum(forms_state[k_it196].get(entry, 0) for entry in ['4', '9', '15', '19', '20', '28', '39'])
+            line2 = sum(forms_state[k_it196].get(entry, 0) for entry in ['4', '14', '16_a', '20', '29', '30', '37'])
+            self.d[1] = line1
+            self.d[2] = line2
+            if line1 <= line2:
+                summary_info[f"{self.key} 10 Total itemized deductions"] = self.d[1]
+                Form(k_it196, get_existing=True).push_to_dict('40', self.d[1])
+                return
+            self.d[3] = self.d[1] - self.d[2]
+            self.d[4] = self.d[3] * 0.80
+            self.d[5] = forms_state[k_it201]['19']  # federal AGI
+            self.d[6] = 330_200  # single
+            if self.d[6] >= self.d[5]:
+                summary_info[f"{self.key} 10 Total itemized deductions"] = self.d[1]
+                Form(k_it196, get_existing=True).push_to_dict('40', self.d[1])
+                return
+            self.d[7] = self.d[5] - self.d[6]
+            self.d[8] = self.d[7] * 0.03
+            self.d[9] = min(self.d[4], self.d[8])
+            self.d[10] = max(0., self.d[1] - self.d[9])
+            summary_info[f"{self.key} 10 Total itemized deductions"] = self.d[10]
+            Form(k_it196, get_existing=True).push_to_dict('40', self.d[10])
+
+    class NYLine41ItemizedDeductionsSubtractionsWorksheet(Worksheet):
+        def __init__(self):
+            Worksheet.__init__(self, w_ny_line41_itemized_deductions_subtractions, 11)
+
+        def build(self):
+            federal_agi = forms_state[k_it201]['19']  # federal AGI
+            taxes_paid = forms_state[k_it196]['9']
+            if federal_agi <= 330_200:
+                Form(k_it196, get_existing=True).push_to_dict('41', taxes_paid)
+                return
+
+            # self.push_to_dict('41', state_tax + local_tax)
+            # ny_agi = forms_state[k_it201]['33']
+            self.d[1] = worksheets[w_ny_line40_itemized_deductions][9]
+            self.d[2] = worksheets[w_ny_line40_itemized_deductions][3]
+            self.d[3] = round(self.d[1] / self.d[2], 4)
+            self.d[4] = taxes_paid
+            self.d[5] = 0  # B,C
+            self.d[6] = self.d[4] + self.d[5]
+            self.d[7] = self.d[3] * self.d[6]
+            self.d[8] = self.d[6] - self.d[7]
+            self.d[9] = 0  # D,E
+            self.d[10] = 0  # long-term care
+            self.d[11] = self.d[8] + self.d[9] + self.d[10]
+            summary_info[f"{self.key} NY Worksheet2 Line 41 - Itemized Deduction Subtractions"] = self.d[11]
+            Form(k_it196, get_existing=True).push_to_dict('41', self.d[11])
+
+    class NYLine46ItemizedDeductionsAdjustmentWorksheet(Worksheet):
+        def __init__(self):
+            Worksheet.__init__(self, w_ny_line46_itemized_deduction_adjustments, 7)
+
+        def build(self):
+            ny_agi = forms_state[k_it201]['33']
+            # worksheet 3
+            self.d[1] = ny_agi
+            self.d[2] = 100_000  # single
+            self.d[3] = self.d[1] - self.d[2]
+            self.d[4] = min(self.d[3], 50_000)
+            self.d[5] = round(self.d[4] / 50_000, 4)
+            self.d[6] = forms_state[k_it196]['45'] * 0.25
+            self.d[7] = self.d[5] * self.d[6]
+            summary_info[f"{self.key} NY Worksheet3 Line 46 - Itemized Deduction Adjustment"] = self.d[7]
+            Form(k_it196, get_existing=True).push_to_dict('46', self.d[7])
+
+    state_form = FormIT201()
+
     if d['resident']:
         Form1040().build()  # one other version for NR
     else:
         logger.error("Non-resident not yet implemented")
         # Form1040NR().build()  # one other version for NR
-    FormIT201().build()
+
+    state_form.build()  # asynchronous for US Treasury Interest
+
+    # forms_state[k_1040]['married_filling_separately'] = True
 
     return forms_state, worksheets, summary_info

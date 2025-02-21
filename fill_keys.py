@@ -484,10 +484,10 @@ def fill_fields_files():
                         f.write("qualifying_name\n")
                     elif year_folder in ["2024"]:
                         f.write("single\n")
-                        # f.write("married_filling_jointly\n")
-                        f.write("head_of_household\n")
+                        f.write("married_filling_jointly\n")
+                        # f.write("head_of_household\n") -> same as single
                         f.write("married_filling_separately\n")
-                        # f.write("qualifying_widower\n")
+                        # f.write("qualifying_widower\n") -> same as jointly
                         f.write("qualifying_name\n")
                         f.write("alien\n")
                         f.write("alien_name\n")
@@ -829,6 +829,25 @@ def fill_fields_files():
                 f.write("ssn\n")
                 for i in range(1, 25):
                     f.write(f"{i}\n")
+            elif "it196_fill_in" in u:
+                # ssn and tick boxes are not marked
+                f.write("name\n")
+                for i in range(1, 8):
+                    f.write(f"{i}\n")
+                f.write(f"8 a b\n")
+                for i in range(8, 11):
+                    f.write(f"{i}\n")
+                f.write(f"11 a b\n")
+                for i in range(11, 13):
+                    f.write(f"{i}\n")
+                for i in range(14, 16):
+                    f.write(f"{i}\n")
+                f.write(f"16_a\n")
+                for i in range(16, 24):
+                    f.write(f"{i}\n")
+                f.write(f"24 a b\n")
+                for i in range(24, 50):
+                    f.write(f"{i}\n")
             else:
                 logger.error("Fields File not defined %s", u)
 
@@ -844,7 +863,9 @@ def build_keys(file, keys_name, keys_orig):
             try:
                 for command in f:
                     if " " not in command:
+                        # logger.error(command)
                         u = next(it)
+                        # logger.error(u)
                         u = command.strip(), u[1], u[2]
                         out.write("\t\t".join(u) + "\n")
                     else:

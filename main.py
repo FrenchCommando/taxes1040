@@ -32,7 +32,9 @@ import utils.forms_clean
 
 
 def main():
-    for form_filing_year in ["2023", "2024"]:
+    for form_filing_year in [
+        "2023", "2024",
+    ]:
         key_matcher.year_folder = form_filing_year
         key_matcher.main()
         fill_keys.year_folder = form_filing_year
@@ -43,7 +45,9 @@ def main():
 
     fill_taxes.main()
 
-    for form_filing_year in ["2023", "2024"]:
+    for form_filing_year in [
+        "2023", "2024",
+    ]:
         utils.forms_clean.clean(form_filing_year)
 
 

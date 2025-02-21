@@ -1,5 +1,7 @@
 import os
 import json
+
+from utils.form_worksheet_names import k_it201
 from utils.forms_constants import *
 from utils.forms_utils import fill_pdf_from_keys, logging, process_logger, map_folders, load_keys, output_pdf_folder
 from pdfrw import PdfReader, PdfWriter
@@ -24,7 +26,7 @@ def fill_pdfs(forms_state, forms_year_folder):
 
     all_out_files = []
     for f, d_contents in forms_state.items():
-        if not f.startswith("Federal"):
+        if f in [k_it201]:
             continue
         d_mapping = load_keys(os.path.join(form_year_folder, f + keys_extension))
 
@@ -151,9 +153,9 @@ def main():
     save_json(data=states2023, out="data" + "2023" + json_extension)
     save_json(data=worksheets_2023, out="worksheet" + "2023" + json_extension)
     save_json(data=summary_2023, out="summary" + "2023" + json_extension)
-    # pdf_files2023 = fill_pdfs(states2023, "2023")
-    # outfile2023 = "forms" + "2023" + pdf_extension
-    # merge_pdfs(pdf_files2023, outfile2023)
+    pdf_files2023 = fill_pdfs(states2023, "2023")
+    outfile2023 = "forms" + "2023" + pdf_extension
+    merge_pdfs(pdf_files2023, outfile2023)
 
     data2024 = gather_inputs(input_year_folder="2024")
     states2024, worksheets_2024, summary_2024 = fill_taxes_2024(d=data2024, output_2023=(states2023, worksheets_2023))

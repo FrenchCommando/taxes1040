@@ -13,6 +13,7 @@ k_8949 = 'Federal/f8949'
 k_8959 = 'Federal/f8959'
 
 k_it201 = 'ny/it201'
+k_it196 = 'ny/it196_fill_in'
 
 
 w_simplified_method = 'SimplifiedMethod'  # for 4a, 4b
@@ -40,3 +41,8 @@ w_capital_loss_carryover = 'CapitalLossCarryover'  # line 6 - 14
 w_28pc_rate_gain = '28pc_rate_gain'  # line 18
 w_unrecaptured_section_1250_gain = 'UnrecapturedSection1250Gain'  # line 19
 w_schedule_d_tax = 'ScheduleDTax'
+
+# NY line 40 itemized deductions
+w_ny_line40_itemized_deductions = 'NYLine40ItemizedDeductions'
+w_ny_line41_itemized_deductions_subtractions = 'NYLine41ItemizedDeductionsSubtractions'
+w_ny_line46_itemized_deduction_adjustments = 'NYLine46ItemizedDeductionsAdjustments'

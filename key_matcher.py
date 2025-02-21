@@ -45,7 +45,10 @@ def process_pdf(file):
 def process_all():
     forms_year_folder = os.path.join(forms_folder, year_folder)
     for u in glob.glob(os.path.join(forms_year_folder, "*", "", "*")):
-        if os.path.splitext(u)[1] == pdf_extension and os.path.basename(u).startswith("f"):
+        if (
+                os.path.splitext(u)[1] == pdf_extension and os.path.basename(u).startswith("f")
+                or os.path.basename(u) in ['it196_fill_in.pdf']
+        ):
             logger.info("Processing file %s", u)
             process_pdf(u)
         else:

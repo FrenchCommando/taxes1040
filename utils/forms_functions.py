@@ -185,6 +185,21 @@ def computation_2024_ny(amount):
         return 449_929 + (amount - 5_000_000) * 0.10_30
     return 2_509_929 + (amount - 25_000_000) * 0.10_90
 
+
+def computation_2024_ny_recapture(amount, gross):
+    # single and married filling separately
+    if amount <= 107_650:
+        return 0
+    if amount <= 215_400:
+        tax = computation_2024_ny(amount=amount)
+        if gross >= 157_650:
+            return 0.06 * amount - tax
+        return (0.06 * amount - tax) * round((gross - 107_650) / 50_000, 4)
+    if amount <= 1_077_550:
+        return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
+    raise ValueError("Too bored to implement it - computation_2024_ny_recapture")
+
+
 def computation_2024_nyc(amount):
     # looks like it didn't change from previous year
     # but was the wrong table
