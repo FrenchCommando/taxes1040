@@ -58,7 +58,8 @@ def save_json(data, out):
 
 def gather_inputs(input_year_folder):
     input_folder = os.path.join("input_data", input_year_folder)
-    j = json.load(open(os.path.join(input_folder, 'input.json'), 'rb'))
+    with open(os.path.join(input_folder, 'input.json'), 'rb') as file_reader:
+        j = json.load(file_reader)
 
     additional_info = {
         'single': True,  # if you're not single too bad for you
