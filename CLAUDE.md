@@ -25,15 +25,26 @@ python main.py
 ```
 
 The entry point is `main.py`. It runs three stages:
-1. **Key matching** (`key_matcher.py`) — extracts PDF annotation field names from blank IRS forms, generates `.keys` mapping files
-2. **Field filling** (`fill_keys.py`) — first creates empty `.fields` files for every `.keys` file (via `create_empty_fields()`, using exclusive-create mode `'x'` to skip existing files), then `fill_fields_files()` overwrites the known ones with actual human-readable field definitions. This ensures every form has a `.fields` file even if `fill_fields_files()` doesn't handle it yet.
-3. **Tax computation** (`fill_taxes.py`) — reads input data, computes taxes, fills PDFs, outputs JSON
+1. **Key matching** (`key_matcher.py`) — opens each blank IRS PDF, iterates over annotation widgets, and produces raw `.keys` files in `key_mapping/` mapping each annotation name to a sequential integer index and its type (`/Tx` text or `/Btn` checkbox). Also generates debug PDFs with integers filled in so you can visually identify which index corresponds to which box.
+2. **Field filling** (`fill_keys.py`) — a build-time step that rewrites the `.keys` files, replacing integer indices with human-readable names:
+   - `create_empty_fields()` creates a blank `.fields` file for every `.keys` file (exclusive-create mode `'x'` to skip existing)
+   - `fill_fields_files()` writes human-readable field definitions into each `.fields` file, form by form. Each line is a positional format: a single word (e.g. `single`) names the next annotation; a multi-word line (e.g. `self first_name_initial last_name ssn`) names the next N annotations with `prefix_suffix` keys
+   - `build_keys()` walks the `.fields` file and original `.keys` file in parallel via an iterator, producing a new `.keys` file where the integer index column is replaced by the human-readable name
+   - `move_keys_to_parent()` moves the rewritten `.keys` files into `forms/{year}/` alongside the PDFs, where they are consumed at tax-fill time
+3. **Tax computation** (`fill_taxes.py`) — reads input data, computes taxes, fills PDFs, outputs JSON. The `fill_pdfs()` function reads the final `.keys` files (`annotation_name → human_readable_name, type`) and joins them with `forms_state` (keyed by human-readable names) to write values into the PDF annotations.
 
 Edit `main.py` to select which tax years to process. Edit `fill_taxes.py:main()` to control which year computations run (uncomment/comment year blocks).
 
 ## Architecture
 
-**Pipeline flow:** `forms/{year}/` (blank PDFs) → `key_mapping/` → `fields_mapping/` → `output/{year}/` (filled PDFs)
+**Pipeline flow:** `forms/{year}/` (blank PDFs) → `key_mapping/` (raw `.keys` with integer indices) → `fields_mapping/` (`.fields` definitions rewrite `.keys` with human-readable names) → rewritten `.keys` moved back to `forms/{year}/` → `output/{year}/` (filled PDFs)
+
+**PDF generation happens at three stages:**
+1. **Debug PDF (integer indices)** — `key_matcher.py` fills each blank PDF with sequential integers and writes it to `key_mapping/{year}/`. Used to visually identify which integer index maps to which box on the form.
+2. **Debug PDF (human-readable names)** — `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct.
+3. **Final output PDFs** — `fill_taxes.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name → human_readable_name` with `forms_state[human_readable_name] → computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `forms{year}.pdf`.
+
+Debug PDFs from stages 1 and 2 are cleaned up by `utils/forms_clean.py` after processing.
 
 **Core computation:** Each tax year has its own `utils/forms_core_{year}.py` containing a single `fill_taxes_{year}(d, output_prev=None)` function. These are large monolithic functions (~1500+ lines) that compute every form line by line. They use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
 

@@ -33,7 +33,7 @@ import utils.forms_clean
 
 def main():
     for form_filing_year in [
-        "2023", "2024",
+        "2023", "2024", "2025",
     ]:
         key_matcher.year_folder = form_filing_year
         key_matcher.main()
@@ -43,10 +43,10 @@ def main():
     for input_filing_year in []:
         input_data.build_json.build_input(year_folder=input_filing_year)
 
-    fill_taxes.main()
+    # fill_taxes.main()
 
     for form_filing_year in [
-        "2023", "2024",
+        "2023", "2024", "2025",
     ]:
         utils.forms_clean.clean(form_filing_year)
 

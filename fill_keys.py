@@ -42,7 +42,7 @@ def fill_fields_files():
     if year_folder == "2018":
         dollar_cents = " dollar cents"
         payer_dollar_cents = " payer" + dollar_cents
-    elif year_folder in ["2019", "2020", "2021", "2022", "2023", "2024"]:
+    elif year_folder in ["2019", "2020", "2021", "2022", "2023", "2024", "2025"]:
         payer_dollar_cents = " payer value"
         dollar_cents = " value"
     else:
@@ -457,7 +457,7 @@ def fill_fields_files():
                     f.write("firm_phone\n")
                     f.write("firm_address\n")
                     f.write("firm_ein\n")
-                elif year_folder in ["2023", "2024"]:
+                elif year_folder in ["2023", "2024", "2025"]:
                     f.write("beginning\n")
                     f.write("ending\n")
                     f.write("end_year\n")
