@@ -3,3 +3,7 @@
 *__pycache__/
 /main.spec
 *.log
+# generated PDFs (not diffable - JSON outputs are tracked instead)
+/output/
+# merged output PDFs at repo root - leading / anchors to root, * does not match /
+/forms*.pdf
