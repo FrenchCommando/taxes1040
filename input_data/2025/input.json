@@ -3,17 +3,17 @@
         {
             "Payments": [
                 {
-                    "Date": "2024/09/18",
+                    "Date": "2025/09/18",
                     "InterestAmount": 2000,
                     "PrincipalAmount": 0
                 },
                 {
-                    "Date": "2024/11/1",
+                    "Date": "2025/11/1",
                     "InterestAmount": 5000,
                     "PrincipalAmount": 800
                 },
                 {
-                    "Date": "2024/12/1",
+                    "Date": "2025/12/1",
                     "InterestAmount": 5000,
                     "PrincipalAmount": 800
                 }
@@ -65,8 +65,8 @@
                 {
                     "SalesDescription": "SOME ETF",
                     "Shares": "500",
-                    "DateAcquired": "2024/04/15",
-                    "DateSold": "2024/07/20",
+                    "DateAcquired": "2025/04/15",
+                    "DateSold": "2025/07/20",
                     "WashSaleCode": "",
                     "Proceeds": 36000,
                     "Cost": 26000,
@@ -91,8 +91,8 @@
                 {
                     "SalesDescription": "CRYPTO DOLLAR",
                     "Shares": 50000,
-                    "DateAcquired": "2022/01/01",
-                    "DateSold": "2024/07/04",
+                    "DateAcquired": "2023/01/01",
+                    "DateSold": "2025/07/04",
                     "WashSaleCode": "",
                     "Proceeds": 50000,
                     "Cost": 50000,
@@ -134,17 +134,17 @@
     "EstimatedIncomeTax": {
         "Federal": [
            {
-                "Date": "2024/01/28",
+                "Date": "2025/01/28",
                 "Amount": 5000.00
            },
            {
-                "Date": "2024/10/09",
+                "Date": "2025/10/09",
                 "Amount": 10000.00
            }
         ],
         "State": [
            {
-                "Date": "2024/10/07",
+                "Date": "2025/10/07",
                 "Amount": 4000.00
            }
         ]
