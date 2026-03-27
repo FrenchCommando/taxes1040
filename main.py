@@ -26,7 +26,12 @@
 
 import fill_taxes
 
-all_years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"]
+all_years = [
+    # "2018", "2019", "2020", "2021", "2022",
+    "2023",
+    "2024",
+    "2025",
+]
 dev_mode = True
 # dev_mode = False
 
@@ -44,14 +49,14 @@ def dev():
         fill_keys.main()
     from utils.forms_constants import key_mapping_folder, fields_mapping_folder
     shutil.rmtree(key_mapping_folder)
-    # for pdf_file_name in glob.glob(os.path.join(fields_mapping_folder, "**", "*.pdf"), recursive=True):
-    #     os.remove(pdf_file_name)
+    for pdf_file_name in glob.glob(os.path.join(fields_mapping_folder, "**", "*.pdf"), recursive=True):
+        os.remove(pdf_file_name)
 
 
 def main():
     if dev_mode:
         dev()
-    fill_taxes.main()
+    # fill_taxes.main()
 
 
 if __name__ == '__main__':

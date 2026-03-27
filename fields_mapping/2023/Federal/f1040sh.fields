@@ -1,0 +1,39 @@
+name
+ssn
+identification
+a y n
+b y n
+c y n
+1 a b
+2 a b c
+3
+4
+5
+6
+7
+8 a b c d e f g h i j k l m n
+9 n y
+10 y n
+11 y n
+12 y n
+13
+14
+15
+16
+17_1 a b c_from c_to d e f g h
+17_2 a b c_from c_to d e f g h
+18 g h
+19
+20
+21
+22
+23 check value
+24
+25
+26
+27 y n
+address
+apt
+city
+preparer name check ptin
+firm name address ein phone
