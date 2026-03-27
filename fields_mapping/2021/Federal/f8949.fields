@@ -1,0 +1,36 @@
+I_name
+I_ssn
+short a b c
+I_1_1 description date_acq date_sold proceeds cost code adjustment gain
+I_1_2 description date_acq date_sold proceeds cost code adjustment gain
+I_1_3 description date_acq date_sold proceeds cost code adjustment gain
+I_1_4 description date_acq date_sold proceeds cost code adjustment gain
+I_1_5 description date_acq date_sold proceeds cost code adjustment gain
+I_1_6 description date_acq date_sold proceeds cost code adjustment gain
+I_1_7 description date_acq date_sold proceeds cost code adjustment gain
+I_1_8 description date_acq date_sold proceeds cost code adjustment gain
+I_1_9 description date_acq date_sold proceeds cost code adjustment gain
+I_1_10 description date_acq date_sold proceeds cost code adjustment gain
+I_1_11 description date_acq date_sold proceeds cost code adjustment gain
+I_1_12 description date_acq date_sold proceeds cost code adjustment gain
+I_1_13 description date_acq date_sold proceeds cost code adjustment gain
+I_1_14 description date_acq date_sold proceeds cost code adjustment gain
+I_2 proceeds cost code adjustment gain
+II_name
+II_ssn
+long d e f
+II_1_1 description date_acq date_sold proceeds cost code adjustment gain
+II_1_2 description date_acq date_sold proceeds cost code adjustment gain
+II_1_3 description date_acq date_sold proceeds cost code adjustment gain
+II_1_4 description date_acq date_sold proceeds cost code adjustment gain
+II_1_5 description date_acq date_sold proceeds cost code adjustment gain
+II_1_6 description date_acq date_sold proceeds cost code adjustment gain
+II_1_7 description date_acq date_sold proceeds cost code adjustment gain
+II_1_8 description date_acq date_sold proceeds cost code adjustment gain
+II_1_9 description date_acq date_sold proceeds cost code adjustment gain
+II_1_10 description date_acq date_sold proceeds cost code adjustment gain
+II_1_11 description date_acq date_sold proceeds cost code adjustment gain
+II_1_12 description date_acq date_sold proceeds cost code adjustment gain
+II_1_13 description date_acq date_sold proceeds cost code adjustment gain
+II_1_14 description date_acq date_sold proceeds cost code adjustment gain
+II_2 proceeds cost code adjustment gain

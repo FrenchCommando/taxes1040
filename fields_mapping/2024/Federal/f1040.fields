@@ -1,0 +1,82 @@
+beginning
+ending
+end_year
+self first_name_initial last_name ssn
+spouse first_name_initial last_name ssn
+address
+apt
+city
+state
+zip
+foreign country province postal
+presidential_election self spouse
+single
+married_filling_jointly
+married_filling_separately
+qualifying_name
+alien
+alien_name
+virtual_currency y n
+can_be_claimed_as_dependent self spouse
+spouse_itemizes_on_separate_or_dual_status_alien
+self born_before_19560102 blind
+spouse born_before_19560102 blind
+more_than_four_dependents
+dependent_1 first_last ssn relationship child_tax_credit credit_for_other_dependent
+dependent_2 first_last ssn relationship child_tax_credit credit_for_other_dependent
+dependent_3 first_last ssn relationship child_tax_credit credit_for_other_dependent
+dependent_4 first_last ssn relationship child_tax_credit credit_for_other_dependent
+1 a b c d e f g h i z
+2 a b
+3 a b
+4 a b
+5 a b
+6 a b c
+7 n value
+8
+9
+10
+11
+12
+13
+14
+15
+16 1 2 3 3_value
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25 a b c d
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35a 8888 value
+35b
+35c checking savings
+35d
+36
+37
+38
+other_designee y n name phone pin
+self occupation identity_protection_pin
+spouse occupation identity_protection_pin
+phone
+email
+preparer_name
+ptin
+self_employed
+firm_name
+firm_phone
+firm_address
+firm_ein

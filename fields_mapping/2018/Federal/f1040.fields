@@ -1,0 +1,70 @@
+single
+married_filling_jointly
+married_filling_separately
+head_of_household
+qualifying_widower
+qualifying_widower_name
+self first_name_initial last_name ssn
+self can_be_claimed_as_dependent_y born_before_19540102_y blind
+spouse first_name_initial last_name ssn
+spouse can_be_claimed_as_dependent_y born_before_19540102_y blind
+spouse_itemizes_on_separate_or_dual_status_alien
+address
+apt
+city_state_zip
+full_year_health_coverage_or_exempt
+presidential_election self spouse
+more_than_four_dependents
+dependent_1 first_last ssn relationship child_tax_credit credit_for_other_dependent
+dependent_2 first_last ssn relationship child_tax_credit credit_for_other_dependent
+dependent_3 first_last ssn relationship child_tax_credit credit_for_other_dependent
+dependent_4 first_last ssn relationship child_tax_credit credit_for_other_dependent
+self occupation identity_protection_pin
+spouse occupation identity_protection_pin
+preparer_name
+ptin
+firm_ein
+firm_name
+firm_phone
+third_party_designee
+self_employed
+firm_address
+1 dollar cents
+2a dollar cents
+2b dollar cents
+3a dollar cents
+3b dollar cents
+4a dollar cents
+4b dollar cents
+5a dollar cents
+5b dollar cents
+6_from_s1_22
+6 dollar cents
+7 dollar cents
+8 dollar cents
+9 dollar cents
+10 dollar cents
+11a tax 1 2 3 3_value
+11b
+11 dollar cents
+12a
+12b
+12 dollar cents
+13 dollar cents
+14 dollar cents
+15 dollar cents
+16 dollar cents
+17a
+17b
+17c
+17_from_5
+17 dollar cents
+18 dollar cents
+19 dollar cents
+20a 8888 dollar cents
+20b
+20c checking savings
+20d
+21 dollar cents
+22 dollar cents
+23 dollar cents
