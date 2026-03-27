@@ -7,3 +7,7 @@
 /output/
 # merged output PDFs at repo root - leading / anchors to root, * does not match /
 /forms*.pdf
+# intermediate key_mapping (raw .keys + integer debug PDFs)
+/key_mapping/
+# debug PDFs in fields_mapping (field-name overlays for visual verification)
+fields_mapping/**/*.pdf
