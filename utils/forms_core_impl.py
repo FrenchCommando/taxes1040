@@ -53,7 +53,7 @@ def fill_taxes(d, output_prev, config):
                 F=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
             ),
         )  # from 8949 to fill 1040sd
-        foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
+        foreign_tax = sum(i.get('Foreign Tax Paid', 0) for i in d['1099'])
 
     standard_deduction = config['standard_deduction']
     qualified_business_deduction = 0

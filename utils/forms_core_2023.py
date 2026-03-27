@@ -44,7 +44,7 @@ def fill_taxes_2023(d, output_2022=None):
                 F=dict(Proceeds=0, Cost=0, Adjustment=0, Gain=0),
             ),
         )  # from 8949 to fill 1040sd
-        foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
+        foreign_tax = sum(i.get('Foreign Tax Paid', 0) for i in d['1099'])
 
     standard_deduction = 13850  # if single or married filing separately
     qualified_business_deduction = 0
