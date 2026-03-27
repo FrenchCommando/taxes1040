@@ -41,7 +41,7 @@ The entry point is `main.py` with two modes:
 ### Tax computation (`fill_taxes.py`)
 Reads input data, computes taxes, fills PDFs, outputs JSON. The `fill_pdfs()` function reads the final `.keys` files (`annotation_name → human_readable_name, type`) and joins them with `forms_state` (keyed by human-readable names) to write values into the PDF annotations.
 
-Edit the `all_years` list in `main.py` to control which year computations run.
+The `all_years` list in `main.py` controls which years dev mode processes (key regeneration). The actual tax computations are controlled by commenting/uncommenting year blocks in `fill_taxes.py:main()`.
 
 ## Architecture
 
@@ -78,12 +78,12 @@ Edit the `all_years` list in `main.py` to control which year computations run.
 3. Place blank IRS PDF forms in `forms/{year}/Federal/` (and `forms/{year}/ny/` for NY)
 4. Create `.fields` files in `fields_mapping/{year}/` for each new form
 5. Create `input_data/{year}/input.json` with that year's financial data
-6. Add the new year to the `all_years` list in `main.py` and import the new `fill_taxes_{year}` in `fill_taxes.py`
+6. Add the new year to `all_years` in `main.py` (for dev mode) and add a computation block in `fill_taxes.py:main()`
 7. Add form name constants to `utils/form_worksheet_names.py` if new forms are needed
 
 ## Important Caveats
 
 - Tax tables (for taxable income under ~$100k) are not parsed; bracket-based computation is used instead
 - Currently configured for **single filer, no dependents, resident**
-- NY state forms are "enhanced" and can't be filled directly; the code computes NY values for JSON output only
+- NY IT-196 (itemized deductions) has `.fields`/`.keys` mappings and PDF filling for 2024–2025. Other NY forms (IT-201, IT-2) are "enhanced" PDFs that can't be filled directly; the code computes NY values for JSON output only
 - Intermediate artifacts are gitignored: `key_mapping/` (raw `.keys` with integer indices, regenerated from blank PDFs each `--dev` run) and debug PDFs in `fields_mapping/`. The final `.keys` with human-readable names live in `forms/{year}/` and are committed.
