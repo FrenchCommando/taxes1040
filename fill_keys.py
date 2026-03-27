@@ -14,26 +14,28 @@ def build_keys(file, keys_name, keys_orig):
     # key_name is the new keys file to be created and overridden
     with open(keys_name, "w+") as out:
         with open(file, 'r') as f:
-            d = load_keys(keys_orig, out_dict=False)
-            it = iter(d)
+            it_keys = iter(load_keys(keys_orig, out_dict=False))
+            command, u = "", ""
             try:
                 for command in f:
                     if " " not in command:
-                        # logger.error(command)
-                        u = next(it)
-                        # logger.error(u)
+                        u = next(it_keys)
                         u = command.strip(), u[1], u[2]
                         out.write("\t\t".join(u) + "\n")
                     else:
                         c = command.strip().split(" ")
                         columns = c[1:]
                         for j in columns:
-                            u = next(it)
+                            u = next(it_keys)
                             n = c[0] + "_" + j
                             u = n, u[1], u[2]
                             out.write("\t\t".join(u) + "\n")
             except StopIteration as e:
-                logger.error("Key iteration stopped %s %s %s", e, keys_name, file)
+                logger.error("Key iteration stopped - too many fields - %s %s %s %s %s", e, keys_name, file, command, u)
+            rest = list(it_keys)
+            if rest:
+                logger.error("Unread keys - %s %s %s %s %s", keys_name, file, rest, command, u)
+
 
 
 def process_fields(file):

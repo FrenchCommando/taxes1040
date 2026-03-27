@@ -1,6 +1,6 @@
 name
 ssn
-1
+1 a b c d e_i e_ii e_iii e_iv e_value f_i f_ii f_iii f_iv f_value y_line y_value z
 2
 3
 4
@@ -16,7 +16,7 @@ ssn
 14
 15
 16
-17 a_value a b c d e f g h i j k l m n o p q z_type1 z_type2 z_amount
+17 a_type a_value b c d e f g h i j k l m n o p q z_type1 z_type2 z_amount
 18
 19
 20
