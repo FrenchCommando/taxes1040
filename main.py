@@ -27,10 +27,12 @@
 import fill_taxes
 
 all_years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024"]
-dev_mode = False
+dev_mode = True
+# dev_mode = False
 
 
 def dev():
+    import shutil
     import key_matcher
     import fill_keys
     for form_filing_year in all_years:
@@ -38,6 +40,8 @@ def dev():
         key_matcher.main()
         fill_keys.year_folder = form_filing_year
         fill_keys.main()
+    from utils.forms_constants import key_mapping_folder
+    shutil.rmtree(key_mapping_folder)
 
 
 def main():
