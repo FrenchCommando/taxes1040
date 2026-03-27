@@ -33,7 +33,7 @@ def build_keys(file, keys_name, keys_orig):
                             u = n, u[1], u[2]
                             out.write("\t\t".join(u) + "\n")
             except StopIteration as e:
-                logger.error("Key iteration stopped", e)
+                logger.error("Key iteration stopped %s %s %s", e, keys_name, file)
 
 
 def process_fields(file):

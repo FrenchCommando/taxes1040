@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#    Copyright (C) 2025 FrenchCommando
+#    Copyright (C) 2026 FrenchCommando
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 import fill_taxes
 
-all_years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024"]
+all_years = ["2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"]
 dev_mode = True
 # dev_mode = False
 
@@ -44,8 +44,8 @@ def dev():
         fill_keys.main()
     from utils.forms_constants import key_mapping_folder, fields_mapping_folder
     shutil.rmtree(key_mapping_folder)
-    for pdf_file_name in glob.glob(os.path.join(fields_mapping_folder, "**", "*.pdf"), recursive=True):
-        os.remove(pdf_file_name)
+    # for pdf_file_name in glob.glob(os.path.join(fields_mapping_folder, "**", "*.pdf"), recursive=True):
+    #     os.remove(pdf_file_name)
 
 
 def main():
