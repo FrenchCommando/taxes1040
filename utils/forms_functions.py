@@ -197,7 +197,11 @@ def computation_2024_ny_recapture(amount, gross):
         return (0.06 * amount - tax) * round((gross - 107_650) / 50_000, 4)
     if amount <= 1_077_550:
         return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
-    raise ValueError("Too bored to implement it - computation_2024_ny_recapture")
+    if amount <= 5_000_000:
+        return 2_399 + 30_171 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
+    if amount <= 25_000_000:
+        return 32_570 + 32_501 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
+    return 65_071 + 150_000 * round(min(50_000, gross - 25_000_000) / 50_000, 4)
 
 
 def computation_2024_nyc(amount):
@@ -258,7 +262,11 @@ def computation_2025_ny_recapture(amount, gross):
         return (0.06 * amount - tax) * round((gross - 107_650) / 50_000, 4)
     if amount <= 1_077_550:
         return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
-    raise ValueError("Too bored to implement it - computation_2025_ny_recapture")
+    if amount <= 5_000_000:
+        return 2_399 + 30_171 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
+    if amount <= 25_000_000:
+        return 32_570 + 32_501 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
+    return 65_071 + 150_000 * round(min(50_000, gross - 25_000_000) / 50_000, 4)
 
 
 def computation_2025_nyc(amount):
