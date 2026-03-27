@@ -1,0 +1,103 @@
+beginning
+ending
+end_year
+filed_301
+combat check value
+deceased check mm dd yyyy spouse_mm spouse_dd spouse_yyyy
+other check 1 2 3
+self first_name_initial last_name ssn
+spouse first_name_initial last_name ssn
+address
+apt
+city
+state
+zip
+foreign country province postal
+home_us
+presidential_election self spouse
+single
+married_filling_jointly
+married_filling_separately
+qualifying_name
+child_name
+alien
+alien_name
+virtual_currency y n
+more_than_four_dependents
+first 1 2 3 4
+last 1 2 3 4
+ssn 1 2 3 4
+relationship 1 2 3 4
+lived 1 2 3 4
+lived_us 1 2 3 4
+full_time_student_1
+disabled_1
+full_time_student_2
+disabled_2
+full_time_student_3
+disabled_3
+full_time_student_4
+disabled_4
+child_tax_credit_1
+credit_other_dependents_1
+child_tax_credit_2
+credit_other_dependents_2
+child_tax_credit_3
+credit_other_dependents_3
+child_tax_credit_4
+credit_other_dependents_4
+mfs_hoh_lived_apart
+1 a b c d e f g h_type h_amount i z
+2 a b
+3 a b c1 c2
+4 a b c1 c2 c3 c3_value
+5 a b c1 c2 c3 c3_value
+6 a b c d
+7 a b_d b_child b_child_value
+8
+9
+10
+11 a b
+12 a_you a_spouse b c d_you_born d_you_blind d_spouse_born d_spouse_blind e
+13 a b
+14
+15
+16 1 2 3 3_value
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25 a b c d
+26 value ssn
+27 a b c
+28 actc value
+29
+30
+31
+32
+33
+34
+35a 8888 value
+35b
+35c checking savings
+35d
+36
+37
+38
+other_designee y n name phone pin
+self occupation identity_protection_pin
+spouse occupation identity_protection_pin
+phone
+email
+preparer_name
+ptin
+self_employed
+firm_name
+firm_phone
+firm_address
+firm_ein
