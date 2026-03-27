@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Does
 
-Python tool that computes and fills IRS Form 1040 and related federal/state tax forms (2018–2024). 
+Python tool that computes and fills IRS Form 1040 and related federal/state tax forms (2018–2025). 
 It reads financial input data (W2, 1099, 1098), performs tax computations, and outputs filled PDF forms plus JSON summaries.
 
 Inputs: the initial version was parsing raw `pdf`/`xml`/`csv` files - a lot of wasted energy - now inputs are `json` filled by the user
@@ -28,7 +28,7 @@ python main.py
 
 The entry point is `main.py` with two modes:
 - **Default** (`dev_mode = False`) — runs `fill_taxes.main()` only (tax computation, PDF filling, JSON output)
-- **Dev mode** (`dev_mode = True`) — first regenerates `.keys` files from `.fields` mappings, then runs tax computation. Use when adding a new form PDF, editing a `.fields` file, or adding a new tax year.
+- **Dev mode** (`dev_mode = True`) — first regenerates `.keys` files from `.fields` mappings for each year in `all_years`, cleans up intermediate artifacts (`key_mapping/` folder and debug PDFs), then runs tax computation. Use when adding a new form PDF, editing a `.fields` file, or adding a new tax year.
 
 ### Dev mode pipeline
 1. **Key matching** (`key_matcher.py`) — opens each blank IRS PDF, iterates over annotation widgets, and produces raw `.keys` files in `key_mapping/` mapping each annotation name to a sequential integer index and its type (`/Tx` text or `/Btn` checkbox). Also generates debug PDFs with integers filled in so you can visually identify which index corresponds to which box.
@@ -41,7 +41,7 @@ The entry point is `main.py` with two modes:
 ### Tax computation (`fill_taxes.py`)
 Reads input data, computes taxes, fills PDFs, outputs JSON. The `fill_pdfs()` function reads the final `.keys` files (`annotation_name → human_readable_name, type`) and joins them with `forms_state` (keyed by human-readable names) to write values into the PDF annotations.
 
-Edit `fill_taxes.py:main()` to control which year computations run (uncomment/comment year blocks).
+Edit the `all_years` list in `main.py` to control which year computations run.
 
 ## Architecture
 
@@ -52,13 +52,15 @@ Edit `fill_taxes.py:main()` to control which year computations run (uncomment/co
 2. **Debug PDF (human-readable names)** — `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct. Gitignored.
 3. **Final output PDFs** — `fill_taxes.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name → human_readable_name` with `forms_state[human_readable_name] → computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `forms{year}.pdf`.
 
-**Core computation:** Each tax year has its own `utils/forms_core_{year}.py` containing a single `fill_taxes_{year}(d, output_prev=None)` function. These are large monolithic functions (~1500+ lines) that compute every form line by line. They use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
+**Core computation:** Each tax year has its own `utils/forms_core_{year}.py` containing a single `fill_taxes_{year}(d, output_prev=None)` function. Old years (2018–2023) are large monolithic functions (~1500+ lines) that compute every form line by line. Years 2024+ use thin config wrappers that call `utils/forms_core_impl.py` — the shared implementation — with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
 
 **Key files:**
+- `utils/forms_core_impl.py` — shared tax computation logic for 2024+, parameterized by year-specific config dicts
 - `utils/forms_functions.py` — shared computation helpers (tax bracket calculations per year, `get_main_info`)
 - `utils/forms_constants.py` — PDF annotation constants, folder/extension names, logger setup
 - `utils/forms_utils.py` — PDF read/write via `pdfrw`, key file loading
 - `utils/form_worksheet_names.py` — string constants for form keys (e.g., `k_1040 = 'Federal/f1040'`) and worksheet names
+- `utils/logger.py` — logging configuration helper
 
 **Input:** `input_data/{year}/input.json` — JSON with W2, 1099, 1098 data. Additional personal info (filing status, address, etc.) is hardcoded in `fill_taxes.py:gather_inputs()`.
 
@@ -71,12 +73,13 @@ Edit `fill_taxes.py:main()` to control which year computations run (uncomment/co
 
 ## Adding a New Tax Year
 
-1. Copy the latest `utils/forms_core_{year}.py`, update tax brackets/thresholds/form changes
-2. Add the corresponding computation function to `utils/forms_functions.py` if bracket tables changed
+1. Create `utils/forms_core_{year}.py` as a thin wrapper: define `CONFIG_{year}` with updated constants (standard deduction, AMT thresholds, etc.) and call `forms_core_impl.fill_taxes()`. See `forms_core_2025.py` as a template.
+2. Add the corresponding computation/bracket functions to `utils/forms_functions.py` if bracket tables changed
 3. Place blank IRS PDF forms in `forms/{year}/Federal/` (and `forms/{year}/ny/` for NY)
-4. Create `input_data/{year}/input.json` with that year's financial data
-5. Add the new year to `main.py` loop and uncomment in `fill_taxes.py:main()`
-6. Add form name constants to `utils/form_worksheet_names.py` if new forms are needed
+4. Create `.fields` files in `fields_mapping/{year}/` for each new form
+5. Create `input_data/{year}/input.json` with that year's financial data
+6. Add the new year to the `all_years` list in `main.py` and import the new `fill_taxes_{year}` in `fill_taxes.py`
+7. Add form name constants to `utils/form_worksheet_names.py` if new forms are needed
 
 ## Important Caveats
 
