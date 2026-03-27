@@ -56,7 +56,7 @@ def dev():
 def main():
     if dev_mode:
         dev()
-    # fill_taxes.main()
+    fill_taxes.main()
 
 
 if __name__ == '__main__':

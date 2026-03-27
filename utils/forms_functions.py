@@ -210,3 +210,62 @@ def computation_2024_nyc(amount):
     if amount <= 50_000:
         return 858 + (amount - 25_000) * 0.03_819
     return 1_813 + (amount - 50_000) * 0.03_876
+
+
+def computation_2025(amount):
+    if amount <= 11_925:
+        return amount * 0.10
+    if amount <= 48_475:
+        return 1_192.50 + (amount - 11_925) * 0.12
+    if amount <= 103_350:
+        return 5_578.50 + (amount - 48_475) * 0.22
+    if amount <= 197_300:
+        return 17_651 + (amount - 103_350) * 0.24
+    if amount <= 250_525:
+        return 40_199 + (amount - 197_300) * 0.32
+    if amount <= 626_350:
+        return 57_231 + (amount - 250_525) * 0.35
+    return 188_769.75 + (amount - 626_350) * 0.37
+
+
+def computation_2025_ny(amount):
+    if amount <= 8_500:
+        return amount * 0.04
+    if amount <= 11_700:
+        return 340 + (amount - 8_500) * 0.045
+    if amount <= 13_900:
+        return 484 + (amount - 11_700) * 0.05_25
+    if amount <= 80_650:
+        return 600 + (amount - 13_900) * 0.05_50
+    if amount <= 215_400:
+        return 4_271 + (amount - 80_650) * 0.06
+    if amount <= 1_077_550:
+        return 12_356 + (amount - 215_400) * 0.06_85
+    if amount <= 5_000_000:
+        return 71_413 + (amount - 1_077_550) * 0.09_65
+    if amount <= 25_000_000:
+        return 449_929 + (amount - 5_000_000) * 0.10_30
+    return 2_509_929 + (amount - 25_000_000) * 0.10_90
+
+
+def computation_2025_ny_recapture(amount, gross):
+    if amount <= 107_650:
+        return 0
+    if amount <= 215_400:
+        tax = computation_2025_ny(amount=amount)
+        if gross >= 157_650:
+            return 0.06 * amount - tax
+        return (0.06 * amount - tax) * round((gross - 107_650) / 50_000, 4)
+    if amount <= 1_077_550:
+        return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
+    raise ValueError("Too bored to implement it - computation_2025_ny_recapture")
+
+
+def computation_2025_nyc(amount):
+    if amount <= 12_000:
+        return amount * 0.03_078
+    if amount <= 25_000:
+        return 369 + (amount - 12_000) * 0.03_762
+    if amount <= 50_000:
+        return 858 + (amount - 25_000) * 0.03_819
+    return 1_813 + (amount - 50_000) * 0.03_876

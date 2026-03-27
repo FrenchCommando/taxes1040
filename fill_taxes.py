@@ -13,6 +13,7 @@ from utils.forms_core_2021 import fill_taxes_2021
 from utils.forms_core_2022 import fill_taxes_2022
 from utils.forms_core_2023 import fill_taxes_2023
 from utils.forms_core_2024 import fill_taxes_2024
+from utils.forms_core_2025 import fill_taxes_2025
 
 
 logger = logging.getLogger('fill_taxes')
@@ -166,6 +167,15 @@ def main():
     pdf_files2024 = fill_pdfs(states2024, "2024")
     outfile2024 = "forms" + "2024" + pdf_extension
     merge_pdfs(pdf_files2024, outfile2024)
+
+    data2025 = gather_inputs(input_year_folder="2025")
+    states2025, worksheets_2025, summary_2025 = fill_taxes_2025(d=data2025, output_2024=(states2024, worksheets_2024))
+    save_json(data=states2025, out="data" + "2025" + json_extension)
+    save_json(data=worksheets_2025, out="worksheet" + "2025" + json_extension)
+    save_json(data=summary_2025, out="summary" + "2025" + json_extension)
+    pdf_files2025 = fill_pdfs(states2025, "2025")
+    outfile2025 = "forms" + "2025" + pdf_extension
+    merge_pdfs(pdf_files2025, outfile2025)
 
 
 if __name__ == "__main__":
