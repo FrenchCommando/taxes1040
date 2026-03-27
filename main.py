@@ -32,6 +32,8 @@ dev_mode = True
 
 
 def dev():
+    import os
+    import glob
     import shutil
     import key_matcher
     import fill_keys
@@ -40,8 +42,10 @@ def dev():
         key_matcher.main()
         fill_keys.year_folder = form_filing_year
         fill_keys.main()
-    from utils.forms_constants import key_mapping_folder
+    from utils.forms_constants import key_mapping_folder, fields_mapping_folder
     shutil.rmtree(key_mapping_folder)
+    for pdf_file_name in glob.glob(os.path.join(fields_mapping_folder, "**", "*.pdf"), recursive=True):
+        os.remove(pdf_file_name)
 
 
 def main():

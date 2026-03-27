@@ -2,6 +2,7 @@
 # the fields file then contains the names of the fields to be mapped
 # with a clear syntax to describe tables and dollar/cents splits
 
+import shutil
 from utils.forms_utils import *
 
 year_folder = "2019"
@@ -76,11 +77,8 @@ def move_keys_to_parent():
             logger.info("Moving keys file %s", u)
             rel = os.path.relpath(u, year_fields_name)
             folder_path = os.path.join(forms_year_folder, rel)
-            try:
-                os.rename(u, folder_path)
-                logger.info("Moved  %s to %s", u, folder_path)
-            except FileExistsError as e:
-                logger.error("Already Exists - Not Moved  %s to %s", u, folder_path)
+            shutil.move(u, folder_path)
+            logger.info("Moved  %s to %s", u, folder_path)
 
 
 def main():

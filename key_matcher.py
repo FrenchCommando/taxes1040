@@ -15,7 +15,8 @@ def process_pdf(file):
     year_name = os.path.join(key_mapping_folder, year_folder)
     forms_year_folder = os.path.join(forms_folder, year_folder)
     k_file = os.path.splitext(file)[0] + keys_extension
-    if not os.path.isfile(k_file):
+    k_file_map = os.path.join(year_name, os.path.relpath(k_file, forms_year_folder))
+    if not os.path.isfile(k_file_map):
         d = {}
         d_type = {}  # /Tx for text /Btn for button
         i = 0
@@ -31,13 +32,12 @@ def process_pdf(file):
                             d_type[key] = fields_type
                             i += 1
 
-        k_file_map = os.path.join(year_name, os.path.relpath(k_file, forms_year_folder))
         with open(k_file_map, 'w+') as f:
             logger.info("File created %s", k_file_map)
             for k, i in d.items():
                 f.write(str(i) + "\t\t" + k + "\t\t" + d_type[k] + "\n")
     else:
-        d = load_keys(k_file)
+        d = load_keys(k_file_map)
     out_file = os.path.join(year_name, os.path.relpath(file, forms_year_folder))
     fill_pdf_from_keys(file=file, out_file=out_file, d=d)
 
