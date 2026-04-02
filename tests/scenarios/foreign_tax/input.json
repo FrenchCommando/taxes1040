@@ -1,0 +1,40 @@
+{
+    "W2": [
+        {
+            "Company": "Good Company & CO LLC",
+            "Company_address": "100 100TH AVE",
+            "Company_city": "NEW YORK",
+            "Company_state": "NY",
+            "Company_zip": "10000",
+            "FullName": "Commando French",
+            "FirstName": "French",
+            "LastName": "Commando",
+            "Address": "111 111TH ST",
+            "Address_apt": "11A",
+            "Address_city": "BROOKLYN",
+            "Address_state": "NY",
+            "Address_zip": "11111",
+            "SSN": "XXXXX5555",
+            "Wages": 150000,
+            "SocialSecurity_wages": 150000,
+            "Medicare_wages": 150000,
+            "Federal_tax": 30000,
+            "SocialSecurity_tax": 9300,
+            "Medicare_tax": 2175,
+            "State": "NY",
+            "State_tax": 7000,
+            "Local_tax": 3000,
+            "Locality": "NEW YORK"
+        }
+    ],
+    "1099": [
+        {
+            "Interest": 200,
+            "Qualified Dividends": 3000,
+            "Ordinary Dividends": 5000,
+            "Foreign Tax Paid": 500,
+            "Foreign Country": "Various",
+            "Institution": "International Fund"
+        }
+    ]
+}
