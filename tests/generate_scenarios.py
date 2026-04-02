@@ -182,6 +182,27 @@ SCENARIOS = {
             },
         ],
     },
+    "amt_high_dividends": {
+        "W2": [{
+            **BASE_W2,
+            "Wages": 50000,
+            "SocialSecurity_wages": 50000,
+            "Medicare_wages": 50000,
+            "Federal_tax": 7000,
+            "SocialSecurity_tax": 3100,
+            "Medicare_tax": 725,
+            "State_tax": 3000,
+            "Local_tax": 1500,
+        }],
+        "1099": [
+            {
+                "Interest": 0,
+                "Qualified Dividends": 200000,
+                "Ordinary Dividends": 200000,
+                "Institution": "Big Dividend Fund",
+            },
+        ],
+    },
     "many_trades": {
         "W2": [BASE_W2],
         "1099": [

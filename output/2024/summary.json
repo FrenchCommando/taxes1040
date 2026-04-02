@@ -12,6 +12,7 @@
     "Federal/f1040 15 Taxable income": 983620.0,
     "QualifiedDividendsAndCapitalGains 25 Tax on all taxable income": 321758.42,
     "Federal/f1040 16 Tax": 321758.0,
+    "ShouldFill6251 Should fill 6251": true,
     "Federal/f6251 4 Alternative minimum taxable income": 983620.0,
     "Federal/f8959 7 Additional Medicare Tax on Medicare wages": 1200.0,
     "Federal/f8959 18 Total Additional Medicare Tax": 1200.0,

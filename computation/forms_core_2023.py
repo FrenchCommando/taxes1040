@@ -404,7 +404,7 @@ def fill_taxes_2023(d, output_2022=None):
             if 'foreign_account' in d:
                 self.d['7a_y'] = True
                 self.d['7a_yes_y'] = True
-                self.d['7b'] = d['foreign_account']
+                self.d['7b_1'] = d['foreign_account']
                 self.d['8_n'] = True
             else:
                 self.d['7a_n'] = True
@@ -798,7 +798,7 @@ def fill_taxes_2023(d, output_2022=None):
             if d['scheduleD']:
                 self.d[3] = max(0, min(forms_state[k_1040sd]['15'], forms_state[k_1040sd]['16']))
             else:
-                self.d[3] = forms_state[k_1040]['7']
+                self.d[3] = forms_state[k_1040].get('7_value', 0)
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
             self.d[6] = 44625  # single

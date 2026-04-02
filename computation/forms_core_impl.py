@@ -231,7 +231,8 @@ def fill_taxes(d, config):
             if forms_state[k_1040s2].get('3', 0) == 0 \
                     and forms_state[k_1040s2].get('21', 0) == 0:
                 del forms_state[k_1040s2]
-                del forms_state[k_6251]
+                if k_6251 in forms_state:
+                    del forms_state[k_6251]
 
             # self.push_to_dict('17', 0)  # schedule 2 line 3
             self.push_sum('18', ['16', '17'])
@@ -344,7 +345,10 @@ def fill_taxes(d, config):
             # Additional Taxes
 
             # Part I - Tax
-            Form6251().build()  # AMT fills 1
+            should_fill_6251 = ShouldFill6251Worksheet()
+            should_fill_6251.build()
+            if should_fill_6251.fill6251:
+                Form6251().build()  # AMT fills 1
             # Form8962().build()  # Excess advance premium tax credit repayment - fills 2
             self.push_sum(key='3', it=['1', '2'])
             Form(k_1040, get_existing=True).push_to_dict('17', self.d['3'])
@@ -472,7 +476,7 @@ def fill_taxes(d, config):
             if 'foreign_account' in d:
                 self.d['7a_y'] = True
                 self.d['7a_yes_y'] = True
-                self.d['7b'] = d['foreign_account']
+                self.d['7b_1'] = d['foreign_account']
                 self.d['8_n'] = True
             else:
                 self.d['7a_n'] = True
@@ -910,7 +914,7 @@ def fill_taxes(d, config):
             if d['scheduleD']:
                 self.d[3] = max(0, min(forms_state[k_1040sd]['15'], forms_state[k_1040sd]['16']))
             else:
-                self.d[3] = forms_state[k_1040]['7']
+                self.d[3] = forms_state[k_1040].get('7_value', 0)
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
             self.d[6] = config['qualified_div_0pct']  # single
@@ -944,18 +948,19 @@ def fill_taxes(d, config):
 
         def build(self):
             if k_1040sa in forms_state:
-                self.d[1] = forms_state[k_1040]['15_dollar']
+                self.d[1] = forms_state[k_1040]['15']
                 self.d[2] = forms_state[k_1040sa]['7']
                 self.d[3] = self.d[1] + self.d[2]
             else:
-                self.d[3] = forms_state[k_1040]['13_dollar']
-            self.d[4] = forms_state[k_1040s1].get('1_dollar', 0) \
-                + forms_state[k_1040s1].get('8z_dollar', 0) \
+                self.d[3] = forms_state[k_1040]['11']
+            self.d[4] = forms_state[k_1040s1].get('1', 0) \
+                + forms_state[k_1040s1].get('8_z', 0) \
                 if k_1040s1 in forms_state else 0
             self.d[5] = self.d[3] - self.d[4]
             self.d[6] = config['should_fill_6251_exemption']  # single
             if self.d[5] <= self.d[6]:
                 self.fill6251 = False
+                summary_info[f"{self.key} Should fill 6251"] = self.fill6251
                 return
             self.d[7] = self.d[5] - self.d[6]
             self.d[8] = config['should_fill_6251_phaseout']  # single
@@ -968,11 +973,13 @@ def fill_taxes(d, config):
                 self.d[11] = self.d[7] + self.d[10]
             if self.d[11] >= config['should_fill_6251_28pct']:  # single
                 self.fill6251 = True
+                summary_info[f"{self.key} Should fill 6251"] = self.fill6251
                 return
             self.d[12] = self.d[11] * 0.26
-            self.d[13] = forms_state[k_1040]['11a'] \
-                + forms_state[k_1040s2]['46']
+            self.d[13] = forms_state[k_1040]['16'] \
+                + forms_state[k_1040s2].get('2', 0)
             self.fill6251 = (self.d[13] < self.d[12])
+            summary_info[f"{self.key} Should fill 6251"] = self.fill6251
 
     class FormIT201(Form):
         def __init__(self):
