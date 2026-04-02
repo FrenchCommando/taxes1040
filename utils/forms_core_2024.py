@@ -24,5 +24,5 @@ CONFIG_2024 = dict(
 )
 
 
-def fill_taxes_2024(d, output_2023=None):
-    return fill_taxes(d, output_prev=output_2023, config=CONFIG_2024)
+def fill_taxes_2024(d):
+    return fill_taxes(d, config=CONFIG_2024)

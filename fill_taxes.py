@@ -5,12 +5,6 @@ from utils.form_worksheet_names import k_it201
 from utils.forms_constants import *
 from utils.forms_utils import fill_pdf_from_keys, logging, process_logger, map_folders, load_keys, output_pdf_folder
 from pdfrw import PdfReader, PdfWriter
-from utils.user_interface import update_dict
-from utils.forms_core_2018 import fill_taxes_2018
-from utils.forms_core_2019 import fill_taxes_2019
-from utils.forms_core_2020 import fill_taxes_2020
-from utils.forms_core_2021 import fill_taxes_2021
-from utils.forms_core_2022 import fill_taxes_2022
 from utils.forms_core_2023 import fill_taxes_2023
 from utils.forms_core_2024 import fill_taxes_2024
 from utils.forms_core_2025 import fill_taxes_2025
@@ -93,10 +87,6 @@ def gather_inputs(input_year_folder):
         'ssn': '200112222'
     }
 
-    # update_dict(additional_info)
-    # update_dict(override_stuff)
-    # update_dict(j, modify=False)
-
     data = {}
     data.update(j)
     data.update(additional_info)
@@ -115,86 +105,42 @@ def gather_inputs(input_year_folder):
     return data
 
 
+def extract_carryover(forms_state):
+    """Extract carryover values from a year's forms_state (for bridging legacy years)."""
+    from utils.form_worksheet_names import k_1040, k_1040sd
+    return {
+        'taxable_income': forms_state[k_1040].get('15', 0),
+        'schedule_d_net_short_term': forms_state.get(k_1040sd, {}).get('7', 0),
+        'schedule_d_net_long_term': forms_state.get(k_1040sd, {}).get('15', 0),
+        'schedule_d_loss_deduction': forms_state.get(k_1040sd, {}).get('21', 0),
+    }
+
+
+def process_year(year, states, worksheets, summary):
+    save_json(data=states, out="data" + year + json_extension)
+    save_json(data=worksheets, out="worksheet" + year + json_extension)
+    save_json(data=summary, out="summary" + year + json_extension)
+    pdf_files = fill_pdfs(states, year)
+    merge_pdfs(pdf_files, "forms" + year + pdf_extension)
+
+
 def main():
-    # data2018 = gather_inputs(input_year_folder="2018")
-    # states2018, worksheets_all2018 = fill_taxes_2018(data2018)
-    # pdf_files2018 = fill_pdfs(states2018, "2018")
-    # outfile2018 = "forms" + "2018" + pdf_extension
-    # merge_pdfs(pdf_files2018, outfile2018)
-
-    # data2019 = gather_inputs(input_year_folder="2019")
-    # states2019, worksheets_all2019 = fill_taxes_2019(data2019, (states2018, worksheets_all2018))
-    # pdf_files2019 = fill_pdfs(states2019, "2019")
-    # outfile2019 = "forms" + "2019" + pdf_extension
-    # merge_pdfs(pdf_files2019, outfile2019)
-
-    # data2020 = gather_inputs(input_year_folder="2020")
-    # states2020, worksheets_all2020 = fill_taxes_2020(data2020, (states2019, worksheets_all2019))
-    # pdf_files2020 = fill_pdfs(states2020, "2020")
-    # outfile2020 = "forms" + "2020" + pdf_extension
-    # merge_pdfs(pdf_files2020, outfile2020)
-
-    # data2021 = gather_inputs(input_year_folder="2021")
-    # states2021, worksheets_all2021 = fill_taxes_2021(data2021, output_2020=None)
-    # pdf_files2021 = fill_pdfs(states2021, "2021")
-    # outfile2021 = "forms" + "2021" + pdf_extension
-    # merge_pdfs(pdf_files2021, outfile2021)
-
-    # data2022 = gather_inputs(input_year_folder="2022")
-    # states2022, worksheets_all2022 = fill_taxes_2022(d=data2022, output_2021=None)
-    # save_json(data=states2022, out="data" + "2022" + json_extension)
-    # save_json(data=worksheets_all2022, out="worksheet" + "2022" + json_extension)
-    # pdf_files2022 = fill_pdfs(states2022, "2022")
-    # outfile2022 = "forms" + "2022" + pdf_extension
-    # merge_pdfs(pdf_files2022, outfile2022)
-
+    # 2023 — frozen legacy interface
     data2023 = gather_inputs(input_year_folder="2023")
-    # states2023, worksheets_2023, summary_2023 =
-    # fill_taxes_2023(d=data2023, output_2022=(states2022, worksheets_all2022))
     states2023, worksheets_2023, summary_2023 = fill_taxes_2023(d=data2023, output_2022=None)
-    save_json(data=states2023, out="data" + "2023" + json_extension)
-    save_json(data=worksheets_2023, out="worksheet" + "2023" + json_extension)
-    save_json(data=summary_2023, out="summary" + "2023" + json_extension)
-    pdf_files2023 = fill_pdfs(states2023, "2023")
-    outfile2023 = "forms" + "2023" + pdf_extension
-    merge_pdfs(pdf_files2023, outfile2023)
+    process_year("2023", states2023, worksheets_2023, summary_2023)
 
+    # 2024+ — Markovian interface (carryover passed via d['prior_year'])
     data2024 = gather_inputs(input_year_folder="2024")
-    states2024, worksheets_2024, summary_2024 = fill_taxes_2024(d=data2024, output_2023=(states2023, worksheets_2023))
-    save_json(data=states2024, out="data" + "2024" + json_extension)
-    save_json(data=worksheets_2024, out="worksheet" + "2024" + json_extension)
-    save_json(data=summary_2024, out="summary" + "2024" + json_extension)
-    pdf_files2024 = fill_pdfs(states2024, "2024")
-    outfile2024 = "forms" + "2024" + pdf_extension
-    merge_pdfs(pdf_files2024, outfile2024)
+    data2024['prior_year'] = extract_carryover(states2023)
+    states2024, worksheets_2024, summary_2024, carryover_2024 = fill_taxes_2024(d=data2024)
+    process_year("2024", states2024, worksheets_2024, summary_2024)
 
     data2025 = gather_inputs(input_year_folder="2025")
-    states2025, worksheets_2025, summary_2025 = fill_taxes_2025(d=data2025, output_2024=(states2024, worksheets_2024))
-    save_json(data=states2025, out="data" + "2025" + json_extension)
-    save_json(data=worksheets_2025, out="worksheet" + "2025" + json_extension)
-    save_json(data=summary_2025, out="summary" + "2025" + json_extension)
-    pdf_files2025 = fill_pdfs(states2025, "2025")
-    outfile2025 = "forms" + "2025" + pdf_extension
-    merge_pdfs(pdf_files2025, outfile2025)
+    data2025['prior_year'] = carryover_2024
+    states2025, worksheets_2025, summary_2025, carryover_2025 = fill_taxes_2025(d=data2025)
+    process_year("2025", states2025, worksheets_2025, summary_2025)
 
 
 if __name__ == "__main__":
-    # year_folder = "2019"
     main()
-
-    # outfile = "forms" + pdf_extension
-    # pdf_files = [
-    #     'output\\2018\\Federal\\f1040sd.pdf',
-    #     'output\\2018\\Federal\\f1040s1.pdf',
-    #     # 'output\\2018\\Federal\\f8949_0.pdf',
-    #     # 'output\\2018\\Federal\\f8949_1.pdf',
-    #     'output\\2018\\Federal\\f1040.pdf',
-    #     # 'output\\2018\\Federal\\f1040sb.pdf',
-    #     # 'output\\2018\\Federal\\f1040s3.pdf',
-    # ]
-    # path = r"C:\Users\marti\Downloads\docs\rentchecks"
-    # outfile = os.path.join(path, "rentchecks.pdf")
-    # pdf_files = [
-    #     os.path.join(path, f"check{i}.pdf") for i in range(1013, 1025)
-    # ]
-    # merge_pdfs(pdf_files, outfile)

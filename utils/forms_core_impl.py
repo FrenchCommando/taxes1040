@@ -4,7 +4,7 @@ from utils.form_worksheet_names import *
 from utils.forms_constants import logger
 
 
-def fill_taxes(d, output_prev, config):
+def fill_taxes(d, config):
     """Shared tax computation logic parameterized by year-specific constants.
 
     config keys:
@@ -12,6 +12,9 @@ def fill_taxes(d, output_prev, config):
         standard_deduction, amt_exemption, amt_28pct_threshold, amt_28pct_excess,
         qualified_div_0pct, qualified_div_20pct,
         should_fill_6251_exemption, should_fill_6251_phaseout, should_fill_6251_28pct,
+
+    d may contain 'prior_year' dict with keys:
+        taxable_income, schedule_d_net_short_term, schedule_d_net_long_term, schedule_d_loss_deduction
     """
     computation = config['computation']
     computation_ny = config['computation_ny']
@@ -19,10 +22,7 @@ def fill_taxes(d, output_prev, config):
     computation_nyc = config['computation_nyc']
     year = config['year']
 
-    if output_prev is not None:
-        states_prev, worksheets_prev = output_prev
-    else:
-        states_prev, worksheets_prev = None, None
+    prior_year = d.get('prior_year')
 
     main_info = get_main_info(d)
     wages = sum(w['Wages'] for w in d['W2'])
@@ -39,6 +39,7 @@ def fill_taxes(d, output_prev, config):
     health_savings_account = d.get('health_savings_account', False)
     capital_gains = None
     contract1256 = None
+    foreign_tax = 0
 
     if has_1099:
         sum_trades = dict(
@@ -132,8 +133,8 @@ def fill_taxes(d, output_prev, config):
             if has_1099:
                 Form1040sb().build()
 
-                if forms_state[k_1040sb]['4_value'] == 0 \
-                        and forms_state[k_1040sb]['6_value'] == 0 \
+                if forms_state[k_1040sb].get('4_value', 0) == 0 \
+                        and forms_state[k_1040sb].get('6_value', 0) == 0 \
                         and 'foreign_account' not in d:
                     del forms_state[k_1040sb]
 
@@ -431,8 +432,8 @@ def fill_taxes(d, output_prev, config):
             self.push_to_dict('4_value', self.d.get('2_value', 0) - self.d.get('3_value', 0))
             self.push_sum('6_value', ['5_{}_value'.format(str(i)) for i in range(1, 17)])
 
-            Form(k_1040, get_existing=True).push_to_dict('2_b', self.d['4_value'])
-            Form(k_1040, get_existing=True).push_to_dict('3_b', self.d['6_value'])
+            Form(k_1040, get_existing=True).push_to_dict('2_b', self.d.get('4_value', 0))
+            Form(k_1040, get_existing=True).push_to_dict('3_b', self.d.get('6_value', 0))
 
             if 'foreign_account' in d:
                 self.d['7a_y'] = True
@@ -841,22 +842,22 @@ def fill_taxes(d, output_prev, config):
             Worksheet.__init__(self, w_capital_loss_carryover, 13)
 
         def build(self):
-            if states_prev is None:
+            if prior_year is None:
                 return
-            self.d[1] = states_prev[k_1040]['15']
-            self.d[2] = max(0., states_prev[k_1040sd]['21'])  # sign flip
+            self.d[1] = prior_year['taxable_income']
+            self.d[2] = max(0., prior_year['schedule_d_loss_deduction'])  # sign flip
             self.d[3] = max(0., self.d[1] + self.d[2])
             self.d[4] = min(self.d[2], self.d[3])
-            if states_prev[k_1040sd]['7'] < 0:
-                self.d[5] = max(0, -states_prev[k_1040sd]['7'])
-                self.d[6] = max(0, states_prev[k_1040sd]['15'])
+            if prior_year['schedule_d_net_short_term'] < 0:
+                self.d[5] = max(0, -prior_year['schedule_d_net_short_term'])
+                self.d[6] = max(0, prior_year['schedule_d_net_long_term'])
                 self.d[7] = self.d[4] + self.d[6]
                 self.d[8] = max(0., self.d[5] - self.d[7])  # enter this in D 6
                 # loss as positive number
                 summary_info[f"{self.key} 8 Short-term capital loss carryover for {year}"] = self.d[8]
-            if states_prev[k_1040sd]['15'] < 0:  # it's ok to repeat
-                self.d[9] = max(0., -states_prev[k_1040sd]['15'])
-                self.d[10] = max(0., states_prev[k_1040sd]['7'])
+            if prior_year['schedule_d_net_long_term'] < 0:  # it's ok to repeat
+                self.d[9] = max(0., -prior_year['schedule_d_net_long_term'])
+                self.d[10] = max(0., prior_year['schedule_d_net_short_term'])
                 self.d[11] = max(0., self.d[4] - self.d[5])
                 self.d[12] = self.d[10] + self.d[11]
                 self.d[13] = max(0., self.d[9] - self.d[12])  # enter in D 14
@@ -944,10 +945,10 @@ def fill_taxes(d, output_prev, config):
             Form.__init__(self, k_it201)
 
         def build(self):
-            self.push_to_dict('1', forms_state[k_1040]['1_z'])
-            self.push_to_dict('2', forms_state[k_1040]['2_b'])
-            self.push_to_dict('3', forms_state[k_1040]['3_b'])
-            self.push_to_dict('7', forms_state[k_1040]['7_value'])
+            self.push_to_dict('1', forms_state[k_1040].get('1_z', 0))
+            self.push_to_dict('2', forms_state[k_1040].get('2_b', 0))
+            self.push_to_dict('3', forms_state[k_1040].get('3_b', 0))
+            self.push_to_dict('7', forms_state[k_1040].get('7_value', 0))
             self.push_sum('17', ['1', '2', '3', '7'])
             self.push_to_dict('19', self.d.get('17', 0) - self.d.get('18', 0))
             self.push_sum('24', ['19', '20', '21', '22', '23'])  # additions
@@ -1180,4 +1181,11 @@ def fill_taxes(d, output_prev, config):
 
     # forms_state[k_1040]['married_filling_separately'] = True
 
-    return forms_state, worksheets, summary_info
+    carryover = {
+        'taxable_income': forms_state[k_1040].get('15', 0),
+        'schedule_d_net_short_term': forms_state.get(k_1040sd, {}).get('7', 0),
+        'schedule_d_net_long_term': forms_state.get(k_1040sd, {}).get('15', 0),
+        'schedule_d_loss_deduction': forms_state.get(k_1040sd, {}).get('21', 0),
+    }
+
+    return forms_state, worksheets, summary_info, carryover
