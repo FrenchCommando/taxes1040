@@ -2,10 +2,10 @@ import os
 import json
 
 from utils.forms_constants import override_keyword, json_extension
-from utils.forms_core_impl import extract_carryover
-from utils.forms_core_2023 import fill_taxes_2023
-from utils.forms_core_2024 import fill_taxes_2024
-from utils.forms_core_2025 import fill_taxes_2025
+from computation.forms_core_impl import extract_carryover
+from computation.forms_core_2023 import fill_taxes_2023
+from computation.forms_core_2024 import fill_taxes_2024
+from computation.forms_core_2025 import fill_taxes_2025
 
 
 def gather_inputs(input_year_folder):
@@ -68,10 +68,12 @@ def save_json(data, out):
 
 
 def process_year(year, states, worksheets, summary, carryover):
-    save_json(data=states, out="data" + year + json_extension)
-    save_json(data=worksheets, out="worksheet" + year + json_extension)
-    save_json(data=summary, out="summary" + year + json_extension)
-    save_json(data=carryover, out="carryover" + year + json_extension)
+    output_dir = os.path.join("output", year)
+    os.makedirs(output_dir, exist_ok=True)
+    save_json(data=states, out=os.path.join(output_dir, "data" + json_extension))
+    save_json(data=worksheets, out=os.path.join(output_dir, "worksheet" + json_extension))
+    save_json(data=summary, out=os.path.join(output_dir, "summary" + json_extension))
+    save_json(data=carryover, out=os.path.join(output_dir, "carryover" + json_extension))
 
 
 FILL_FUNCTIONS = {

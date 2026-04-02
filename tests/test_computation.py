@@ -20,7 +20,7 @@ import os
 import unittest
 
 from utils.forms_constants import override_keyword
-from utils.forms_core_2025 import fill_taxes_2025
+from computation.forms_core_2025 import fill_taxes_2025
 
 SCENARIOS_DIR = os.path.join(os.path.dirname(__file__), 'scenarios')
 
@@ -108,8 +108,8 @@ class TestRealData(unittest.TestCase):
     """Verify that computing from real input_data/ matches the committed output JSONs."""
 
     def test_real_data(self):
-        from fill_taxes import gather_inputs, FILL_FUNCTIONS
-        from utils.forms_core_impl import extract_carryover
+        from pipeline.fill_taxes import gather_inputs, FILL_FUNCTIONS
+        from computation.forms_core_impl import extract_carryover
         from utils.forms_constants import json_extension
 
         years = ["2023", "2024", "2025"]
@@ -127,7 +127,7 @@ class TestRealData(unittest.TestCase):
                 states, worksheets, summary, carryover = fill_func(d=data)
 
             for name, actual in [('data', states), ('worksheet', worksheets), ('summary', summary), ('carryover', carryover)]:
-                with open(name + year + json_extension, 'r') as f:
+                with open(os.path.join("output", year, name + json_extension), 'r') as f:
                     expected = json.load(f)
                 self.assertEqual(actual, expected, f'{name}{year}: mismatch')
 

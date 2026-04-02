@@ -1,10 +1,10 @@
-from utils.forms_functions import (
+from computation.forms_functions import (
     computation_2025,
     computation_2025_ny,
     computation_2025_ny_recapture,
     computation_2025_nyc,
 )
-from utils.forms_core_impl import fill_taxes
+from computation.forms_core_impl import fill_taxes
 
 CONFIG_2025 = dict(
     year='2025',

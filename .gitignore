@@ -2,11 +2,9 @@
 /build
 *__pycache__/
 /main.spec
-*.log
-# generated PDFs (not diffable - JSON outputs are tracked instead)
-/output/
-# merged output PDFs at repo root - leading / anchors to root, * does not match /
-/forms*.pdf
+/logs/
+# generated PDFs in output (not diffable - JSON outputs are tracked)
+output/**/*.pdf
 # intermediate key_mapping (raw .keys + integer debug PDFs)
 /key_mapping/
 # debug PDFs in fields_mapping (field-name overlays for visual verification)

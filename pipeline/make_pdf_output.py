@@ -1,14 +1,14 @@
 import os
 import json
 
-from utils.form_worksheet_names import k_it201
+from computation.form_worksheet_names import k_it201
 from utils.forms_constants import forms_folder, keys_extension, pdf_extension, json_extension
 from utils.forms_utils import fill_pdf_from_keys, load_keys, map_folders, output_pdf_folder
 from pdfrw import PdfReader, PdfWriter
 
 
 def fill_pdfs(year):
-    data_file = "data" + year + json_extension
+    data_file = os.path.join("output", year, "data" + json_extension)
     with open(data_file, 'r') as f:
         forms_state = json.load(f)
 
@@ -46,4 +46,4 @@ def merge_pdfs(files, out):
 def main(years):
     for year in years:
         pdf_files = fill_pdfs(year)
-        merge_pdfs(pdf_files, "forms" + year + pdf_extension)
+        merge_pdfs(pdf_files, os.path.join("output", year, "forms" + pdf_extension))

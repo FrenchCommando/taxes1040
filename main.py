@@ -24,8 +24,8 @@
 ====================================================================================================================
 """
 
-import fill_taxes
-import make_pdf_output
+from pipeline import fill_taxes
+from pipeline import make_pdf_output
 
 all_years = [
     # "2018", "2019", "2020", "2021", "2022",
@@ -41,8 +41,8 @@ def dev():
     import os
     import glob
     import shutil
-    import key_matcher
-    import fill_keys
+    from pipeline import key_matcher
+    from pipeline import fill_keys
     for form_filing_year in all_years:
         key_matcher.year_folder = form_filing_year
         key_matcher.main()

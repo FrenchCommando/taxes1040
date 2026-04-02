@@ -1,19 +1,18 @@
 from itertools import islice, chain
-from utils.forms_functions import get_main_info, computation_2022 as computation
-from utils.form_worksheet_names import *
+from computation.forms_functions import get_main_info, computation_2021 as computation
+from computation.form_worksheet_names import *
 from utils.forms_constants import logger
 
 
-def fill_taxes_2022(d, output_2021=None):
-    if output_2021 is not None:
-        states_2021, worksheets_all_2021 = output_2021
+def fill_taxes_2021(d, output_2020=None):
+    if output_2020 is not None:
+        states_2020, worksheets_all_2020 = output_2020
 
     main_info = get_main_info(d)
     wages = sum(w['Wages'] for w in d['W2'])
     federal_tax = sum(w['Federal_tax'] for w in d['W2'])
     social_security_tax = sum(w['SocialSecurity_tax'] for w in d['W2'])
     medicare_tax = sum(w['Medicare_tax'] for w in d['W2'])
-    medicare_wages = sum(w['Medicare_wages'] for w in d['W2'])
     state_tax = sum(w['State_tax'] for w in d['W2'])
     local_tax = sum(w['Local_tax'] for w in d['W2'])
 
@@ -39,7 +38,7 @@ def fill_taxes_2022(d, output_2021=None):
         )  # from 8949 to fill 1040sd
         foreign_tax = sum(i.get('Foreign Tax', 0) for i in d['1099'])
 
-    standard_deduction = 12950  # if single or married filing separately
+    standard_deduction = 12550  # if single or married filing separately
     qualified_business_deduction = 0
     health_savings_account_max_contribution = 3600
 
@@ -103,10 +102,7 @@ def fill_taxes_2022(d, output_2021=None):
                 self.push_to_dict('virtual_currency_y', False)
                 self.push_to_dict('virtual_currency_n', True)
 
-            self.push_to_dict('1_a', wages)
-            self.push_sum('1_z', [
-                '1_a', '1_b', '1_c', '1_d', '1_e', '1_f', '1_g', '1_h', '1_i'
-            ])
+            self.push_to_dict('1', wages)
 
             if has_1099:
                 Form1040sb().build()
@@ -150,7 +146,7 @@ def fill_taxes_2022(d, output_2021=None):
                         and forms_state[k_1040s1].get('26', 0) == 0:
                     del forms_state[k_1040s1]
 
-            self.push_sum('9', ['1_z', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
+            self.push_sum('9', ['1', '2_b', '3_b', '4_b', '5_b', '6_b', '7_value', '8'])  # total income
 
             self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
 
@@ -161,7 +157,7 @@ def fill_taxes_2022(d, output_2021=None):
                 self.push_to_dict('12_a', itemized_deduction)
             else:
                 self.push_to_dict('12_a', standard_deduction)
-            charitable_contributions = 0
+            charitable_contributions = 300
             self.push_to_dict('12_b', charitable_contributions)
             self.push_sum('12_c', ['12_a', '12_b'])
 
@@ -188,10 +184,7 @@ def fill_taxes_2022(d, output_2021=None):
             self.push_sum('21', ['19', '20'])
             self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
 
-            # from AMT 8959
-            # need schedule 2 and 8959
-            amt_final = medicare_tax - medicare_wages * 0.0145
-            medicare_tax_stuff = max(amt_final, 0)
+            medicare_tax_stuff = 608  # need schedule 2 and 8959
 
             self.push_to_dict('23', medicare_tax_stuff)  # other taxes from Schedule 2 line 21
             self.push_sum('24', ['22', '23'])  # total tax
@@ -345,12 +338,6 @@ def fill_taxes_2022(d, output_2021=None):
                         self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
                         self.push_to_dict("{}_{}_value".format(index, str(i)), f[key])
                         i += 1
-                    other_key = "Other Income"
-                    if key == "Interest" and other_key in f and f[other_key] != 0:
-                        self.d["{}_{}_payer".format(index, str(i))] = \
-                            " ".join((f['Institution'], f['Other Description']))
-                        self.push_to_dict("{}_{}_value".format(index, str(i)), f[other_key])
-                        i += 1
             fill_value("1", "Interest")
             fill_value("5", "Ordinary Dividends")
 
@@ -362,9 +349,6 @@ def fill_taxes_2022(d, output_2021=None):
                 self.d['7a_y'] = True
                 self.d['7a_yes_y'] = True
                 self.d['7b'] = d['foreign_account']
-                self.d['8_n'] = True
-            else:
-                self.d['7a_n'] = True
                 self.d['8_n'] = True
 
     class Form1040sd(Form):
@@ -508,7 +492,7 @@ def fill_taxes_2022(d, output_2021=None):
 
         def build(self):
             def yield_trades(long_short, form_code):
-                for uu in d['1099']:  # remove crypto transactions
+                for uu in chain(d['1099'], d['transaction']):
                     if 'Trades' in uu:
                         for tt in uu['Trades']:
                             if long_short in tt['LongShort'] and form_code == tt['FormCode']:
@@ -564,8 +548,7 @@ def fill_taxes_2022(d, output_2021=None):
                             gain = t["h"]
                             self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain)
                         else:
-                            self.d['{}_1_{}_description'.format(index, str(i))] = \
-                                f"{t['Shares']} {t['SalesDescription']}"
+                            self.d['{}_1_{}_description'.format(index, str(i))] = f"{t['Shares']} {t['SalesDescription']}"
                             self.d['{}_1_{}_date_acq'.format(index, str(i))] = t['DateAcquired']
                             self.d['{}_1_{}_date_sold'.format(index, str(i))] = t['DateSold']
 
@@ -622,17 +605,17 @@ def fill_taxes_2022(d, output_2021=None):
             ddd = d
             fff = forms_state
             www = worksheets
-            self.d[1] = states_2021[k_1040]['11_b']
-            self.d[2] = max(0., states_2021[k_1040sd]['21'])
+            self.d[1] = states_2020[k_1040]['11_b']
+            self.d[2] = max(0., states_2020[k_1040sd]['21'])
             self.d[3] = max(0., self.d[1] + self.d[2])
             self.d[4] = min(self.d[2], self.d[3])
-            self.d[5] = max(0, -states_2021[k_1040sd]['7'])
-            self.d[6] = max(0, states_2021[k_1040sd]['15'])
+            self.d[5] = max(0, -states_2020[k_1040sd]['7'])
+            self.d[6] = max(0, states_2020[k_1040sd]['15'])
             self.d[7] = self.d[4] + self.d[6]
             self.d[8] = max(0., self.d[5] - self.d[7])
             if self.d[6] == 0:
-                self.d[9] = max(0., -states_2021[k_1040sd]['15'])
-                self.d[10] = max(0., states_2021[k_1040sd]['7'])
+                self.d[9] = max(0., -states_2020[k_1040sd]['15'])
+                self.d[10] = max(0., states_2020[k_1040sd]['7'])
                 self.d[11] = max(0., self.d[4] - self.d[5])
                 self.d[12] = self.d[10] + self.d[11]
                 self.d[13] = max(0., self.d[9] - self.d[12])
@@ -650,14 +633,14 @@ def fill_taxes_2022(d, output_2021=None):
                 self.d[3] = forms_state[k_1040s1]['7']
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
-            self.d[6] = 41675  # single
+            self.d[6] = 40400  # single
             self.d[7] = min(self.d[1], self.d[6])
             self.d[8] = min(self.d[5], self.d[7])
             self.d[9] = self.d[7] - self.d[8]  # taxed 0%
             self.d[10] = min(self.d[1], self.d[4])
             self.d[11] = self.d[9]
             self.d[12] = self.d[11] - self.d[10]
-            self.d[13] = 459750.  # single
+            self.d[13] = 445850.  # single
             self.d[14] = min(self.d[1], self.d[13])
             self.d[15] = self.d[5] + self.d[9]
             self.d[16] = max(0., self.d[14] - self.d[15])
