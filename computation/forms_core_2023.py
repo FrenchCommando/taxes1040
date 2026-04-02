@@ -101,7 +101,6 @@ def fill_taxes_2023(d, output_2022=None):
                 'city': main_info['address_city'],
                 'state': main_info['address_state'],
                 'zip': main_info['address_zip'],
-                'full_year_health_coverage_or_exempt': d['full_year_health_coverage_or_exempt'],
                 'presidential_election_self': d['presidential_election_self'],
                 'self_occupation': d['occupation'],
                 'phone': d['phone'],

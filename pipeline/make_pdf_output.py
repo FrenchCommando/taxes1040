@@ -28,7 +28,7 @@ def fill_pdfs(year):
             keys_expected = {val[0] for val in d_mapping.values()}
             unmatched = set(contents.keys()) - keys_expected
             if unmatched:
-                logger.error("%s%s - computation keys not in .keys: %s", f, suffix, sorted(unmatched))
+                logger.error("%s %s%s - computation keys not in .keys: %s", year, f, suffix, sorted(unmatched))
             ddd = {k: contents[val[0]] for k, val in d_mapping.items() if val[0] in contents}
             outfile = os.path.join(output_year_folder, f + suffix + pdf_extension)
             all_out_files.append(outfile)

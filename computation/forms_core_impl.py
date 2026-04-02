@@ -5,6 +5,29 @@ import logging
 logger = logging.getLogger('computation')
 
 
+def _remap_dict(d, field_map):
+    result = {}
+    for key, value in d.items():
+        if key in field_map:
+            new_key = field_map[key]
+            if new_key is not None:
+                result[new_key] = value
+        else:
+            result[key] = value
+    return result
+
+
+def apply_field_maps(forms_state, field_maps):
+    for form_key, field_map in field_maps.items():
+        if form_key not in forms_state:
+            continue
+        form_data = forms_state[form_key]
+        if isinstance(form_data, list):
+            forms_state[form_key] = [_remap_dict(page, field_map) for page in form_data]
+        elif isinstance(form_data, dict):
+            forms_state[form_key] = _remap_dict(form_data, field_map)
+
+
 def extract_carryover(forms_state):
     """Extract carryover values from a year's forms_state (for bridging legacy years)."""
     return {
@@ -666,7 +689,7 @@ def fill_taxes(d, config):
             # b means "Covered/Uncovered" == 'UNCOVERED' --  "FormCode" == "B"
 
             trades_subsets = []
-            trades_per_page_limit = 14
+            trades_per_page_limit = config.get('trades_per_page_limit', 14)
             for code in ["A", "B", "C", "D", "E", "F"]:
                 trades_short = yield_trades(long_short='SHORT', form_code=code)
                 trades_long = yield_trades(long_short='LONG', form_code=code)
@@ -1063,7 +1086,8 @@ def fill_taxes(d, config):
             Form.__init__(self, k_it196)
 
         def build(self):
-            self.push_name_ssn()  # ssn not mapped
+            self.d['name'] = forms_state[k_1040]['self_first_name_initial'] \
+                             + " " + forms_state[k_1040]['self_last_name']
 
             # medical and dental
             # self.push_to_dict('1', 100)
@@ -1198,5 +1222,9 @@ def fill_taxes(d, config):
         'schedule_d_net_long_term': forms_state.get(k_1040sd, {}).get('15', 0),
         'schedule_d_loss_deduction': forms_state.get(k_1040sd, {}).get('21', 0),
     }
+
+    field_maps = config.get('field_maps')
+    if field_maps:
+        apply_field_maps(forms_state, field_maps)
 
     return forms_state, worksheets, summary_info, carryover
