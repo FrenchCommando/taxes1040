@@ -3,7 +3,7 @@ import json
 
 from utils.forms_constants import override_keyword, json_extension
 from computation.forms_core_impl import extract_carryover
-from computation.forms_core_2023 import fill_taxes_2023
+from computation.legacy.forms_core_2023 import fill_taxes_2023
 from computation.forms_core_2024 import fill_taxes_2024
 from computation.forms_core_2025 import fill_taxes_2025
 
