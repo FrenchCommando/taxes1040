@@ -24,6 +24,7 @@
 ====================================================================================================================
 """
 
+import utils.logger  # configure root logger
 from pipeline import fill_taxes
 from pipeline import make_pdf_output
 

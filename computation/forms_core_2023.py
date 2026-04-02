@@ -6,7 +6,8 @@ from computation.forms_functions import (
     computation_2023_nyc as computation_nyc,
 )
 from computation.form_worksheet_names import *
-from utils.forms_constants import logger
+import logging
+logger = logging.getLogger('computation')
 
 
 def fill_taxes_2023(d, output_2022=None):

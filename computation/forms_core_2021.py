@@ -1,7 +1,8 @@
 from itertools import islice, chain
 from computation.forms_functions import get_main_info, computation_2021 as computation
 from computation.form_worksheet_names import *
-from utils.forms_constants import logger
+import logging
+logger = logging.getLogger('computation')
 
 
 def fill_taxes_2021(d, output_2020=None):

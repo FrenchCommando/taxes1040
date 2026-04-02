@@ -7,11 +7,11 @@
 # (using the fill_keys.py script)
 from utils.forms_utils import *
 
-
 year_folder = "2024"
 
 
 def process_pdf(file):
+    logger = logging.getLogger('key_mapping')
     year_name = os.path.join(key_mapping_folder, year_folder)
     forms_year_folder = os.path.join(forms_folder, year_folder)
     k_file = os.path.splitext(file)[0] + keys_extension
@@ -43,6 +43,7 @@ def process_pdf(file):
 
 
 def process_all():
+    logger = logging.getLogger('key_mapping')
     forms_year_folder = os.path.join(forms_folder, year_folder)
     for u in glob.glob(os.path.join(forms_year_folder, "*", "", "*")):
         if (

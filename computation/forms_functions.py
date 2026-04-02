@@ -1,4 +1,6 @@
-from utils.forms_constants import logger, override_keyword
+import logging
+logger = logging.getLogger('computation')
+from utils.forms_constants import override_keyword
 
 
 def get_main_info(d):

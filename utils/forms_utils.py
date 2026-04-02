@@ -1,11 +1,13 @@
 import os
 import glob
 import re
+import logging
 import pdfrw
 from utils.forms_constants import *
 
 
 def map_folders(name, year_folder):
+    logger = logging.getLogger('map_folders')
     if not os.path.isdir(name):
         os.mkdir(name)
     year_name = os.path.join(name, year_folder)
@@ -22,6 +24,7 @@ def map_folders(name, year_folder):
 
 
 def load_keys(file, out_dict=True):
+    logger = logging.getLogger('load_keys')
     if out_dict:
         d = {}
     else:
@@ -40,6 +43,7 @@ def load_keys(file, out_dict=True):
 
 
 def fill_pdf_from_keys(file, out_file, d):
+    logger = logging.getLogger('fill_pdf')
     # file is the pdf file
     # d is the dictionary mapping the annotation fields to values
     template_pdf = pdfrw.PdfReader(file)

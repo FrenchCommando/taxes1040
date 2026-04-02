@@ -9,6 +9,7 @@ year_folder = "2019"
 
 
 def build_keys(file, keys_name, keys_orig):
+    logger = logging.getLogger('fields_mapping')
     # file is the "fields" file
     # keys_orig contains the original keys
     # key_name is the new keys file to be created and overridden
@@ -39,6 +40,7 @@ def build_keys(file, keys_name, keys_orig):
 
 
 def process_fields(file):
+    logger = logging.getLogger('fields_mapping')
     year_keys_name = os.path.join(key_mapping_folder, year_folder)
     year_fields_name = os.path.join(fields_mapping_folder, year_folder)
 
@@ -64,6 +66,7 @@ def process_fields(file):
 
 
 def generate_keys_pdf():
+    logger = logging.getLogger('fields_mapping')
     year_fields_name = os.path.join(fields_mapping_folder, year_folder)
     for u in glob.glob(os.path.join(year_fields_name, "*", "*")):
         if u.endswith(fields_extension):
@@ -72,6 +75,7 @@ def generate_keys_pdf():
 
 
 def move_keys_to_parent():
+    logger = logging.getLogger('fields_mapping')
     year_fields_name = os.path.join(fields_mapping_folder, year_folder)
     forms_year_folder = os.path.join(forms_folder, year_folder)
     for u in glob.glob(os.path.join(year_fields_name, "*", "*")):
