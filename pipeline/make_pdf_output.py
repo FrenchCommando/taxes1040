@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 
 from computation.form_worksheet_names import k_it201
 from utils.forms_constants import forms_folder, keys_extension, pdf_extension, json_extension
@@ -23,6 +24,11 @@ def fill_pdfs(year):
         d_mapping = load_keys(os.path.join(form_year_folder, f + keys_extension))
 
         def fill_one_pdf(contents, suffix=""):
+            logger = logging.getLogger('output_pdf')
+            keys_expected = {val[0] for val in d_mapping.values()}
+            unmatched = set(contents.keys()) - keys_expected
+            if unmatched:
+                logger.error("%s%s - computation keys not in .keys: %s", f, suffix, sorted(unmatched))
             ddd = {k: contents[val[0]] for k, val in d_mapping.items() if val[0] in contents}
             outfile = os.path.join(output_year_folder, f + suffix + pdf_extension)
             all_out_files.append(outfile)
