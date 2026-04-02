@@ -21,6 +21,11 @@ CONFIG_2024 = dict(
     should_fill_6251_exemption=81_300,
     should_fill_6251_phaseout=578_150,
     should_fill_6251_28pct=220_700,
+    trades_per_page_limit=14,
+    salt_limit=10_000,
+    salt_phaseout_start=500_000,
+    salt_phaseout_rate=0.30,
+    salt_floor=10_000,
 )
 
 

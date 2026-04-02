@@ -6,6 +6,7 @@
     "Federal/f1040sd 15 Net long-term capital gain or (loss)": -24000.0,
     "Federal/f1040 9 Total income": 1002632.0,
     "Federal/f1040 11 adjusted gross income": 1002632.0,
+    "SALTDeduction 10 SALT deduction": 10000,
     "MortgageInterestDeduction 11 Qualified loan limit for 2025": 750000,
     "MortgageInterestDeduction 15 Deductible Home Mortgage Interest for 2025": 9012.0,
     "MortgageInterestDeduction 16 Personal (not Deductible) Interest for 2025": 2988.0,

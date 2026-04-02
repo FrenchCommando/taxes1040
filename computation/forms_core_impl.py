@@ -415,7 +415,10 @@ def fill_taxes(d, config):
 
 
             self.push_sum('5_d', ['5_a', '5_b', '5_c'])
-            self.push_to_dict('5_e', min(self.d.get('5_d', 0), 10000))
+            # Line 5e: SALT deduction limit (worksheet-based for 2025+)
+            salt_worksheet = SALTDeductionWorksheet(self.d.get('5_d', 0))
+            salt_worksheet.build()
+            self.push_to_dict('5_e', salt_worksheet.result)
             # 6 is other
             self.push_sum('7', ['5_e', '6'])
 
@@ -698,7 +701,7 @@ def fill_taxes(d, config):
             # b means "Covered/Uncovered" == 'UNCOVERED' --  "FormCode" == "B"
 
             trades_subsets = []
-            trades_per_page_limit = config.get('trades_per_page_limit', 14)
+            trades_per_page_limit = config['trades_per_page_limit']
             for code in ["A", "B", "C", "D", "E", "F"]:
                 trades_short = yield_trades(long_short='SHORT', form_code=code)
                 trades_long = yield_trades(long_short='LONG', form_code=code)
@@ -836,6 +839,48 @@ def fill_taxes(d, config):
         def build(self):
             raise NotImplementedError()
 
+    class SALTDeductionWorksheet(Worksheet):
+        """State and Local Tax Deduction Worksheet (Schedule A line 5e).
+        For 2025+: cap is $40k single, phased out by 30% of (MAGI - $500k), floor $10k.
+        For 2024: salt_limit == salt_floor == $10k, so worksheet trivially caps at $10k.
+        """
+        def __init__(self, salt_total):
+            Worksheet.__init__(self, w_salt_deduction, 10)
+            self.salt_total = salt_total  # Schedule A line 5d
+            self.result = 0
+
+        def build(self):
+            # If total SALT <= floor, deduction isn't limited — skip worksheet
+            if self.salt_total <= config['salt_floor']:
+                self.result = self.salt_total
+                summary_info[f"{self.key} 10 SALT deduction"] = self.result
+                return
+            # Line 1: SALT deduction limit
+            self.d[1] = config['salt_limit']
+            # Line 2: MAGI (Form 1040 line 11b; using AGI since foreign exclusions not supported)
+            self.d[2] = forms_state[k_1040]['11']
+            # Lines 3a-3e: foreign income exclusions (not supported, 0)
+            self.d[4] = self.d[2]
+            # Line 5: phaseout threshold
+            self.d[5] = config['salt_phaseout_start']
+            if self.d[4] > self.d[5]:
+                # Line 6: MAGI above threshold
+                self.d[6] = self.d[4] - self.d[5]
+                # Line 7: 30% phaseout
+                self.d[7] = self.d[6] * config['salt_phaseout_rate']
+                # Line 8: reduced limit
+                self.d[8] = self.d[1] - self.d[7]
+                # Line 9: max of reduced limit and floor
+                self.d[9] = max(self.d[8], config['salt_floor'])
+            else:
+                # No phaseout — use full limit
+                self.d[9] = self.d[1]
+            # Line 10: smaller of limit or actual SALT
+            self.d[10] = min(self.d[9], self.salt_total)
+            self.result = self.d[10]
+            summary_info[f"{self.key} 10 SALT deduction"] = self.result
+
+    # See IRS Publication 936 — Home Mortgage Interest Deduction
     class MortgageInterestDeductionWorksheet(Worksheet):
         def __init__(self):
             Worksheet.__init__(self, w_mortgage_interest_deduction, 16)

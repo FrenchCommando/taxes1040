@@ -35,6 +35,7 @@ w_student_loan_interest_deduction = 'StudentLoanInterestDeduction'  # s1 line 33
 w_should_fill_6251 = 'ShouldFill6251'  # s2 line 45
 
 w_mortgage_interest_deduction = "MortgageInterestDeduction"
+w_salt_deduction = "SALTDeduction"  # Schedule A line 5e
 
 # schedule D
 w_capital_loss_carryover = 'CapitalLossCarryover'  # line 6 - 14

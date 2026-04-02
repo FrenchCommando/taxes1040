@@ -22,6 +22,10 @@ CONFIG_2025 = dict(
     should_fill_6251_exemption=88_100,
     should_fill_6251_phaseout=626_350,
     should_fill_6251_28pct=232_600,
+    salt_limit=40_000,
+    salt_phaseout_start=500_000,
+    salt_phaseout_rate=0.30,
+    salt_floor=10_000,
     trades_per_page_limit=11,
     field_maps={
         k_1040: {
