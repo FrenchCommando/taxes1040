@@ -67,29 +67,37 @@ def save_json(data, out):
         json.dump(data, f, indent=4)
 
 
-def process_year(year, states, worksheets, summary):
+def process_year(year, states, worksheets, summary, carryover):
     save_json(data=states, out="data" + year + json_extension)
     save_json(data=worksheets, out="worksheet" + year + json_extension)
     save_json(data=summary, out="summary" + year + json_extension)
+    save_json(data=carryover, out="carryover" + year + json_extension)
 
 
-def main():
-    # 2023 — frozen legacy interface
-    data2023 = gather_inputs(input_year_folder="2023")
-    states2023, worksheets_2023, summary_2023 = fill_taxes_2023(d=data2023, output_2022=None)
-    process_year("2023", states2023, worksheets_2023, summary_2023)
+FILL_FUNCTIONS = {
+    "2023": fill_taxes_2023,
+    "2024": fill_taxes_2024,
+    "2025": fill_taxes_2025,
+}
 
-    # 2024+ — Markovian interface (carryover passed via d['prior_year'])
-    data2024 = gather_inputs(input_year_folder="2024")
-    data2024['prior_year'] = extract_carryover(states2023)
-    states2024, worksheets_2024, summary_2024, carryover_2024 = fill_taxes_2024(d=data2024)
-    process_year("2024", states2024, worksheets_2024, summary_2024)
 
-    data2025 = gather_inputs(input_year_folder="2025")
-    data2025['prior_year'] = carryover_2024
-    states2025, worksheets_2025, summary_2025, carryover_2025 = fill_taxes_2025(d=data2025)
-    process_year("2025", states2025, worksheets_2025, summary_2025)
+def main(years):
+    carryover = None
+    for year in years:
+        data = gather_inputs(year)
+        if carryover is not None:
+            data['prior_year'] = carryover
+
+        fill_func = FILL_FUNCTIONS[year]
+        if year == "2023":
+            # frozen legacy interface — returns 3-tuple, no carryover
+            states, worksheets, summary = fill_func(d=data, output_2022=None)
+            carryover = extract_carryover(states)
+        else:
+            states, worksheets, summary, carryover = fill_func(d=data)
+
+        process_year(year, states, worksheets, summary, carryover)
 
 
 if __name__ == "__main__":
-    main()
+    main(["2023", "2024", "2025"])

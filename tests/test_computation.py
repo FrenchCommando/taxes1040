@@ -72,7 +72,7 @@ def load_scenario_input(scenario_dir):
 
 def load_expected(scenario_dir):
     expected = {}
-    for name in ('data', 'worksheets', 'summary'):
+    for name in ('data', 'worksheets', 'summary', 'carryover'):
         path = os.path.join(scenario_dir, f'{name}.json')
         with open(path, 'r') as f:
             expected[name] = json.load(f)
@@ -86,11 +86,12 @@ class TestComputation(unittest.TestCase):
 def make_test(scenario_name, scenario_dir):
     def test(self):
         data = load_scenario_input(scenario_dir)
-        states, worksheets, summary, _carryover = fill_taxes_2025(d=data)
+        states, worksheets, summary, carryover = fill_taxes_2025(d=data)
         expected = load_expected(scenario_dir)
         self.assertEqual(states, expected['data'], f'{scenario_name}: forms_state mismatch')
         self.assertEqual(worksheets, expected['worksheets'], f'{scenario_name}: worksheets mismatch')
         self.assertEqual(summary, expected['summary'], f'{scenario_name}: summary mismatch')
+        self.assertEqual(carryover, expected['carryover'], f'{scenario_name}: carryover mismatch')
     return test
 
 
@@ -101,6 +102,34 @@ for entry in sorted(os.listdir(SCENARIOS_DIR)):
         test_method = make_test(entry, scenario_path)
         test_method.__name__ = f'test_{entry}'
         setattr(TestComputation, f'test_{entry}', test_method)
+
+
+class TestRealData(unittest.TestCase):
+    """Verify that computing from real input_data/ matches the committed output JSONs."""
+
+    def test_real_data(self):
+        from fill_taxes import gather_inputs, FILL_FUNCTIONS
+        from utils.forms_core_impl import extract_carryover
+        from utils.forms_constants import json_extension
+
+        years = ["2023", "2024", "2025"]
+        carryover = None
+        for year in years:
+            data = gather_inputs(year)
+            if carryover is not None:
+                data['prior_year'] = carryover
+
+            fill_func = FILL_FUNCTIONS[year]
+            if year == "2023":
+                states, worksheets, summary = fill_func(d=data, output_2022=None)
+                carryover = extract_carryover(states)
+            else:
+                states, worksheets, summary, carryover = fill_func(d=data)
+
+            for name, actual in [('data', states), ('worksheet', worksheets), ('summary', summary), ('carryover', carryover)]:
+                with open(name + year + json_extension, 'r') as f:
+                    expected = json.load(f)
+                self.assertEqual(actual, expected, f'{name}{year}: mismatch')
 
 
 if __name__ == '__main__':

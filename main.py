@@ -57,7 +57,7 @@ def dev():
 def main():
     if dev_mode:
         dev()
-    fill_taxes.main()
+    fill_taxes.main(all_years)
     make_pdf_output.main(all_years)
 
 

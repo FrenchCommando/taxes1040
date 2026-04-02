@@ -10,7 +10,6 @@ To add a scenario: add an entry to the SCENARIOS dict below and re-run this scri
 To regenerate all expected outputs: python tests/generate_scenarios.py
 
 Scenarios:
-    base_2025             — full real-world input (mirrors input_data/2025/)
     w2_only               — W2 wages only, no 1099/investments
     capital_loss           — short-term loss exceeding $3k deduction limit
     capital_loss_carryover — prior-year losses carried forward via prior_year dict
@@ -213,17 +212,12 @@ def generate_all():
         scenario_dir = os.path.join(SCENARIOS_DIR, name)
         os.makedirs(scenario_dir, exist_ok=True)
 
-        # Write input
-        input_path = os.path.join(scenario_dir, 'input.json')
-        with open(input_path, 'w') as f:
+        with open(os.path.join(scenario_dir, 'input.json'), 'w') as f:
             json.dump(input_data, f, indent=4)
 
-        # Run computation
         data = load_scenario_input(scenario_dir)
-        states, worksheets, summary, _carryover = fill_taxes_2025(d=data)
-
-        # Write expected outputs
-        for out_name, out_data in [('data', states), ('worksheets', worksheets), ('summary', summary)]:
+        states, worksheets, summary, carryover = fill_taxes_2025(d=data)
+        for out_name, out_data in [('data', states), ('worksheets', worksheets), ('summary', summary), ('carryover', carryover)]:
             with open(os.path.join(scenario_dir, f'{out_name}.json'), 'w') as f:
                 json.dump(out_data, f, indent=4)
 
