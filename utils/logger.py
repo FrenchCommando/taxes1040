@@ -1,7 +1,8 @@
 import logging
 import os
 
-LOG_LEVEL = logging.INFO
+# LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.ERROR
 
 logs_folder = "logs"
 os.makedirs(logs_folder, exist_ok=True)

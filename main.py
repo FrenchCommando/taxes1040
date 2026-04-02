@@ -34,8 +34,8 @@ all_years = [
     "2024",
     "2025",
 ]
-dev_mode = True
-# dev_mode = False
+# dev_mode = True
+dev_mode = False
 
 
 def dev():
