@@ -45,10 +45,8 @@ def dev():
     from pipeline import key_matcher
     from pipeline import fill_keys
     for form_filing_year in all_years:
-        key_matcher.year_folder = form_filing_year
-        key_matcher.main()
-        fill_keys.year_folder = form_filing_year
-        fill_keys.main()
+        key_matcher.main(form_filing_year)
+        fill_keys.main(form_filing_year)
     from utils.forms_constants import key_mapping_folder, fields_mapping_folder
     shutil.rmtree(key_mapping_folder)
     for pdf_file_name in glob.glob(os.path.join(fields_mapping_folder, "**", "*.pdf"), recursive=True):

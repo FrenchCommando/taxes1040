@@ -5,8 +5,6 @@
 import shutil
 from utils.forms_utils import *
 
-year_folder = "2019"
-
 
 def build_keys(file, keys_name, keys_orig):
     logger = logging.getLogger('fields_mapping')
@@ -39,7 +37,7 @@ def build_keys(file, keys_name, keys_orig):
 
 
 
-def process_fields(file):
+def process_fields(file, year_folder):
     logger = logging.getLogger('fields_mapping')
     year_keys_name = os.path.join(key_mapping_folder, year_folder)
     year_fields_name = os.path.join(fields_mapping_folder, year_folder)
@@ -65,16 +63,16 @@ def process_fields(file):
     fill_pdf_from_keys(file=pdf_orig, out_file=pdf_name, d={k: v[0] for k, v in d.items()})
 
 
-def generate_keys_pdf():
+def generate_keys_pdf(year_folder):
     logger = logging.getLogger('fields_mapping')
     year_fields_name = os.path.join(fields_mapping_folder, year_folder)
     for u in glob.glob(os.path.join(year_fields_name, "*", "*")):
         if u.endswith(fields_extension):
             logger.info("Processing fields file %s", u)
-            process_fields(u)
+            process_fields(u, year_folder)
 
 
-def move_keys_to_parent():
+def move_keys_to_parent(year_folder):
     logger = logging.getLogger('fields_mapping')
     year_fields_name = os.path.join(fields_mapping_folder, year_folder)
     forms_year_folder = os.path.join(forms_folder, year_folder)
@@ -87,12 +85,11 @@ def move_keys_to_parent():
             logger.info("Moved  %s to %s", u, folder_path)
 
 
-def main():
+def main(year_folder):
     map_folders(fields_mapping_folder, year_folder)
-    generate_keys_pdf()
-    move_keys_to_parent()  # moves the keys files when done
+    generate_keys_pdf(year_folder)
+    move_keys_to_parent(year_folder)  # moves the keys files when done
 
 
 if __name__ == "__main__":
-    year_folder = "2024"
-    main()
+    main("2024")

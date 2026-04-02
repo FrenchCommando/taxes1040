@@ -7,10 +7,8 @@
 # (using the fill_keys.py script)
 from utils.forms_utils import *
 
-year_folder = "2024"
 
-
-def process_pdf(file):
+def process_pdf(file, year_folder):
     logger = logging.getLogger('key_mapping')
     year_name = os.path.join(key_mapping_folder, year_folder)
     forms_year_folder = os.path.join(forms_folder, year_folder)
@@ -42,7 +40,7 @@ def process_pdf(file):
     fill_pdf_from_keys(file=file, out_file=out_file, d=d)
 
 
-def process_all():
+def process_all(year_folder):
     logger = logging.getLogger('key_mapping')
     forms_year_folder = os.path.join(forms_folder, year_folder)
     for u in glob.glob(os.path.join(forms_year_folder, "*", "", "*")):
@@ -51,19 +49,15 @@ def process_all():
                 or os.path.basename(u) in ['it196_fill_in.pdf']
         ):
             logger.info("Processing file %s", u)
-            process_pdf(u)
+            process_pdf(u, year_folder)
         else:
             logger.info("File ignored %s", u)
-    # for u in glob.glob(os.path.join(key_mapping_folder, "*", "")):
-    #     logger.info("File exists %s", u)
 
 
-def main():
-    # global year_folder
-    # year_folder = "2018"
+def main(year_folder):
     map_folders(key_mapping_folder, year_folder)
-    process_all()
+    process_all(year_folder)
 
 
 if __name__ == "__main__":
-    main()
+    main("2024")
