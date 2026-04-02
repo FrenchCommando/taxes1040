@@ -561,9 +561,15 @@ def fill_taxes(d, config):
         def build(self):
             self.push_name_ssn()
 
-            # Part I
+            # Part I — Alternative Minimum Taxable Income (AMTI)
+            # Line 1: taxable income from f1040 line 15
             self.push_to_dict('1_value', forms_state[k_1040]['15'])
-            # 2a if itemized
+            # Line 2a: add back SALT deduction (Schedule A line 7) — only when itemizing
+            # Schedule A is always built, but only used when it beats standard deduction
+            if forms_state[k_1040]['12'] == forms_state[k_1040sa].get('17', 0):
+                self.push_to_dict('2a_value', forms_state[k_1040sa]['7'])
+            # Lines 2b-2t, 3: other AMT preference items (not yet implemented)
+            # Line 4: AMTI = sum of lines 1 through 3
             self.push_sum(key='4_value', it=[
                 '1_value',
                 '2a_value', '2b_value', '2c_value', '2d_value',
@@ -576,34 +582,33 @@ def fill_taxes(d, config):
             if '4_value' in self.d:
                 summary_info[f"{self.key} 4 Alternative minimum taxable income"] = self.d['4_value']
 
-            # Part II
+            # Part II — AMT Exemption and Computation
+            # Line 5: AMT exemption amount (from config, filing-status dependent)
             self.push_to_dict('5_value', config['amt_exemption'])
+            # Line 6: AMTI minus exemption
             self.push_to_dict('6_value', max(0, self.d.get('4_value', 0) - self.d.get('5_value', 0)))
             if self.d.get('6_value') > 0:
-                # line 7
+                # Line 7: 26% on first bracket, 28% above threshold
                 self.push_to_dict(
                     '7_value',
                     self.d['6_value'] * 0.26 if self.d['6_value'] < config['amt_28pct_threshold'] else
                     self.d['6_value'] * 0.28 - config['amt_28pct_excess']
                 )
-
-                # alternative minimum tax foreign tax credit
+                # Line 8: AMT foreign tax credit (not implemented)
                 self.push_to_dict('8_value', 0)
-                # tentative minimum tax
+                # Line 9: tentative minimum tax
                 self.push_to_dict('9_value', self.d.get('7_value', 0) - self.d.get('8_value', 0))
-
+                # Line 10: regular tax (f1040 line 16 + Schedule 2 line 2 excess advance PTC)
                 self.push_to_dict(
                     '10_value',
                     max(0, forms_state[k_1040]['16'] + forms_state[k_1040s2].get('2', 0))
-                    # minus 4972
-                    # subtract S3 line 1
-                    # form 8978 line 14 positive
                 )
             else:
                 self.push_to_dict('7_value', 0)
                 self.push_to_dict('9_value', 0)
                 self.push_to_dict('11_value', 0)
 
+            # Line 11: AMT = tentative minimum tax minus regular tax (floor 0)
             self.push_to_dict('11_value', max(0, self.d.get('9_value', 0) - self.d.get('10_value', 0)))
             if '11_value' in self.d:
                 summary_info[f"{self.key} 11 AMT"] = self.d['11_value']
@@ -865,15 +870,17 @@ def fill_taxes(d, config):
             self.d[13] = interest_paid
             if self.d[11] >= self.d[12]:
                 # All interest deductible
+                Form(k_1040sa, get_existing=True).push_to_dict('8_a', self.d[13])
                 summary_info[f"{self.key} 13 All Interest Deductible for {year}"] = self.d[13]
                 return
 
+            # Partial deduction — prorate by qualified loan ratio
             self.d[14] = round(self.d[11] / self.d[12], 3)
             self.d[15] = self.d[13] * self.d[14]
+            Form(k_1040sa, get_existing=True).push_to_dict('8_a', self.d[15])
             summary_info[f"{self.key} 15 Deductible Home Mortgage Interest for {year}"] = self.d[15]
             self.d[16] = self.d[13] - self.d[15]
             summary_info[f"{self.key} 16 Personal (not Deductible) Interest for {year}"] = self.d[16]
-            Form(k_1040sa, get_existing=True).push_to_dict('8_a', self.d[15])
 
     class CapitalLossCarryoverWorksheet(Worksheet):
         def __init__(self):

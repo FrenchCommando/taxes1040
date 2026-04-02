@@ -225,6 +225,41 @@ SCENARIOS = {
             },
         ],
     },
+    "amt_itemized_salt": {
+        # Itemizes (mortgage + SALT > standard deduction) AND triggers AMT
+        # (SALT add-back raises AMTI; qualified dividends keep regular tax low)
+        "W2": [{
+            **BASE_W2,
+            "Wages": 80000,
+            "SocialSecurity_wages": 80000,
+            "Medicare_wages": 80000,
+            "Federal_tax": 12000,
+            "SocialSecurity_tax": 4960,
+            "Medicare_tax": 1160,
+            "State_tax": 6000,
+            "Local_tax": 3000,
+        }],
+        "1099": [
+            {
+                "Interest": 0,
+                "Qualified Dividends": 200000,
+                "Ordinary Dividends": 200000,
+                "Institution": "Big Dividend Fund",
+            },
+        ],
+        "1098": [
+            {
+                "Payments": [
+                    {"Date": "2025/06/01", "InterestAmount": 6000, "PrincipalAmount": 1000},
+                    {"Date": "2025/12/01", "InterestAmount": 6000, "PrincipalAmount": 1000},
+                ],
+                "PrincipalBalance": 400000,
+                "LoanNumber": "789012",
+                "Recipient": "Mortgage Bank",
+            },
+        ],
+        "Other": [{"PropertyTax": 4000}],
+    },
 }
 
 

@@ -145,4 +145,4 @@ taxes1040/
 - NY IT-196 (itemized deductions) has `.fields`/`.keys` mappings and PDF filling for 2024–2025. Other NY forms (IT-201, IT-2) are "enhanced" PDFs that can't be filled directly; the code computes NY values for JSON output only
 - Intermediate artifacts are gitignored: `key_mapping/` (raw `.keys` with integer indices, regenerated from blank PDFs each dev run) and debug PDFs in `fields_mapping/`. The final `.keys` with human-readable names live in `forms/{year}/` and are committed.
 - The field mapping layer only handles renamed fields. New fields requiring new computation logic need code additions to `forms_core_impl.py`.
-- Form6251 Part I lines 2a–2t (AMT preference add-backs like SALT) are not yet implemented — AMTI currently equals taxable income. The ShouldFill6251Worksheet screens whether Form 6251 is needed.
+- Form6251 Part I line 2a (SALT add-back when itemizing) is implemented. Lines 2b–2t (other AMT preference items like depreciation, ISO, passive activities) are not yet implemented. The ShouldFill6251Worksheet screens whether Form 6251 is needed.
