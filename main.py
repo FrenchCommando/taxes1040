@@ -25,6 +25,7 @@
 """
 
 import fill_taxes
+import make_pdf_output
 
 all_years = [
     # "2018", "2019", "2020", "2021", "2022",
@@ -57,6 +58,7 @@ def main():
     if dev_mode:
         dev()
     fill_taxes.main()
+    make_pdf_output.main(all_years)
 
 
 if __name__ == '__main__':

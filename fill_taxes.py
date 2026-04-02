@@ -1,54 +1,11 @@
 import os
 import json
 
-from utils.form_worksheet_names import k_it201
-from utils.forms_constants import *
-from utils.forms_utils import fill_pdf_from_keys, logging, process_logger, map_folders, load_keys, output_pdf_folder
-from pdfrw import PdfReader, PdfWriter
+from utils.forms_constants import override_keyword, json_extension
+from utils.forms_core_impl import extract_carryover
 from utils.forms_core_2023 import fill_taxes_2023
 from utils.forms_core_2024 import fill_taxes_2024
 from utils.forms_core_2025 import fill_taxes_2025
-
-
-logger = logging.getLogger('fill_taxes')
-process_logger(logger, file_name='fill_taxes')
-
-
-def fill_pdfs(forms_state, forms_year_folder):
-    map_folders(output_pdf_folder, forms_year_folder)
-    form_year_folder = os.path.join(forms_folder, forms_year_folder)
-    output_year_folder = os.path.join(output_pdf_folder, forms_year_folder)
-
-    all_out_files = []
-    for f, d_contents in forms_state.items():
-        if f in [k_it201]:
-            continue
-        d_mapping = load_keys(os.path.join(form_year_folder, f + keys_extension))
-
-        def fill_one_pdf(contents, suffix=""):
-            ddd = {k: contents[val[0]] for k, val in d_mapping.items() if val[0] in contents}
-            outfile = os.path.join(output_year_folder, f + suffix + pdf_extension)
-            all_out_files.append(outfile)
-            fill_pdf_from_keys(file=os.path.join(form_year_folder, f + pdf_extension),
-                               out_file=outfile, d=ddd)
-        if isinstance(d_contents, list):
-            for i, one_content in enumerate(d_contents):
-                fill_one_pdf(one_content, "_" + str(i))
-        elif isinstance(d_contents, dict):
-            fill_one_pdf(d_contents)
-    return all_out_files
-
-
-def merge_pdfs(files, out):
-    writer = PdfWriter()
-    for inpfn in files:
-        writer.addpages(PdfReader(inpfn).pages)
-    writer.write(out)
-
-
-def save_json(data, out):
-    with open(out, 'w+') as f:
-        json.dump(data, f, indent=4)
 
 
 def gather_inputs(input_year_folder):
@@ -105,23 +62,15 @@ def gather_inputs(input_year_folder):
     return data
 
 
-def extract_carryover(forms_state):
-    """Extract carryover values from a year's forms_state (for bridging legacy years)."""
-    from utils.form_worksheet_names import k_1040, k_1040sd
-    return {
-        'taxable_income': forms_state[k_1040].get('15', 0),
-        'schedule_d_net_short_term': forms_state.get(k_1040sd, {}).get('7', 0),
-        'schedule_d_net_long_term': forms_state.get(k_1040sd, {}).get('15', 0),
-        'schedule_d_loss_deduction': forms_state.get(k_1040sd, {}).get('21', 0),
-    }
+def save_json(data, out):
+    with open(out, 'w+') as f:
+        json.dump(data, f, indent=4)
 
 
 def process_year(year, states, worksheets, summary):
     save_json(data=states, out="data" + year + json_extension)
     save_json(data=worksheets, out="worksheet" + year + json_extension)
     save_json(data=summary, out="summary" + year + json_extension)
-    pdf_files = fill_pdfs(states, year)
-    merge_pdfs(pdf_files, "forms" + year + pdf_extension)
 
 
 def main():

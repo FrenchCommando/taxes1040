@@ -4,6 +4,16 @@ from utils.form_worksheet_names import *
 from utils.forms_constants import logger
 
 
+def extract_carryover(forms_state):
+    """Extract carryover values from a year's forms_state (for bridging legacy years)."""
+    return {
+        'taxable_income': forms_state[k_1040].get('15', 0),
+        'schedule_d_net_short_term': forms_state.get(k_1040sd, {}).get('7', 0),
+        'schedule_d_net_long_term': forms_state.get(k_1040sd, {}).get('15', 0),
+        'schedule_d_loss_deduction': forms_state.get(k_1040sd, {}).get('21', 0),
+    }
+
+
 def fill_taxes(d, config):
     """Shared tax computation logic parameterized by year-specific constants.
 
