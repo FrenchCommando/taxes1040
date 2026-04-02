@@ -954,7 +954,10 @@ def fill_taxes(d, config):
             self.fill6251 = None
 
         def build(self):
-            if k_1040sa in forms_state:
+            # Line 1-3: if itemizing, start from taxable income + SALT add-back;
+            # otherwise start from AGI (standard deduction not allowed for AMT)
+            itemized = forms_state[k_1040]['12'] == forms_state[k_1040sa].get('17', 0)
+            if itemized:
                 self.d[1] = forms_state[k_1040]['15']
                 self.d[2] = forms_state[k_1040sa]['7']
                 self.d[3] = self.d[1] + self.d[2]
