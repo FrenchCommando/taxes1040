@@ -82,37 +82,16 @@
         "3": 12000,
         "5": 12000,
         "7": 12000,
-        "8": 4800.0,
-        "9": 7200.0
+        "8": 4800,
+        "9": 7200
     },
-    "Federal/f8949": [
-        {
-            "I_name": "French Commando",
-            "I_ssn": "200112222",
-            "II_name": "French Commando",
-            "II_ssn": "200112222",
-            "short_b": true,
-            "I_1_1_description": "Form 6781, Part I",
-            "I_1_1_gain": 4800.0,
-            "I_2_gain": 4800
-        },
-        {
-            "I_name": "French Commando",
-            "I_ssn": "200112222",
-            "II_name": "French Commando",
-            "II_ssn": "200112222",
-            "long_e": true,
-            "II_1_1_description": "Form 6781, Part I",
-            "II_1_1_gain": 7200.0,
-            "II_2_gain": 7200
-        }
-    ],
+    "Federal/f8949": [],
     "Federal/f1040sd": {
         "name": "French Commando",
         "ssn": "200112222",
         "dispose_opportunity_n": true,
-        "2_gain": 4800,
-        "9_gain": 7200,
+        "4": 4800,
+        "11": 7200,
         "7": 4800,
         "15": 7200,
         "16": 12000,

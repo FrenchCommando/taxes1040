@@ -516,6 +516,13 @@ def fill_taxes(d, config):
             fill_gains("LONG", "E", "9")
             fill_gains("LONG", "F", "10")
 
+            # Form 6781 Section 1256 contracts -> Schedule D lines 4 and 11
+            if contract1256 and k_6781 in forms_state:
+                if '8' in forms_state[k_6781]:
+                    self.push_to_dict('4', forms_state[k_6781]['8'])
+                if '9' in forms_state[k_6781]:
+                    self.push_to_dict('11', forms_state[k_6781]['9'])
+
             # fill capital loss carryover worksheet
             capital_loss = CapitalLossCarryoverWorksheet()
             capital_loss.build()
@@ -696,8 +703,8 @@ def fill_taxes(d, config):
             self.push_to_dict('3', self.d.get('2_c', 0) - self.d.get('2_b', 0))
             self.push_sum('5', ['3', '4'])
             self.push_sum('7', ['5', '6'])
-            self.push_to_dict('8', self.d.get('7', 0) * 0.4)
-            self.push_to_dict('9', self.d.get('7', 0) * 0.6)
+            self.push_to_dict('8', round(self.d.get('7', 0) * 0.4))
+            self.push_to_dict('9', round(self.d.get('7', 0) * 0.6))
 
     class Form8889(Form):
         def __init__(self):
@@ -742,11 +749,7 @@ def fill_taxes(d, config):
                         for tt in uu['Trades']:
                             if long_short in tt['LongShort'] and form_code == tt['FormCode']:
                                 yield tt
-                if contract1256:
-                    if (long_short == "SHORT") and (form_code == "B") and ('8' in forms_state[k_6781]):
-                        yield dict(a="Form 6781, Part I", h=forms_state[k_6781]["8"])
-                    if (long_short == "LONG") and (form_code == "E") and ('9' in forms_state[k_6781]):
-                        yield dict(a="Form 6781, Part I", h=forms_state[k_6781]["9"])
+                # 1256 contracts go directly to Schedule D lines 4/11, not through 8949
 
             # need a-b-c granularity here
             # a means "Covered/Uncovered" == 'COVERED' --  "FormCode" == "A"
@@ -787,31 +790,25 @@ def fill_taxes(d, config):
                     self.d[check_key] = True
                     s_proceeds, s_cost, s_adj, s_gain = 0, 0, 0, 0
                     for i, t in enumerate(trades[ls_key], 1):
-                        if "a" in t:  # form 6781 stuff
-                            self.d['{}_1_{}_description'.format(index, str(i))] = t["a"]
-                            proceeds, cost, adj = 0, 0, 0
-                            gain = t["h"]
-                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain)
+                        self.d['{}_1_{}_description'.format(index, str(i))] = \
+                            f"{t['Shares']} {t['SalesDescription']}"
+                        self.d['{}_1_{}_date_acq'.format(index, str(i))] = t['DateAcquired']
+                        self.d['{}_1_{}_date_sold'.format(index, str(i))] = t['DateSold']
+
+                        proceeds = t['Proceeds']
+                        self.push_to_dict('{}_1_{}_proceeds'.format(index, str(i)), proceeds)
+                        cost = t['Cost']
+                        self.push_to_dict('{}_1_{}_cost'.format(index, str(i)), cost)
+
+                        if 'WashSaleValue' in t:
+                            adj = t['WashSaleValue']
+                            self.push_to_dict('{}_1_{}_adjustment'.format(index, str(i)), adj)
+                            self.d['{}_1_{}_code'.format(index, str(i))] = t['WashSaleCode']
                         else:
-                            self.d['{}_1_{}_description'.format(index, str(i))] = \
-                                f"{t['Shares']} {t['SalesDescription']}"
-                            self.d['{}_1_{}_date_acq'.format(index, str(i))] = t['DateAcquired']
-                            self.d['{}_1_{}_date_sold'.format(index, str(i))] = t['DateSold']
+                            adj = 0
 
-                            proceeds = t['Proceeds']
-                            self.push_to_dict('{}_1_{}_proceeds'.format(index, str(i)), proceeds)
-                            cost = t['Cost']
-                            self.push_to_dict('{}_1_{}_cost'.format(index, str(i)), cost)
-
-                            if 'WashSaleValue' in t:
-                                adj = t['WashSaleValue']
-                                self.push_to_dict('{}_1_{}_adjustment'.format(index, str(i)), adj)
-                                self.d['{}_1_{}_code'.format(index, str(i))] = t['WashSaleCode']
-                            else:
-                                adj = 0
-
-                            gain = round(proceeds) - round(cost) + round(adj)
-                            self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain)
+                        gain = round(proceeds) - round(cost) + round(adj)
+                        self.push_to_dict('{}_1_{}_gain'.format(index, str(i)), gain)
 
                         s_proceeds += round(proceeds)
                         s_cost += round(cost)
