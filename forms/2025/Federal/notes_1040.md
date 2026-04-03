@@ -1,4 +1,4 @@
-# 2025 Form 1040 Instructions — Key Numbers
+# 2025 Form 1040 Instructions - Key Numbers
 
 Source: IRS Instructions for Form 1040 (2025), Catalog Number 24811V, Feb 25, 2026
 
@@ -125,7 +125,7 @@ Available whether you take the standard deduction or itemize.
 - Line 11 -> 11a (AGI)
 - Line 12 -> 12e (standard/itemized deduction)
 - Line 13 -> 13a (QBI deduction)
-- Line 13b: new — Schedule 1-A additional deductions
+- Line 13b: new - Schedule 1-A additional deductions
 - Line 7 value -> 7a (capital gain/loss)
 - Line 7n: removed
 - Line 26 -> 26 value

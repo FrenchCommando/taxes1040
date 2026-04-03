@@ -1,4 +1,4 @@
-# 2024 Form 1040 Instructions — Key Numbers
+# 2024 Form 1040 Instructions - Key Numbers
 
 Source: IRS Instructions for Form 1040 (2024), Catalog Number 24811V, Dec 16, 2024
 

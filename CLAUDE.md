@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Does
 
-Python tool that computes and fills IRS Form 1040 and related federal/state tax forms (2018–2025). 
+Python tool that computes and fills IRS Form 1040 and related federal/state tax forms (2018-2025). 
 It reads financial input data (W2, 1099, 1098), performs tax computations, and outputs filled PDF forms plus JSON summaries.
 
 Inputs: the initial version was parsing raw `pdf`/`xml`/`csv` files - a lot of wasted energy - now inputs are `json` filled by the user
@@ -56,55 +56,55 @@ The `all_years` list in `main.py` controls which years are processed - dev mode 
 
 ```
 taxes1040/
-├── main.py                     # entry point
-├── pipeline/                   # pipeline scripts
-│   ├── fill_keys.py            # .fields → .keys rewriting
-│   ├── fill_taxes.py           # tax computation orchestration + JSON output
-│   ├── key_matcher.py          # PDF annotation → raw .keys extraction
-│   └── make_pdf_output.py      # .keys + data.json → filled PDFs
-├── computation/                # tax logic
-│   ├── legacy/                 # frozen monoliths (2018–2023), one per year
-│   ├── forms_core_2024.py      # thin config wrapper → forms_core_impl
-│   ├── forms_core_2025.py      # thin config wrapper → forms_core_impl (with field_maps)
-│   ├── forms_core_impl.py      # shared computation engine for 2024+
-│   ├── forms_functions.py      # tax bracket functions + get_main_info
-│   └── form_worksheet_names.py # form key constants (k_1040, k_6251, etc.)
-├── utils/                      # infrastructure
-│   ├── forms_constants.py      # PDF annotation constants, folder/extension names
-│   ├── forms_utils.py          # PDF read/write via pdfrw, key file loading
-│   └── logger.py               # root logger configuration (single file: logs/taxes1040.log)
-├── tests/                      # test suite
-│   ├── test_computation.py     # scenario-based tests (discovers scenarios/<year>/) + real data test
-│   ├── generate_scenarios_2025.py  # generates/regenerates 2025 expected outputs
-│   └── scenarios/              # scenarios organized by year
-│       └── 2025/               # each scenario has input.json + expected JSONs
-├── forms/                      # blank PDFs + committed .keys files, by year
-├── fields_mapping/             # .fields files (positional annotation mappings), by year
-├── input_data/                 # input JSON, by year
-├── output/{year}/              # all generated output per year
-│   ├── data.json               # all computed form field values (tracked)
-│   ├── summary.json            # human-readable key results (tracked)
-│   ├── worksheet.json          # intermediate worksheet computations (tracked)
-│   ├── carryover.json          # values passed to next year (tracked)
-│   ├── forms.pdf               # merged PDF (gitignored)
-│   └── Federal/, ny/           # individual filled PDFs (gitignored)
-└── logs/                       # log files (gitignored)
+|-- main.py                     # entry point
+|-- pipeline/                   # pipeline scripts
+|   |-- fill_keys.py            # .fields -> .keys rewriting
+|   |-- fill_taxes.py           # tax computation orchestration + JSON output
+|   |-- key_matcher.py          # PDF annotation -> raw .keys extraction
+|   +-- make_pdf_output.py      # .keys + data.json -> filled PDFs
+|-- computation/                # tax logic
+|   |-- legacy/                 # frozen monoliths (2018-2023), one per year
+|   |-- forms_core_2024.py      # thin config wrapper -> forms_core_impl
+|   |-- forms_core_2025.py      # thin config wrapper -> forms_core_impl (with field_maps)
+|   |-- forms_core_impl.py      # shared computation engine for 2024+
+|   |-- forms_functions.py      # tax bracket functions + get_main_info
+|   +-- form_worksheet_names.py # form key constants (k_1040, k_6251, etc.)
+|-- utils/                      # infrastructure
+|   |-- forms_constants.py      # PDF annotation constants, folder/extension names
+|   |-- forms_utils.py          # PDF read/write via pdfrw, key file loading
+|   +-- logger.py               # root logger configuration (single file: logs/taxes1040.log)
+|-- tests/                      # test suite
+|   |-- test_computation.py     # scenario-based tests (discovers scenarios/<year>/) + real data test
+|   |-- generate_scenarios_2025.py  # generates/regenerates 2025 expected outputs
+|   +-- scenarios/              # scenarios organized by year
+|       +-- 2025/               # each scenario has input.json + expected JSONs
+|-- forms/                      # blank PDFs + committed .keys files, by year
+|-- fields_mapping/             # .fields files (positional annotation mappings), by year
+|-- input_data/                 # input JSON, by year
+|-- output/{year}/              # all generated output per year
+|   |-- data.json               # all computed form field values (tracked)
+|   |-- summary.json            # human-readable key results (tracked)
+|   |-- worksheet.json          # intermediate worksheet computations (tracked)
+|   |-- carryover.json          # values passed to next year (tracked)
+|   |-- forms.pdf               # merged PDF (gitignored)
+|   +-- Federal/, ny/           # individual filled PDFs (gitignored)
++-- logs/                       # log files (gitignored)
 ```
 
 ## Architecture
 
-**Pipeline flow:** `forms/{year}/` (blank PDFs) → `key_mapping/` (raw `.keys` with integer indices) → `fields_mapping/{year}/` (static `.fields` files rewrite `.keys` with human-readable names) → rewritten `.keys` committed in `forms/{year}/` → `output/{year}/` (filled PDFs + JSON)
+**Pipeline flow:** `forms/{year}/` (blank PDFs) -> `key_mapping/` (raw `.keys` with integer indices) -> `fields_mapping/{year}/` (static `.fields` files rewrite `.keys` with human-readable names) -> rewritten `.keys` committed in `forms/{year}/` -> `output/{year}/` (filled PDFs + JSON)
 
 **PDF generation happens at three stages:**
 1. **Debug PDF (integer indices)** - `key_matcher.py` fills each blank PDF with sequential integers and writes it to `key_mapping/{year}/`. Used to visually identify which integer index maps to which box on the form. Gitignored.
 2. **Debug PDF (human-readable names)** - `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct. Gitignored.
-3. **Final output PDFs** - `make_pdf_output.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name → human_readable_name` with `forms_state[human_readable_name] → computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `output/{year}/forms.pdf`.
+3. **Final output PDFs** - `make_pdf_output.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name -> human_readable_name` with `forms_state[human_readable_name] -> computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `output/{year}/forms.pdf`.
 
-**Core computation:** Each tax year has its own `computation/forms_core_{year}.py` containing a single `fill_taxes_{year}(d)` function. Old years (2018–2023) are frozen monoliths in `computation/legacy/` - large single functions that compute every form line by line. Years 2024+ use thin config wrappers that call `computation/forms_core_impl.py` - the shared implementation - with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
+**Core computation:** Each tax year has its own `computation/forms_core_{year}.py` containing a single `fill_taxes_{year}(d)` function. Old years (2018-2023) are frozen monoliths in `computation/legacy/` - large single functions that compute every form line by line. Years 2024+ use thin config wrappers that call `computation/forms_core_impl.py` - the shared implementation - with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
 
 **Field mapping layer:** The shared computation (`forms_core_impl.py`) uses 2024 as the canonical year for field names. When PDF forms change layout between years (e.g., f1040 line 11 became 11a in 2025), the year config includes a `field_maps` dict that translates canonical names to the year's actual field names. The mapping is applied as a bulk rename after all computation is done (so cross-form reads during computation use consistent 2024 names). Only forms that changed need mapping entries; stable forms pass through untouched. See `CONFIG_2025` in `forms_core_2025.py` for an example. A `None` value in the mapping means the field was removed.
 
-**Logging:** Configured once in `utils/logger.py` (root logger → `logs/taxes1040.log`). Each module/function uses `logging.getLogger('descriptive_name')` - the logger name in the output identifies the source (e.g., `key_mapping`, `fields_mapping`, `output_pdf`, `computation`, `fill_pdf`, `load_keys`, `map_folders`).
+**Logging:** Configured once in `utils/logger.py` (root logger -> `logs/taxes1040.log`). Each module/function uses `logging.getLogger('descriptive_name')` - the logger name in the output identifies the source (e.g., `key_mapping`, `fields_mapping`, `output_pdf`, `computation`, `fill_pdf`, `load_keys`, `map_folders`).
 
 ## Adding a New Tax Year
 
@@ -144,7 +144,7 @@ taxes1040/
 
 - Tax tables (for taxable income under ~$100k) are not parsed; bracket-based computation is used instead
 - Currently configured for **single filer, no dependents, resident**
-- NY IT-196 (itemized deductions) has `.fields`/`.keys` mappings and PDF filling for 2024–2025. Other NY forms (IT-201, IT-2) are "enhanced" PDFs that can't be filled directly; the code computes NY values for JSON output only
+- NY IT-196 (itemized deductions) has `.fields`/`.keys` mappings and PDF filling for 2024-2025. Other NY forms (IT-201, IT-2) are "enhanced" PDFs that can't be filled directly; the code computes NY values for JSON output only
 - Intermediate artifacts are gitignored: `key_mapping/` (raw `.keys` with integer indices, regenerated from blank PDFs each dev run) and debug PDFs in `fields_mapping/`. The final `.keys` with human-readable names live in `forms/{year}/` and are committed.
 - The field mapping layer only handles renamed fields. New fields requiring new computation logic need code additions to `forms_core_impl.py`.
-- Form6251 Part I line 2a (SALT add-back when itemizing) is implemented. Lines 2b–2t (other AMT preference items like depreciation, ISO, passive activities) are not yet implemented. The ShouldFill6251Worksheet screens whether Form 6251 is needed.
+- Form6251 Part I line 2a (SALT add-back when itemizing) is implemented. Lines 2b-2t (other AMT preference items like depreciation, ISO, passive activities) are not yet implemented. The ShouldFill6251Worksheet screens whether Form 6251 is needed.

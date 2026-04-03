@@ -1,4 +1,4 @@
-# 2023 Form 1040 Instructions — Key Numbers
+# 2023 Form 1040 Instructions - Key Numbers
 
 Source: IRS Instructions for Form 1040 (2023), Catalog Number 24811V, Dec 27, 2023
 
