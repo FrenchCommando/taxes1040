@@ -29,7 +29,7 @@ python main.py
 python -m unittest tests.test_computation -v
 
 # Regenerate test expected outputs after computation changes
-python tests/generate_scenarios.py
+python tests/generate_scenarios_2025.py
 ```
 
 The entry point is `main.py` with two modes:
@@ -74,9 +74,10 @@ taxes1040/
 │   ├── forms_utils.py          # PDF read/write via pdfrw, key file loading
 │   └── logger.py               # root logger configuration (single file: logs/taxes1040.log)
 ├── tests/                      # test suite
-│   ├── test_computation.py     # scenario-based tests (10 scenarios) + real data test
-│   ├── generate_scenarios.py   # generates/regenerates expected outputs
-│   └── scenarios/              # each scenario has input.json + expected JSONs
+│   ├── test_computation.py     # scenario-based tests (discovers scenarios/<year>/) + real data test
+│   ├── generate_scenarios_2025.py  # generates/regenerates 2025 expected outputs
+│   └── scenarios/              # scenarios organized by year
+│       └── 2025/               # each scenario has input.json + expected JSONs
 ├── forms/                      # blank PDFs + committed .keys files, by year
 ├── fields_mapping/             # .fields files (positional annotation mappings), by year
 ├── input_data/                 # input JSON, by year
@@ -129,9 +130,10 @@ taxes1040/
 
 ### Phase 4: Tests
 
-12. **Regenerate test scenarios** — run `python tests/generate_scenarios.py` to update expected outputs (tests currently run against the latest year's computation).
-13. **Run tests** — `python -m unittest tests.test_computation -v` to verify all scenarios pass.
-14. **Add new scenarios** if the year introduced new logic paths — add entries to `SCENARIOS` in `tests/generate_scenarios.py`, regenerate, and re-run.
+12. **Create a year-specific scenario generator** — copy `tests/generate_scenarios_2025.py` to `tests/generate_scenarios_{year}.py`, update the import and `SCENARIOS_DIR` path. Scenarios live in `tests/scenarios/{year}/`.
+13. **Regenerate test scenarios** — run `python tests/generate_scenarios_{year}.py` to generate expected outputs. The test runner auto-discovers year subfolders.
+14. **Run tests** — `python -m unittest tests.test_computation -v` to verify all scenarios pass.
+15. **Add new scenarios** if the year introduced new logic paths — add entries to `SCENARIOS` in the year's generator, regenerate, and re-run.
 
 ### Notes
 

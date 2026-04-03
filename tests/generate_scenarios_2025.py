@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from tests.test_computation import load_scenario_input
 from computation.forms_core_2025 import fill_taxes_2025
 
-SCENARIOS_DIR = os.path.join(os.path.dirname(__file__), 'scenarios')
+SCENARIOS_DIR = os.path.join(os.path.dirname(__file__), 'scenarios', '2025')
 
 # Minimal W2 used by all scenarios
 BASE_W2 = {
