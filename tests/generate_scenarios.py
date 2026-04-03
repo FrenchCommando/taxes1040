@@ -19,6 +19,7 @@ Scenarios:
     foreign_tax            — foreign tax paid triggers Schedule 3 credit
     contract_1256          — Section 1256 futures contracts via Form 6781
     many_trades            — 20 trades across short/long term, multiple 8949 pages
+    low_income_itemized    — NY AGI under $100k with NY itemization (tests NY line 46 guard)
 """
 import json
 import os
@@ -259,6 +260,33 @@ SCENARIOS = {
             },
         ],
         "Other": [{"PropertyTax": 4000}],
+    },
+    "low_income_itemized": {
+        # NY AGI under $100k, itemizes for NY (mortgage + taxes > $8k NY standard)
+        # Tests NY Worksheet 3 line 46 guard: skip when NY AGI - $100k <= 0
+        "W2": [{
+            **BASE_W2,
+            "Wages": 70000,
+            "SocialSecurity_wages": 70000,
+            "Medicare_wages": 70000,
+            "Federal_tax": 10000,
+            "SocialSecurity_tax": 4340,
+            "Medicare_tax": 1015,
+            "State_tax": 3000,
+            "Local_tax": 1500,
+        }],
+        "1098": [
+            {
+                "Payments": [
+                    {"Date": "2025/06/01", "InterestAmount": 4000, "PrincipalAmount": 1000},
+                    {"Date": "2025/12/01", "InterestAmount": 4000, "PrincipalAmount": 1000},
+                ],
+                "PrincipalBalance": 200000,
+                "LoanNumber": "654321",
+                "Recipient": "Mortgage Bank",
+            },
+        ],
+        "Other": [{"PropertyTax": 3000, "CoopStateTaxes": 50}],
     },
 }
 

@@ -306,7 +306,7 @@ def fill_taxes(d, config):
                 hsa_taxable_distribution = forms_state[k_8889].get('16', 0)
                 if hsa_taxable_distribution > 0:
                     self.push_to_dict('8_e', hsa_taxable_distribution)
-                if forms_state[k_8889].get('13', 0) == 0 and forms_state[k_8889].get('13', 0) == 0:
+                if forms_state[k_8889].get('13', 0) == 0 and forms_state[k_8889].get('16', 0) == 0:
                     del forms_state[k_8889]
             self.push_to_dict('9',
                               - self.d.get('8_a', 0)
@@ -1259,6 +1259,9 @@ def fill_taxes(d, config):
             self.d[1] = ny_agi
             self.d[2] = 100_000  # single
             self.d[3] = self.d[1] - self.d[2]
+            # If line 3 is zero or less, skip lines 4-7 and enter 0 on IT-196 line 46
+            if self.d[3] <= 0:
+                return
             self.d[4] = min(self.d[3], 50_000)
             self.d[5] = round(self.d[4] / 50_000, 4)
             self.d[6] = forms_state[k_it196]['45'] * 0.25
