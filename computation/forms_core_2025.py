@@ -28,6 +28,7 @@ CONFIG_2025 = dict(
     salt_phaseout_start=500_000,
     salt_phaseout_rate=0.30,
     salt_floor=10_000,
+    ny_standard_deduction=8_000,
     ny_itemized_deduction_threshold=340_700,
     trades_per_page_limit=11,
     field_maps={

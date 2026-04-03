@@ -1109,7 +1109,7 @@ def fill_taxes(d, config):
             self.push_to_dict('33', self.d.get('24', 0) - self.d.get('32', 0))
             if '33' in self.d:
                 summary_info[f"{self.key} 33 New York adjusted gross income"] = self.d['33']
-            standard_deduction_ny = 8000
+            standard_deduction_ny = config['ny_standard_deduction']
             FormIT196().build()
             itemized_deduction_ny = forms_state[k_it196].get('49', 0)
             if itemized_deduction_ny > standard_deduction_ny:
