@@ -771,7 +771,9 @@ def fill_taxes(d, config):
 
             # accumulate the proceeds/cost/adjustment/gain for 1040sd
 
-            if len(trades_subsets) == 1:
+            if len(trades_subsets) == 0:
+                del forms_state[k_8949]
+            elif len(trades_subsets) == 1:
                 # if few enough trades
                 forms_state[k_8949] = self.build_one(trades_subsets[0])
             else:
