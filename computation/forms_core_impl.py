@@ -1143,14 +1143,18 @@ def fill_taxes(d, config):
 
             self.push_sum('62', ['61'])
 
-            # fixed school tax
-            taxable_income = self.d['37']
-            fixed_school_tax = 63 if taxable_income <= 250_000 else 0
+            # fixed school tax credit (eligibility based on income = line 19)
+            income_for_school_credit = self.d['19']
+            fixed_school_tax = 63 if income_for_school_credit <= 250_000 else 0
             self.push_to_dict('69', fixed_school_tax)
-            # school tax rate reduction
-            school_tax_reduction = taxable_income * 0.00171 \
-                if taxable_income <= 12_000 else 21 + (taxable_income - 12_000) * 0.00228 \
-                if taxable_income <= 500_000 else 0
+            # school tax rate reduction (eligibility on income, calculation on city taxable income)
+            city_taxable_income = self.d.get('47', 0)
+            if income_for_school_credit <= 500_000:
+                school_tax_reduction = city_taxable_income * 0.00171 \
+                    if city_taxable_income <= 12_000 \
+                    else 21 + (city_taxable_income - 12_000) * 0.00228
+            else:
+                school_tax_reduction = 0
             self.push_to_dict('69a', school_tax_reduction)
 
             self.push_to_dict('72', state_tax)
@@ -1198,8 +1202,11 @@ def fill_taxes(d, config):
             self.push_to_dict('3', self.d['2'] * 0.10)
             self.push_to_dict('4', max(0, self.d.get('1', 0) - self.d['3']))
 
-            # taxes
+            # taxes (NY has no SALT cap)
             self.push_to_dict('5', state_tax + local_tax)
+            # line 6: real estate taxes (same as federal Sch A line 5c)
+            self.push_to_dict('6', forms_state[k_1040sa].get('5_c', 0))
+            # line 7: personal property taxes (co-op state taxes)
             property_tax_state = 0
             if "Other" in d:
                 for line in d["Other"]:
@@ -1227,9 +1234,18 @@ def fill_taxes(d, config):
             self.push_to_dict('42', self.d['40'] - self.d['41'])
             # 44
             self.push_sum('45', ['42', '43', '44'])
-            # 46
+            # 46: itemized deduction adjustment (NYAGI-dependent)
+            ny_agi = forms_state[k_it201]['33']
             NYLine46ItemizedDeductionsAdjustmentWorksheet().build()
-            self.push_to_dict('47', self.d['45'] - self.d.get('46', 0))
+            # 47: itemized deduction after adjustment
+            if ny_agi <= 100_000:
+                self.push_to_dict('47', self.d['45'])
+            elif ny_agi <= 1_000_000:
+                self.push_to_dict('47', self.d['45'] - self.d.get('46', 0))
+            elif ny_agi <= 10_000_000:
+                self.push_to_dict('47', forms_state[k_it201]['19'] * 0.50)
+            else:
+                self.push_to_dict('47', forms_state[k_it201]['19'] * 0.25)
             # 48
             self.push_sum('49', ['47', '48'])
 
@@ -1251,7 +1267,7 @@ def fill_taxes(d, config):
             self.d[3] = self.d[1] - self.d[2]
             self.d[4] = self.d[3] * 0.80
             self.d[5] = forms_state[k_it201]['19']  # federal AGI
-            self.d[6] = 330_200  # single
+            self.d[6] = config['ny_itemized_deduction_threshold']  # single
             if self.d[6] >= self.d[5]:
                 summary_info[f"{self.key} 10 Total itemized deductions"] = self.d[1]
                 Form(k_it196, get_existing=True).push_to_dict('40', self.d[1])
@@ -1269,9 +1285,10 @@ def fill_taxes(d, config):
 
         def build(self):
             federal_agi = forms_state[k_it201]['19']  # federal AGI
-            taxes_paid = forms_state[k_it196]['9']
-            if federal_agi <= 330_200:
-                Form(k_it196, get_existing=True).push_to_dict('41', taxes_paid)
+            # subtraction A: state/local income tax (line 5) + foreign tax (line 8)
+            taxes_subtracted = forms_state[k_it196].get('5', 0) + forms_state[k_it196].get('8', 0)
+            if federal_agi <= config['ny_itemized_deduction_threshold']:
+                Form(k_it196, get_existing=True).push_to_dict('41', taxes_subtracted)
                 return
 
             # self.push_to_dict('41', state_tax + local_tax)
@@ -1279,7 +1296,7 @@ def fill_taxes(d, config):
             self.d[1] = worksheets[w_ny_line40_itemized_deductions][9]
             self.d[2] = worksheets[w_ny_line40_itemized_deductions][3]
             self.d[3] = round(self.d[1] / self.d[2], 4)
-            self.d[4] = taxes_paid
+            self.d[4] = taxes_subtracted
             self.d[5] = 0  # B,C
             self.d[6] = self.d[4] + self.d[5]
             self.d[7] = self.d[3] * self.d[6]
@@ -1296,19 +1313,30 @@ def fill_taxes(d, config):
 
         def build(self):
             ny_agi = forms_state[k_it201]['33']
-            # worksheet 3
-            self.d[1] = ny_agi
-            self.d[2] = 100_000  # single
-            self.d[3] = self.d[1] - self.d[2]
-            # If line 3 is zero or less, skip lines 4-7 and enter 0 on IT-196 line 46
-            if self.d[3] <= 0:
+            line_45 = forms_state[k_it196].get('45', 0)
+            if ny_agi <= 100_000:
                 return
-            self.d[4] = min(self.d[3], 50_000)
-            self.d[5] = round(self.d[4] / 50_000, 4)
-            self.d[6] = forms_state[k_it196]['45'] * 0.25
-            self.d[7] = self.d[5] * self.d[6]
-            summary_info[f"{self.key} NY Worksheet3 Line 46 - Itemized Deduction Adjustment"] = self.d[7]
-            Form(k_it196, get_existing=True).push_to_dict('46', self.d[7])
+            if ny_agi > 1_000_000:
+                # line 47 uses a different formula; no line 46 needed
+                return
+            if ny_agi <= 475_000:
+                # Worksheet 3: phase-in from 0% to 25%
+                excess = min(ny_agi - 100_000, 50_000)
+                fraction = round(excess / 50_000, 4)
+                adjustment = fraction * line_45 * 0.25
+            elif ny_agi <= 525_000:
+                # Worksheet 4: phase-in from 25% to 50%
+                excess = min(ny_agi - 475_000, 50_000)
+                fraction = round(excess / 50_000, 4)
+                adjustment = line_45 * 0.25 + fraction * line_45 * 0.25
+            else:
+                # NYAGI $525k-$1M: flat 50%
+                adjustment = line_45 * 0.50
+            # store worksheet values for auditability
+            self.d[1] = ny_agi
+            self.d[7] = adjustment
+            summary_info[f"{self.key} NY Worksheet3 Line 46 - Itemized Deduction Adjustment"] = adjustment
+            Form(k_it196, get_existing=True).push_to_dict('46', adjustment)
 
     state_form = FormIT201()
 

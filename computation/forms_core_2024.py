@@ -26,6 +26,7 @@ CONFIG_2024 = dict(
     salt_phaseout_start=500_000,
     salt_phaseout_rate=0.30,
     salt_floor=10_000,
+    ny_itemized_deduction_threshold=330_200,
 )
 
 

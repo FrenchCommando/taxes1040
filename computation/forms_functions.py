@@ -189,8 +189,9 @@ def computation_2024_ny(amount):
 
 
 def computation_2024_ny_recapture(amount, gross):
-    # single and married filling separately
-    if amount <= 107_650:
+    # single and married filing separately
+    # recapture triggers on AGI (gross), not taxable income (amount)
+    if gross <= 107_650:
         return 0
     if amount <= 215_400:
         tax = computation_2024_ny(amount=amount)
@@ -200,9 +201,9 @@ def computation_2024_ny_recapture(amount, gross):
     if amount <= 1_077_550:
         return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
     if amount <= 5_000_000:
-        return 2_399 + 30_171 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
+        return 2_399 + 30_172 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
     if amount <= 25_000_000:
-        return 32_570 + 32_501 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
+        return 32_571 + 32_500 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
     return 65_071 + 150_000 * round(min(50_000, gross - 25_000_000) / 50_000, 4)
 
 
@@ -255,7 +256,9 @@ def computation_2025_ny(amount):
 
 
 def computation_2025_ny_recapture(amount, gross):
-    if amount <= 107_650:
+    # single and married filing separately
+    # recapture triggers on AGI (gross), not taxable income (amount)
+    if gross <= 107_650:
         return 0
     if amount <= 215_400:
         tax = computation_2025_ny(amount=amount)
@@ -265,9 +268,9 @@ def computation_2025_ny_recapture(amount, gross):
     if amount <= 1_077_550:
         return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
     if amount <= 5_000_000:
-        return 2_399 + 30_171 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
+        return 2_399 + 30_172 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
     if amount <= 25_000_000:
-        return 32_570 + 32_501 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
+        return 32_571 + 32_500 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
     return 65_071 + 150_000 * round(min(50_000, gross - 25_000_000) / 50_000, 4)
 
 
