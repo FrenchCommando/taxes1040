@@ -531,9 +531,7 @@ def fill_taxes(d, config):
             self.push_sum('16', ['7', '15'])
             if self.d['16'] > 0:
                 Form(k_1040, get_existing=True).push_to_dict('7_value', self.d['16'])
-                if self.d['15'] < 0 or self.d['16'] < 0:
-                    self.d['17_n'] = True
-                else:
+                if self.d['15'] > 0 and self.d['16'] > 0:
                     self.d['17_y'] = True
 
                     # 18 is '28% Rate Gain Worksheet'
@@ -545,6 +543,8 @@ def fill_taxes(d, config):
                     else:
                         self.d['20_n'] = True
                     return  # don't fill 22
+                else:
+                    self.d['17_n'] = True
 
             elif self.d['16'] < 0:
                 capital_loss_limit = 3000 if d['single'] else 1500
@@ -586,10 +586,15 @@ def fill_taxes(d, config):
                 summary_info[f"{self.key} 4 Alternative minimum taxable income"] = self.d['4_value']
 
             # Part II — AMT Exemption and Computation
-            # Line 5: AMT exemption amount (from config, filing-status dependent)
-            self.push_to_dict('5_value', config['amt_exemption'])
+            # Line 5: exemption reduced by 25% of AMTI exceeding phaseout start
+            amti = self.d.get('4_value', 0)
+            exemption = config['amt_exemption']
+            phaseout_start = config['should_fill_6251_phaseout']
+            if amti > phaseout_start:
+                exemption = max(0, exemption - 0.25 * (amti - phaseout_start))
+            self.push_to_dict('5_value', exemption)
             # Line 6: AMTI minus exemption
-            self.push_to_dict('6_value', max(0, self.d.get('4_value', 0) - self.d.get('5_value', 0)))
+            self.push_to_dict('6_value', max(0, amti - self.d.get('5_value', 0)))
             if self.d.get('6_value') > 0:
                 # Line 7: 26% on first bracket, 28% above threshold
                 self.push_to_dict(

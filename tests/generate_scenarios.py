@@ -20,6 +20,7 @@ Scenarios:
     contract_1256          — Section 1256 futures contracts via Form 6781
     many_trades            — 20 trades across short/long term, multiple 8949 pages
     low_income_itemized    — NY AGI under $100k with NY itemization (tests NY line 46 guard)
+    amt_exemption_phaseout — high income pushes AMTI above $626,350, AMT exemption phased out
 """
 import json
 import os
@@ -287,6 +288,33 @@ SCENARIOS = {
             },
         ],
         "Other": [{"PropertyTax": 3000, "CoopStateTaxes": 50}],
+    },
+    "amt_exemption_phaseout": {
+        # High income pushes AMTI above $626,350 exemption phaseout start
+        # Tests Form 6251 line 5 reduced exemption (25% of excess over phaseout)
+        "W2": [{
+            **BASE_W2,
+            "Wages": 700000,
+            "SocialSecurity_wages": 176100,
+            "Medicare_wages": 700000,
+            "Federal_tax": 170000,
+            "SocialSecurity_tax": 10918,
+            "Medicare_tax": 10150,
+            "State_tax": 40000,
+            "Local_tax": 20000,
+        }],
+        "1098": [
+            {
+                "Payments": [
+                    {"Date": "2025/06/01", "InterestAmount": 10000, "PrincipalAmount": 2000},
+                    {"Date": "2025/12/01", "InterestAmount": 10000, "PrincipalAmount": 2000},
+                ],
+                "PrincipalBalance": 500000,
+                "LoanNumber": "111222",
+                "Recipient": "Mortgage Bank",
+            },
+        ],
+        "Other": [{"PropertyTax": 10000}],
     },
 }
 
