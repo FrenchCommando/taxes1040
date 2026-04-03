@@ -33,12 +33,12 @@ python tests/generate_scenarios_2025.py
 ```
 
 The entry point is `main.py` with two modes:
-- **Default** (`dev_mode = False`) — runs `fill_taxes.main()` and `make_pdf_output.main()` (tax computation, PDF filling, JSON output)
-- **Dev mode** (`dev_mode = True`) — first regenerates `.keys` files from `.fields` mappings for each year in `all_years`, cleans up intermediate artifacts (`key_mapping/` folder and debug PDFs), then runs the full pipeline (same as default mode). Use when adding a new form PDF, editing a `.fields` file, or adding a new tax year.
+- **Default** (`dev_mode = False`) - runs `fill_taxes.main()` and `make_pdf_output.main()` (tax computation, PDF filling, JSON output)
+- **Dev mode** (`dev_mode = True`) - first regenerates `.keys` files from `.fields` mappings for each year in `all_years`, cleans up intermediate artifacts (`key_mapping/` folder and debug PDFs), then runs the full pipeline (same as default mode). Use when adding a new form PDF, editing a `.fields` file, or adding a new tax year.
 
 ### Dev mode pipeline
-1. **Key matching** (`pipeline/key_matcher.py`) — opens each blank IRS PDF, iterates over annotation widgets, and produces raw `.keys` files in `key_mapping/` mapping each annotation name to a sequential integer index and its type (`/Tx` text or `/Btn` checkbox). Also generates debug PDFs with integers filled in so you can visually identify which index corresponds to which box.
-2. **Field filling** (`pipeline/fill_keys.py`) — reads the static `.fields` files from `fields_mapping/{year}/` and rewrites the `.keys` files, replacing integer indices with human-readable names:
+1. **Key matching** (`pipeline/key_matcher.py`) - opens each blank IRS PDF, iterates over annotation widgets, and produces raw `.keys` files in `key_mapping/` mapping each annotation name to a sequential integer index and its type (`/Tx` text or `/Btn` checkbox). Also generates debug PDFs with integers filled in so you can visually identify which index corresponds to which box.
+2. **Field filling** (`pipeline/fill_keys.py`) - reads the static `.fields` files from `fields_mapping/{year}/` and rewrites the `.keys` files, replacing integer indices with human-readable names:
    - `.fields` files are committed to the repo and edited directly. Each line is a positional format: a single word (e.g. `single`) names the next annotation; a multi-word line (e.g. `self first_name_initial last_name ssn`) names the next N annotations with `prefix_suffix` keys
    - `build_keys()` walks the `.fields` file and original `.keys` file in parallel via an iterator, producing a new `.keys` file where the integer index column is replaced by the human-readable name
    - `generate_keys_pdf()` produces debug PDFs in `fields_mapping/{year}/` with human-readable names overlaid for visual verification (gitignored)
@@ -50,7 +50,7 @@ Reads input data, computes taxes, outputs JSON to `output/{year}/`.
 ### PDF output (`pipeline/make_pdf_output.py`)
 Reads `output/{year}/data.json`, fills blank PDFs using `.keys` mappings, merges into `output/{year}/forms.pdf`. Logs errors for computation keys that don't match any `.keys` entry (detects field name mismatches between computation and PDF layout).
 
-The `all_years` list in `main.py` controls which years are processed — dev mode (key regeneration), tax computation (`fill_taxes`), and PDF output (`make_pdf_output`) all receive this same list.
+The `all_years` list in `main.py` controls which years are processed - dev mode (key regeneration), tax computation (`fill_taxes`), and PDF output (`make_pdf_output`) all receive this same list.
 
 ## Project Structure
 
@@ -96,44 +96,44 @@ taxes1040/
 **Pipeline flow:** `forms/{year}/` (blank PDFs) → `key_mapping/` (raw `.keys` with integer indices) → `fields_mapping/{year}/` (static `.fields` files rewrite `.keys` with human-readable names) → rewritten `.keys` committed in `forms/{year}/` → `output/{year}/` (filled PDFs + JSON)
 
 **PDF generation happens at three stages:**
-1. **Debug PDF (integer indices)** — `key_matcher.py` fills each blank PDF with sequential integers and writes it to `key_mapping/{year}/`. Used to visually identify which integer index maps to which box on the form. Gitignored.
-2. **Debug PDF (human-readable names)** — `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct. Gitignored.
-3. **Final output PDFs** — `make_pdf_output.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name → human_readable_name` with `forms_state[human_readable_name] → computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `output/{year}/forms.pdf`.
+1. **Debug PDF (integer indices)** - `key_matcher.py` fills each blank PDF with sequential integers and writes it to `key_mapping/{year}/`. Used to visually identify which integer index maps to which box on the form. Gitignored.
+2. **Debug PDF (human-readable names)** - `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct. Gitignored.
+3. **Final output PDFs** - `make_pdf_output.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name → human_readable_name` with `forms_state[human_readable_name] → computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `output/{year}/forms.pdf`.
 
-**Core computation:** Each tax year has its own `computation/forms_core_{year}.py` containing a single `fill_taxes_{year}(d)` function. Old years (2018–2023) are frozen monoliths in `computation/legacy/` — large single functions that compute every form line by line. Years 2024+ use thin config wrappers that call `computation/forms_core_impl.py` — the shared implementation — with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
+**Core computation:** Each tax year has its own `computation/forms_core_{year}.py` containing a single `fill_taxes_{year}(d)` function. Old years (2018–2023) are frozen monoliths in `computation/legacy/` - large single functions that compute every form line by line. Years 2024+ use thin config wrappers that call `computation/forms_core_impl.py` - the shared implementation - with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
 
 **Field mapping layer:** The shared computation (`forms_core_impl.py`) uses 2024 as the canonical year for field names. When PDF forms change layout between years (e.g., f1040 line 11 became 11a in 2025), the year config includes a `field_maps` dict that translates canonical names to the year's actual field names. The mapping is applied as a bulk rename after all computation is done (so cross-form reads during computation use consistent 2024 names). Only forms that changed need mapping entries; stable forms pass through untouched. See `CONFIG_2025` in `forms_core_2025.py` for an example. A `None` value in the mapping means the field was removed.
 
-**Logging:** Configured once in `utils/logger.py` (root logger → `logs/taxes1040.log`). Each module/function uses `logging.getLogger('descriptive_name')` — the logger name in the output identifies the source (e.g., `key_mapping`, `fields_mapping`, `output_pdf`, `computation`, `fill_pdf`, `load_keys`, `map_folders`).
+**Logging:** Configured once in `utils/logger.py` (root logger → `logs/taxes1040.log`). Each module/function uses `logging.getLogger('descriptive_name')` - the logger name in the output identifies the source (e.g., `key_mapping`, `fields_mapping`, `output_pdf`, `computation`, `fill_pdf`, `load_keys`, `map_folders`).
 
 ## Adding a New Tax Year
 
 ### Phase 1: Computation
 
-1. **Create the config wrapper** — `computation/forms_core_{year}.py`. Define `CONFIG_{year}` with updated constants (standard deduction, AMT thresholds, bracket limits, etc.) and a one-liner `fill_taxes_{year}(d)` that calls `forms_core_impl.fill_taxes(d, config=CONFIG_{year})`. Use `forms_core_2025.py` as a template.
-2. **Update bracket functions** — if tax brackets changed, add `computation_{year}`, `computation_{year}_ny`, etc. to `computation/forms_functions.py`.
-3. **Register the year in the pipeline** — add the new fill function to `FILL_FUNCTIONS` in `pipeline/fill_taxes.py` and import it. Add the year string to `all_years` in `main.py`.
+1. **Create the config wrapper** - `computation/forms_core_{year}.py`. Define `CONFIG_{year}` with updated constants (standard deduction, AMT thresholds, bracket limits, etc.) and a one-liner `fill_taxes_{year}(d)` that calls `forms_core_impl.fill_taxes(d, config=CONFIG_{year})`. Use `forms_core_2025.py` as a template.
+2. **Update bracket functions** - if tax brackets changed, add `computation_{year}`, `computation_{year}_ny`, etc. to `computation/forms_functions.py`.
+3. **Register the year in the pipeline** - add the new fill function to `FILL_FUNCTIONS` in `pipeline/fill_taxes.py` and import it. Add the year string to `all_years` in `main.py`.
 
 ### Phase 2: PDF Forms and Field Mapping
 
 4. **Place blank IRS PDFs** in `forms/{year}/Federal/` (and `forms/{year}/ny/` for NY state forms).
-5. **Create `.fields` files** in `fields_mapping/{year}/` for each form. Copy from the previous year and adjust for any layout changes. Each `.fields` file is positional — it maps PDF annotation widgets to human-readable field names (see existing files for the format).
-6. **Run dev mode** — set `dev_mode = True` in `main.py` and run `python main.py`. This runs `key_matcher` (extracts raw `.keys` from PDFs) then `fill_keys` (rewrites `.keys` using `.fields`). Check the debug PDFs generated in `fields_mapping/{year}/` to verify field names land on the correct boxes.
-7. **Add field maps if PDF layout changed** — compare the new year's `.keys` against the previous year's. Any computation field names that changed need a `field_maps` entry in the config. The computation uses 2024 as canonical field names; the mapping translates them after computation. Use `None` to drop a removed field. Only include fields that actually changed.
+5. **Create `.fields` files** in `fields_mapping/{year}/` for each form. Copy from the previous year and adjust for any layout changes. Each `.fields` file is positional - it maps PDF annotation widgets to human-readable field names (see existing files for the format).
+6. **Run dev mode** - set `dev_mode = True` in `main.py` and run `python main.py`. This runs `key_matcher` (extracts raw `.keys` from PDFs) then `fill_keys` (rewrites `.keys` using `.fields`). Check the debug PDFs generated in `fields_mapping/{year}/` to verify field names land on the correct boxes.
+7. **Add field maps if PDF layout changed** - compare the new year's `.keys` against the previous year's. Any computation field names that changed need a `field_maps` entry in the config. The computation uses 2024 as canonical field names; the mapping translates them after computation. Use `None` to drop a removed field. Only include fields that actually changed.
 
 ### Phase 3: Input Data and Validation
 
-8. **Create input data** — `input_data/{year}/input.json` with that year's W2, 1099, 1098, etc.
-9. **Run the full pipeline** — set `dev_mode = False` and run `python main.py`. This runs computation (`fill_taxes`) then PDF output (`make_pdf_output`).
-10. **Check for field mismatches** — look for `output_pdf` ERROR logs in `logs/taxes1040.log`. These indicate computation keys not found in the `.keys` file, meaning either a missing `field_maps` entry or a new field needing computation logic in `forms_core_impl.py`.
-11. **Inspect output** — review `output/{year}/data.json` (all form fields), `summary.json` (key figures), `worksheet.json` (intermediate calculations), and `carryover.json` (values for next year). Open `output/{year}/forms.pdf` and verify values appear in the correct boxes.
+8. **Create input data** - `input_data/{year}/input.json` with that year's W2, 1099, 1098, etc.
+9. **Run the full pipeline** - set `dev_mode = False` and run `python main.py`. This runs computation (`fill_taxes`) then PDF output (`make_pdf_output`).
+10. **Check for field mismatches** - look for `output_pdf` ERROR logs in `logs/taxes1040.log`. These indicate computation keys not found in the `.keys` file, meaning either a missing `field_maps` entry or a new field needing computation logic in `forms_core_impl.py`.
+11. **Inspect output** - review `output/{year}/data.json` (all form fields), `summary.json` (key figures), `worksheet.json` (intermediate calculations), and `carryover.json` (values for next year). Open `output/{year}/forms.pdf` and verify values appear in the correct boxes.
 
 ### Phase 4: Tests
 
-12. **Create a year-specific scenario generator** — copy `tests/generate_scenarios_2025.py` to `tests/generate_scenarios_{year}.py`, update the import and `SCENARIOS_DIR` path. Scenarios live in `tests/scenarios/{year}/`.
-13. **Regenerate test scenarios** — run `python tests/generate_scenarios_{year}.py` to generate expected outputs. The test runner auto-discovers year subfolders.
-14. **Run tests** — `python -m unittest tests.test_computation -v` to verify all scenarios pass.
-15. **Add new scenarios** if the year introduced new logic paths — add entries to `SCENARIOS` in the year's generator, regenerate, and re-run.
+12. **Create a year-specific scenario generator** - copy `tests/generate_scenarios_2025.py` to `tests/generate_scenarios_{year}.py`, update the import and `SCENARIOS_DIR` path. Scenarios live in `tests/scenarios/{year}/`.
+13. **Regenerate test scenarios** - run `python tests/generate_scenarios_{year}.py` to generate expected outputs. The test runner auto-discovers year subfolders.
+14. **Run tests** - `python -m unittest tests.test_computation -v` to verify all scenarios pass.
+15. **Add new scenarios** if the year introduced new logic paths - add entries to `SCENARIOS` in the year's generator, regenerate, and re-run.
 
 ### Notes
 
