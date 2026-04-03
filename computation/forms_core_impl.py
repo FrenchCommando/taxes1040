@@ -1092,13 +1092,13 @@ def fill_taxes(d, config):
                 summary_info[f"{self.key} 59 Sales or use tax"] = self.d['59']
             if '60' in self.d:
                 summary_info[f"{self.key} 60 Voluntary contributions"] = self.d['60']
+            self.push_sum('61', ['46', '58', '59', '60'])
             if '61' in self.d:
                 summary_info[
                     (f"{self.key} 61 "
                      f"Total New York State, New York City, Yonkers, "
                      f"and sales or use taxes, MCTMT, and voluntary contributions"
                      )] = self.d['61']
-            self.push_sum('61', ['46', '58', '59', '60'])
 
             self.push_sum('62', ['61'])
 
