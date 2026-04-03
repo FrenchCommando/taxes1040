@@ -1104,12 +1104,12 @@ def fill_taxes(d, config):
 
             # fixed school tax
             taxable_income = self.d['37']
-            fixed_school_tax = 63 if taxable_income < 250_000 else 0
+            fixed_school_tax = 63 if taxable_income <= 250_000 else 0
             self.push_to_dict('69', fixed_school_tax)
             # school tax rate reduction
             school_tax_reduction = taxable_income * 0.00171 \
-                if taxable_income < 12_000 else 21 + (taxable_income - 12_000) * 0.00228 \
-                if taxable_income < 500_000 else 0
+                if taxable_income <= 12_000 else 21 + (taxable_income - 12_000) * 0.00228 \
+                if taxable_income <= 500_000 else 0
             self.push_to_dict('69a', school_tax_reduction)
 
             self.push_to_dict('72', state_tax)
