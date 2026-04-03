@@ -155,7 +155,7 @@ def computation_2024(amount):
     if amount <= 11_600:
         return amount * 0.10
     if amount <= 47_150:
-        return 1_160 + (amount - 11_700) * 0.12
+        return 1_160 + (amount - 11_600) * 0.12
     if amount <= 100_525:
         return 5_426 + (amount - 47_150) * 0.22
     if amount <= 191_950:
