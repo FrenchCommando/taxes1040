@@ -162,9 +162,8 @@ def fill_taxes_2023(d, output_2022=None):
             self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
             summary_info[f"{self.key} 11 adjusted gross income"] = self.d['11']
 
-            # Form1040sa().build()
-            # itemized_deduction = forms_state[k_1040sa].get('17', 0)
-            itemized_deduction = 0
+            Form1040sa().build()
+            itemized_deduction = forms_state[k_1040sa].get('17', 0)
             if itemized_deduction > standard_deduction:
                 self.push_to_dict('12', itemized_deduction)
             else:
@@ -187,7 +186,8 @@ def fill_taxes_2023(d, output_2022=None):
             if forms_state[k_1040s2].get('3', 0) == 0 \
                     and forms_state[k_1040s2].get('21', 0) == 0:
                 del forms_state[k_1040s2]
-                del forms_state[k_6251]
+                if k_6251 in forms_state:
+                    del forms_state[k_6251]
 
             # self.push_to_dict('17', 0)  # schedule 2 line 3
             self.push_sum('18', ['16', '17'])
@@ -295,7 +295,10 @@ def fill_taxes_2023(d, output_2022=None):
             # Additional Taxes
 
             # Part I - Tax
-            Form6251().build()  # AMT fills 1
+            should_fill_6251 = ShouldFill6251Worksheet()
+            should_fill_6251.build()
+            if should_fill_6251.fill6251:
+                Form6251().build()  # AMT fills 1
             # Form8962().build()  # Excess advance premium tax credit repayment - fills 2
             self.push_sum(key='3', it=['1', '2'])
             Form(k_1040, get_existing=True).push_to_dict('17', self.d['3'])
@@ -489,9 +492,12 @@ def fill_taxes_2023(d, output_2022=None):
         def build(self):
             self.push_name_ssn()
 
-            # Part I
+            # Part I — Alternative Minimum Taxable Income (AMTI)
+            # Line 1: taxable income from f1040 line 15
             self.push_to_dict('1_value', forms_state[k_1040]['15'])
-            # 2a if itemized
+            # Line 2a: add back SALT deduction (Schedule A line 7) — only when itemizing
+            if forms_state[k_1040].get('12') == forms_state.get(k_1040sa, {}).get('17', 0):
+                self.push_to_dict('2a_value', forms_state[k_1040sa]['7'])
             self.push_sum(key='4_value', it=[
                 '1_value',
                 '2a_value', '2b_value', '2c_value', '2d_value',
@@ -831,14 +837,17 @@ def fill_taxes_2023(d, output_2022=None):
             self.fill6251 = None
 
         def build(self):
-            if k_1040sa in forms_state:
-                self.d[1] = forms_state[k_1040]['15_dollar']
+            # Line 1-3: if itemizing, start from taxable income + SALT add-back;
+            # otherwise start from AGI (standard deduction not allowed for AMT)
+            itemized = forms_state[k_1040]['12'] == forms_state.get(k_1040sa, {}).get('17', 0)
+            if itemized:
+                self.d[1] = forms_state[k_1040]['15']
                 self.d[2] = forms_state[k_1040sa]['7']
                 self.d[3] = self.d[1] + self.d[2]
             else:
-                self.d[3] = forms_state[k_1040]['13_dollar']
-            self.d[4] = forms_state[k_1040s1].get('1_dollar', 0) \
-                + forms_state[k_1040s1].get('8z_dollar', 0) \
+                self.d[3] = forms_state[k_1040]['11']
+            self.d[4] = forms_state[k_1040s1].get('1', 0) \
+                + forms_state[k_1040s1].get('8_z', 0) \
                 if k_1040s1 in forms_state else 0
             self.d[5] = self.d[3] - self.d[4]
             self.d[6] = 81300  # single
@@ -858,8 +867,8 @@ def fill_taxes_2023(d, output_2022=None):
                 self.fill6251 = True
                 return
             self.d[12] = self.d[11] * 0.26
-            self.d[13] = forms_state[k_1040]['11a'] \
-                + forms_state[k_1040s2]['46']
+            self.d[13] = forms_state[k_1040]['16'] \
+                + forms_state[k_1040s2].get('2', 0)
             self.fill6251 = (self.d[13] < self.d[12])
 
     class FormIT201(Form):
