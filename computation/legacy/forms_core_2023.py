@@ -492,10 +492,10 @@ def fill_taxes_2023(d, output_2022=None):
         def build(self):
             self.push_name_ssn()
 
-            # Part I — Alternative Minimum Taxable Income (AMTI)
+            # Part I - Alternative Minimum Taxable Income (AMTI)
             # Line 1: taxable income from f1040 line 15
             self.push_to_dict('1_value', forms_state[k_1040]['15'])
-            # Line 2a: add back SALT deduction (Schedule A line 7) — only when itemizing
+            # Line 2a: add back SALT deduction (Schedule A line 7) - only when itemizing
             if forms_state[k_1040].get('12') == forms_state.get(k_1040sa, {}).get('17', 0):
                 self.push_to_dict('2a_value', forms_state[k_1040sa]['7'])
             self.push_sum(key='4_value', it=[

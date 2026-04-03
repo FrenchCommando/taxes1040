@@ -564,10 +564,10 @@ def fill_taxes(d, config):
         def build(self):
             self.push_name_ssn()
 
-            # Part I — Alternative Minimum Taxable Income (AMTI)
+            # Part I - Alternative Minimum Taxable Income (AMTI)
             # Line 1: taxable income from f1040 line 15
             self.push_to_dict('1_value', forms_state[k_1040]['15'])
-            # Line 2a: add back SALT deduction (Schedule A line 7) — only when itemizing
+            # Line 2a: add back SALT deduction (Schedule A line 7) - only when itemizing
             # Schedule A is always built, but only used when it beats standard deduction
             if forms_state[k_1040]['12'] == forms_state[k_1040sa].get('17', 0):
                 self.push_to_dict('2a_value', forms_state[k_1040sa]['7'])
@@ -585,7 +585,7 @@ def fill_taxes(d, config):
             if '4_value' in self.d:
                 summary_info[f"{self.key} 4 Alternative minimum taxable income"] = self.d['4_value']
 
-            # Part II — AMT Exemption and Computation
+            # Part II - AMT Exemption and Computation
             # Line 5: exemption reduced by 25% of AMTI exceeding phaseout start
             amti = self.d.get('4_value', 0)
             exemption = config['amt_exemption']
@@ -855,7 +855,7 @@ def fill_taxes(d, config):
             self.result = 0
 
         def build(self):
-            # If total SALT <= floor, deduction isn't limited — skip worksheet
+            # If total SALT <= floor, deduction isn't limited - skip worksheet
             if self.salt_total <= config['salt_floor']:
                 self.result = self.salt_total
                 summary_info[f"{self.key} 10 SALT deduction"] = self.result
@@ -878,14 +878,14 @@ def fill_taxes(d, config):
                 # Line 9: max of reduced limit and floor
                 self.d[9] = max(self.d[8], config['salt_floor'])
             else:
-                # No phaseout — use full limit
+                # No phaseout - use full limit
                 self.d[9] = self.d[1]
             # Line 10: smaller of limit or actual SALT
             self.d[10] = min(self.d[9], self.salt_total)
             self.result = self.d[10]
             summary_info[f"{self.key} 10 SALT deduction"] = self.result
 
-    # See IRS Publication 936 — Home Mortgage Interest Deduction
+    # See IRS Publication 936 - Home Mortgage Interest Deduction
     class MortgageInterestDeductionWorksheet(Worksheet):
         def __init__(self):
             Worksheet.__init__(self, w_mortgage_interest_deduction, 16)
@@ -924,7 +924,7 @@ def fill_taxes(d, config):
                 summary_info[f"{self.key} 13 All Interest Deductible for {year}"] = self.d[13]
                 return
 
-            # Partial deduction — prorate by qualified loan ratio
+            # Partial deduction - prorate by qualified loan ratio
             self.d[14] = round(self.d[11] / self.d[12], 3)
             self.d[15] = self.d[13] * self.d[14]
             Form(k_1040sa, get_existing=True).push_to_dict('8_a', self.d[15])

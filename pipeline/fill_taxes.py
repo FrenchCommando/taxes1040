@@ -92,7 +92,7 @@ def main(years):
 
         fill_func = FILL_FUNCTIONS[year]
         if year == "2023":
-            # frozen legacy interface — returns 3-tuple, no carryover
+            # frozen legacy interface - returns 3-tuple, no carryover
             states, worksheets, summary = fill_func(d=data, output_2022=None)
             carryover = extract_carryover(states)
         else:

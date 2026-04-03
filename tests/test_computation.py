@@ -1,11 +1,11 @@
 """Tax computation tests.
 
 Each test is a scenario in tests/scenarios/<year>/<name>/ containing:
-    input.json       — financial data (W2, 1099, 1098, etc.)
-    data.json        — expected forms_state output (all form field values)
-    worksheets.json  — expected worksheet computations
-    summary.json     — expected summary of key figures
-    carryover.json   — expected carryover values for next year
+    input.json       - financial data (W2, 1099, 1098, etc.)
+    data.json        - expected forms_state output (all form field values)
+    worksheets.json  - expected worksheet computations
+    summary.json     - expected summary of key figures
+    carryover.json   - expected carryover values for next year
 
 The test runner discovers year subfolders under tests/scenarios/, then
 discovers scenario directories within each year. It loads the input,
