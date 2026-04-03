@@ -596,12 +596,48 @@ def fill_taxes(d, config):
             # Line 6: AMTI minus exemption
             self.push_to_dict('6_value', max(0, amti - self.d.get('5_value', 0)))
             if self.d.get('6_value') > 0:
-                # Line 7: 26% on first bracket, 28% above threshold
-                self.push_to_dict(
-                    '7_value',
-                    self.d['6_value'] * 0.26 if self.d['6_value'] < config['amt_28pct_threshold'] else
-                    self.d['6_value'] * 0.28 - config['amt_28pct_excess']
+                amt_taxable = self.d['6_value']
+
+                def amt_26_28(amount):
+                    """26% up to threshold, 28% above."""
+                    if amount <= config['amt_28pct_threshold']:
+                        return amount * 0.26
+                    return amount * 0.28 - config['amt_28pct_excess']
+
+                # Line 7: Part III (preferential capital gain rates) or flat 26%/28%
+                use_part_iii = (
+                    (dividends_qualified is not None and dividends_qualified > 0)
+                    or (d.get('scheduleD', False) and k_1040sd in forms_state
+                        and forms_state[k_1040sd].get('15', 0) > 0
+                        and forms_state[k_1040sd].get('16', 0) > 0)
                 )
+                if use_part_iii:
+                    # Part III: 0%/15%/20% on qualified dividends and capital gains,
+                    # 26%/28% on ordinary portion only
+                    qdiv = forms_state[k_1040].get('3_a', 0)
+                    if d.get('scheduleD', False) and k_1040sd in forms_state:
+                        sd15 = forms_state[k_1040sd].get('15', 0)
+                        sd16 = forms_state[k_1040sd].get('16', 0)
+                        sd_gain = max(0, min(sd15, sd16)) if sd15 > 0 and sd16 > 0 else 0
+                    else:
+                        sd_gain = max(0, forms_state[k_1040].get('7_value', 0))
+                    cap_gains = qdiv + sd_gain
+                    ordinary = max(0, amt_taxable - cap_gains)
+                    # 0% rate portion
+                    zero_ceil = config['qualified_div_0pct']
+                    l18 = min(amt_taxable, zero_ceil)
+                    at_0 = l18 - min(ordinary, l18)
+                    # 15% rate portion
+                    l21 = min(amt_taxable, cap_gains)
+                    l25 = min(amt_taxable, config['qualified_div_20pct'])
+                    l27 = max(0, l25 - (ordinary + at_0))
+                    at_15 = min(l21 - at_0, l27)
+                    # 20% rate portion
+                    at_20 = l21 - at_0 - at_15
+                    preferential = at_15 * 0.15 + at_20 * 0.20 + amt_26_28(ordinary)
+                    self.push_to_dict('7_value', min(preferential, amt_26_28(amt_taxable)))
+                else:
+                    self.push_to_dict('7_value', amt_26_28(amt_taxable))
                 # Line 8: AMT foreign tax credit (not implemented)
                 self.push_to_dict('8_value', 0)
                 # Line 9: tentative minimum tax
