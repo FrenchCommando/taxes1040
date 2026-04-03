@@ -453,12 +453,16 @@ def fill_taxes(d, config):
                 for f in d['1099']:
                     if key in f and f[key] != 0:
                         if "Institution" in f and f['Institution'] == "Department of the Treasury":
-                            summary_info[f"{self.key} Treasury Interest Exempt from Local Tax"] = f[key]
-                            Form(k_it201, get_existing=True).push_to_dict('28', f[key])
-                            # still counted
-                            # continue
+                            summary_info[f"{self.key} Treasury Interest"] = f[key]
                         self.d["{}_{}_payer".format(index, str(i))] = f['Institution']
                         self.push_to_dict("{}_{}_value".format(index, str(i)), f[key])
+                        i += 1
+                    bonds_key = "InterestBondsObligations"
+                    if key == "Interest" and bonds_key in f and f[bonds_key] != 0:
+                        self.d["{}_{}_payer".format(index, str(i))] = \
+                            " ".join((f['Institution'], "US Govt Bonds"))
+                        self.push_to_dict("{}_{}_value".format(index, str(i)), f[bonds_key])
+                        summary_info[f"{self.key} {f['Institution']} US Govt Bonds Interest"] = f[bonds_key]
                         i += 1
                     other_key = "Other Income"
                     if key == "Interest" and other_key in f and f[other_key] != 0:
@@ -1088,6 +1092,18 @@ def fill_taxes(d, config):
             self.push_to_dict('7', forms_state[k_1040].get('7_value', 0))
             self.push_sum('17', ['1', '2', '3', '7'])
             self.push_to_dict('19', self.d.get('17', 0) - self.d.get('18', 0))
+            # line 28: interest on U.S. government bonds (subtracted from NY income)
+            # TreasuryDirect interest (by institution name) + broker-reported amounts
+            if has_1099:
+                treasury_interest = sum(
+                    i.get('Interest', 0) for i in d['1099']
+                    if i.get('Institution') == 'Department of the Treasury'
+                )
+                broker_bonds = sum(i.get('InterestBondsObligations', 0) for i in d['1099'])
+                us_govt_interest = treasury_interest + broker_bonds
+                self.push_to_dict('28', us_govt_interest)
+                if us_govt_interest > 0:
+                    summary_info[f"{self.key} 28 US government bond interest"] = us_govt_interest
             self.push_sum('24', ['19', '20', '21', '22', '23'])  # additions
             self.push_sum('32', ['25', '26', '27', '28', '29', '30', '31'])  # subtractions
             self.push_to_dict('33', self.d.get('24', 0) - self.d.get('32', 0))

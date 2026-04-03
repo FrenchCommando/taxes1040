@@ -1,5 +1,5 @@
 {
-    "Federal/f1040sb Treasury Interest Exempt from Local Tax": 1050.75,
+    "Federal/f1040sb Treasury Interest": 1050.75,
     "CapitalLossCarryover 8 Short-term capital loss carryover for 2024": 82110,
     "Federal/f1040sd 7 Net short-term capital gain or (loss)": -72110,
     "Federal/f1040sd 15 Net long-term capital gain or (loss)": -12000,
@@ -24,6 +24,7 @@
     "Federal/f1040 24 Total Tax": 322157.0,
     "Federal/f1040 33 Total Payments": 86834.0,
     "Federal/f1040 37 amount you owe": 235323.0,
+    "ny/it201 28 US government bond interest": 1050.75,
     "ny/it201 33 New York adjusted gross income": 1001581.0,
     "NYLine40ItemizedDeductions 10 Total itemized deductions": 9893.04,
     "NYLine41ItemizedDeductionsSubtractions NY Worksheet2 Line 41 - Itemized Deduction Subtractions": 5117.923999999999,

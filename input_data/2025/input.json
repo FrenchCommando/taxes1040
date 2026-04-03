@@ -32,6 +32,7 @@
         },
         {
             "Interest": 13.72,
+            "InterestBondsObligations": 1234.56,
             "Qualified Dividends": 168.71,
             "Ordinary Dividends": 1955.32,
             "Foreign Tax Paid": 800.99,
