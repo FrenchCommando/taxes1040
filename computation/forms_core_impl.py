@@ -433,7 +433,11 @@ def fill_taxes(d, config):
             self.push_sum('8_e', ['8_a', '8_b', '8_c'])
             self.push_sum('10', ['8_e', '9'])
 
-            # charity
+            # charity (Schedule A lines 11-14)
+            # 11: cash, 12: other than cash, 13: carryover
+            charitable_cash = sum(c.get('Amount', 0) for c in d.get('Charitable', []))
+            self.push_to_dict('11', charitable_cash)
+            self.push_sum('14', ['11', '12', '13'])
             # theft
             # other
 
@@ -1243,8 +1247,11 @@ def fill_taxes(d, config):
                 self.push_to_dict('10', worksheets[w_mortgage_interest_deduction][13])
             self.push_sum('15', ['10', '11', '12', '14'])
 
-            # gifts
-            self.push_sum('19', ['16', '17', '18'])
+            # gifts (IT-196 lines 16-19)
+            # 16: cash, 17: other than cash, 18: carryover
+            charitable_cash = sum(c.get('Amount', 0) for c in d.get('Charitable', []))
+            self.push_to_dict('16_value', charitable_cash)
+            self.push_sum('19', ['16_value', '17', '18'])
 
             # casualty - theft 20
 

@@ -152,6 +152,12 @@
            }
         ]
     },
+	"Charitable": [
+		{
+			"Entity": "Brooklyn Botanic Garden",
+			"Amount": 152
+		}
+	],
 	"Other": [
 		{
 			"PropertyTax": 2500,
