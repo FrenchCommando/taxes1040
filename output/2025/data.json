@@ -99,6 +99,19 @@
         "7a_n": true,
         "8_n": true
     },
+    "Federal/f6781": {
+        "1_1_a": "Form 1099-B Big Bank HOLDINGS, INC.",
+        "1_1_c": 412.0,
+        "name": "French Commando",
+        "ssn": "200112222",
+        "2_b": 0,
+        "2_c": 412.0,
+        "3": 412.0,
+        "5": 412.0,
+        "7": 412.0,
+        "8": 165.0,
+        "9": 247.0
+    },
     "Federal/f8949": [
         {
             "I_name": "French Commando",
@@ -113,9 +126,21 @@
             "I_1_1_cost": 26000,
             "I_1_1_code": "",
             "I_1_1_gain": 10000,
+            "I_1_2_description": "Form 6781, Part I",
+            "I_1_2_gain": 165.0,
             "I_2_proceeds": 36000,
             "I_2_cost": 26000,
-            "I_2_gain": 10000
+            "I_2_gain": 10165
+        },
+        {
+            "I_name": "French Commando",
+            "I_ssn": "200112222",
+            "II_name": "French Commando",
+            "II_ssn": "200112222",
+            "long_e": true,
+            "II_1_1_description": "Form 6781, Part I",
+            "II_1_1_gain": 247.0,
+            "II_2_gain": 247
         },
         {
             "I_name": "French Commando",
@@ -141,17 +166,18 @@
         "1a_cost": 10000,
         "2_proceeds": 36000,
         "2_cost": 26000,
-        "2_gain": 10000,
+        "2_gain": 10165,
         "8a_proceeds": 200000,
         "8a_cost": 212000,
         "8a_gain": -12000,
+        "9_gain": 247,
         "10_proceeds": 50000,
         "10_cost": 50000,
         "6": 69110,
         "14": 12000.0,
-        "7": -59110,
-        "15": -24000.0,
-        "16": -83110.0,
+        "7": -58945,
+        "15": -23753.0,
+        "16": -82698.0,
         "21": 3000,
         "22_y": true
     },

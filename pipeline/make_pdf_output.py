@@ -18,10 +18,15 @@ def fill_pdfs(year):
     output_year_folder = os.path.join(output_pdf_folder, year)
 
     all_out_files = []
+    logger = logging.getLogger('output_pdf')
     for f, d_contents in forms_state.items():
         if f in [k_it201]:
             continue
-        d_mapping = load_keys(os.path.join(form_year_folder, f + keys_extension))
+        keys_file = os.path.join(form_year_folder, f + keys_extension)
+        if not os.path.exists(keys_file):
+            logger.error("%s %s - no .keys file, skipping PDF fill", year, f)
+            continue
+        d_mapping = load_keys(keys_file)
 
         def fill_one_pdf(contents, suffix=""):
             logger = logging.getLogger('output_pdf')

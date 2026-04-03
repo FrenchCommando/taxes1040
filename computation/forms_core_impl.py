@@ -180,7 +180,11 @@ def fill_taxes(d, config):
                 capital_gains = sum(i.get('Capital Gain Distributions', 0) for i in d['1099'])
 
                 nonlocal contract1256
-                contract1256 = any(i.get('Contract1256', False) for i in d['1099'])
+                contract1256 = any(
+                    i.get('Contract1256', False)
+                    or 'Realized1256' in i or 'Unrealized1256' in i
+                    for i in d['1099']
+                )
 
                 # for Box A, without corrections skip 8949
                 if contract1256:
@@ -674,6 +678,9 @@ def fill_taxes(d, config):
                         if "Contract1256" in u:
                             for contract_item in u["Contract1256"]:
                                 yield contract_item | dict(Institution=institution)
+                        if "Realized1256" in u or "Unrealized1256" in u:
+                            pnl = u.get("Realized1256", 0) + u.get("Unrealized1256", 0)
+                            yield dict(ProfitOrLoss=pnl, Institution=institution)
             for i, item in enumerate(yield_contracts(), 1):
                 if i > 3:
                     raise ValueError("Form6781 more than 3 contracts need a new page")

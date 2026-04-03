@@ -75,7 +75,9 @@
                     "LongShort": "SHORT",
                     "FormCode": "B"
                 }
-            ]
+            ],
+            "Realized1256": 500.99,
+            "Unrealized1256": -88.88
         },
         {
             "Interest": 1050.75,
