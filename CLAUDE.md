@@ -25,6 +25,11 @@ python main.py
 
 # Dev mode: set dev_mode = True in main.py to regenerate .keys from .fields
 
+# Compute marginal tax rates
+python marginal_rates.py                  # default: $100 delta, 2025
+python marginal_rates.py --delta 10000    # larger delta for more precision
+python marginal_rates.py --year 2024      # different year
+
 # Run tests
 python -m unittest tests.test_computation -v
 
@@ -57,6 +62,7 @@ The `all_years` list in `main.py` controls which years are processed - dev mode 
 ```
 taxes1040/
 |-- main.py                     # entry point
+|-- marginal_rates.py           # marginal tax rate analysis (standalone)
 |-- pipeline/                   # pipeline scripts
 |   |-- fill_keys.py            # .fields -> .keys rewriting
 |   |-- fill_taxes.py           # tax computation orchestration + JSON output
@@ -86,6 +92,7 @@ taxes1040/
 |   |-- summary.json            # human-readable key results (tracked)
 |   |-- worksheet.json          # intermediate worksheet computations (tracked)
 |   |-- carryover.json          # values passed to next year (tracked)
+|   |-- marginal_rates.json     # marginal tax rates by income category (tracked)
 |   |-- forms.pdf               # merged PDF (gitignored)
 |   +-- Federal/, ny/           # individual filled PDFs (gitignored)
 +-- logs/                       # log files (gitignored)
@@ -99,6 +106,8 @@ taxes1040/
 1. **Debug PDF (integer indices)** - `key_matcher.py` fills each blank PDF with sequential integers and writes it to `key_mapping/{year}/`. Used to visually identify which integer index maps to which box on the form. Gitignored.
 2. **Debug PDF (human-readable names)** - `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct. Gitignored.
 3. **Final output PDFs** - `make_pdf_output.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name -> human_readable_name` with `forms_state[human_readable_name] -> computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `output/{year}/forms.pdf`.
+
+**Marginal rate analysis (`marginal_rates.py`):** Standalone script that computes marginal tax rates by finite difference. For each input category (W2 wages, short/long-term capital gains, dividends, interest, 1256 contracts, charitable contributions), it perturbs the input by a configurable delta, re-runs `fill_taxes`, and measures the change in federal, NY state, and NYC tax. Outputs to `output/{year}/marginal_rates.json`. Runs independently of the main pipeline — does not load prior-year carryover.
 
 **Core computation:** Each tax year has its own `computation/forms_core_{year}.py` containing a single `fill_taxes_{year}(d)` function. Old years (2018-2023) are frozen monoliths in `computation/legacy/` - large single functions that compute every form line by line. Years 2024+ use thin config wrappers that call `computation/forms_core_impl.py` - the shared implementation - with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
 

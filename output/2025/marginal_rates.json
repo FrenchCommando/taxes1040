@@ -1,0 +1,83 @@
+{
+    "year": "2025",
+    "delta": 10000,
+    "base_taxes": {
+        "federal": 369411.0,
+        "ny_state": 38864.0,
+        "nyc": 21866.0
+    },
+    "marginal_rates": {
+        "W2 Wages": {
+            "description": "Additional dollar of W-2 wage income",
+            "rates": {
+                "federal": 0.379,
+                "ny_state": 0.0342,
+                "nyc": 0.0193,
+                "combined": 0.4325
+            }
+        },
+        "Short-term capital gain": {
+            "description": "Additional dollar of short-term capital gain",
+            "rates": {
+                "federal": 0.37,
+                "ny_state": 0.0342,
+                "nyc": 0.0193,
+                "combined": 0.4235
+            }
+        },
+        "Long-term capital gain": {
+            "description": "Additional dollar of long-term capital gain",
+            "rates": {
+                "federal": 0.2,
+                "ny_state": 0.0342,
+                "nyc": 0.0193,
+                "combined": 0.2535
+            }
+        },
+        "Qualified dividends": {
+            "description": "Additional dollar of qualified dividends (also ordinary)",
+            "rates": {
+                "federal": 0.2,
+                "ny_state": 0.0342,
+                "nyc": 0.0193,
+                "combined": 0.2535
+            }
+        },
+        "Ordinary dividends (non-qualified)": {
+            "description": "Additional dollar of ordinary dividends only",
+            "rates": {
+                "federal": 0.37,
+                "ny_state": 0.0342,
+                "nyc": 0.0193,
+                "combined": 0.4235
+            }
+        },
+        "Interest income": {
+            "description": "Additional dollar of interest income",
+            "rates": {
+                "federal": 0.37,
+                "ny_state": 0.0342,
+                "nyc": 0.0193,
+                "combined": 0.4235
+            }
+        },
+        "1256 contracts": {
+            "description": "Additional dollar of Section 1256 contract gain (60/40 split)",
+            "rates": {
+                "federal": 0.268,
+                "ny_state": 0.0342,
+                "nyc": 0.0193,
+                "combined": 0.3215
+            }
+        },
+        "Charitable contributions": {
+            "description": "Additional dollar of charitable cash contribution (reduces tax)",
+            "rates": {
+                "federal": -0.37,
+                "ny_state": 0.0,
+                "nyc": 0.0,
+                "combined": -0.37
+            }
+        }
+    }
+}
