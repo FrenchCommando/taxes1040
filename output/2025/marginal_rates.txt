@@ -1,56 +1,56 @@
 Marginal tax rates (analytical, year=2025)
 Baseline: AGI=$1,139,279, taxable=$1,120,115, SALT=floor, NY taxable=$567,354
 
-  W2 Wages:
+  W2 Wages:  (37% bracket + 0.9% Additional Medicare Tax (wages > $200k))
     Additional                    Federal   NY State        NYC   Combined
     $0 - $1,020,392               37.90%     3.43%     1.94%    43.26%  <- NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550
     $1,020,392 - $8,863,006       37.90%     4.83%     1.94%    44.66%  <- NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)
     $8,863,006 - $32,196,339      37.90%     7.72%     2.91%    48.53%  <- NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000
     $32,196,339 - ...             37.90%     7.72%     2.91%    48.53%
 
-  Short-term capital gain:
+  Short-term capital gain:  (Taxed as ordinary income)
     Additional                    Federal   NY State        NYC   Combined
     $0 - $1,020,392               37.00%     3.43%     1.94%    42.36%  <- NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550
     $1,020,392 - $8,863,006       37.00%     4.83%     1.94%    43.76%  <- NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)
     $8,863,006 - $32,196,339      37.00%     7.72%     2.91%    47.63%  <- NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000
     $32,196,339 - ...             37.00%     7.72%     2.91%    47.63%
 
-  Long-term capital gain:
+  Long-term capital gain:  (20% preferential rate (taxable income > $533,400))
     Additional                    Federal   NY State        NYC   Combined
     $0 - $1,020,392               20.00%     3.43%     1.94%    25.36%  <- NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550
     $1,020,392 - $8,863,006       20.00%     4.83%     1.94%    26.76%  <- NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)
     $8,863,006 - $32,196,339      20.00%     7.72%     2.91%    30.63%  <- NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000
     $32,196,339 - ...             20.00%     7.72%     2.91%    30.63%
 
-  Qualified dividends:
+  Qualified dividends:  (20% preferential rate (taxable income > $533,400))
     Additional                    Federal   NY State        NYC   Combined
     $0 - $1,020,392               20.00%     3.43%     1.94%    25.36%  <- NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550
     $1,020,392 - $8,863,006       20.00%     4.83%     1.94%    26.76%  <- NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)
     $8,863,006 - $32,196,339      20.00%     7.72%     2.91%    30.63%  <- NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000
     $32,196,339 - ...             20.00%     7.72%     2.91%    30.63%
 
-  Ordinary dividends (non-qualified):
+  Ordinary dividends (non-qualified):  (Taxed as ordinary income)
     Additional                    Federal   NY State        NYC   Combined
     $0 - $1,020,392               37.00%     3.43%     1.94%    42.36%  <- NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550
     $1,020,392 - $8,863,006       37.00%     4.83%     1.94%    43.76%  <- NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)
     $8,863,006 - $32,196,339      37.00%     7.72%     2.91%    47.63%  <- NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000
     $32,196,339 - ...             37.00%     7.72%     2.91%    47.63%
 
-  Interest income:
+  Interest income:  (Taxed as ordinary income)
     Additional                    Federal   NY State        NYC   Combined
     $0 - $1,020,392               37.00%     3.43%     1.94%    42.36%  <- NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550
     $1,020,392 - $8,863,006       37.00%     4.83%     1.94%    43.76%  <- NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)
     $8,863,006 - $32,196,339      37.00%     7.72%     2.91%    47.63%  <- NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000
     $32,196,339 - ...             37.00%     7.72%     2.91%    47.63%
 
-  1256 contracts:
+  1256 contracts:  (60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8%)
     Additional                    Federal   NY State        NYC   Combined
     $0 - $1,020,392               26.80%     3.43%     1.94%    32.16%  <- NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550
     $1,020,392 - $8,863,006       26.80%     4.83%     1.94%    33.56%  <- NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)
     $8,863,006 - $32,196,339      26.80%     7.72%     2.91%    37.43%  <- NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000
     $32,196,339 - ...             26.80%     7.72%     2.91%    37.43%
 
-  Charitable contributions:
+  Charitable contributions:  (Itemized deduction, $1-for-$1. NY: 0% (50% AGI cap at NYAGI > $1M))
     Additional                   Federal   NY State        NYC   Combined
     $0 - $493,765               -37.00%     0.00%     0.00%   -37.00%  <- Federal bracket at taxable $626,350
     $493,765 - $869,590         -35.00%     0.00%     0.00%   -35.00%  <- Federal bracket at taxable $250,525
@@ -59,4 +59,22 @@ Baseline: AGI=$1,139,279, taxable=$1,120,115, SALT=floor, NY taxable=$567,354
     $1,016,765 - $1,071,640     -22.00%     0.00%     0.00%   -22.00%  <- Federal bracket at taxable $48,475
     $1,071,640 - $1,108,190     -12.00%     0.00%     0.00%   -12.00%  <- Federal bracket at taxable $11,925
     $1,108,190 - ...            -10.00%     0.00%     0.00%   -10.00%
+
+  Mortgage interest:  (Deduction ratio 75.1% (qualified limit $750k / loan balance). Effective rate = bracket * 0.751)
+    Additional                   Federal   NY State        NYC   Combined
+    $0 - $657,827               -27.77%     0.00%     0.00%   -27.77%  <- Federal bracket at taxable $626,350
+    $657,827 - $1,158,526       -26.27%     0.00%     0.00%   -26.27%  <- Federal bracket at taxable $250,525
+    $1,158,526 - $1,229,436     -24.19%     0.00%     0.00%   -24.19%  <- Federal bracket at taxable $197,300
+    $1,229,436 - $1,354,602     -18.01%     0.00%     0.00%   -18.01%  <- Federal bracket at taxable $103,350
+    $1,354,602 - $1,427,710     -17.02%     0.00%     0.00%   -17.02%  <- Federal bracket at taxable $48,475
+    $1,427,710 - $1,476,405     -12.29%     0.00%     0.00%   -12.29%  <- Federal bracket at taxable $11,925
+    $1,476,405 - ...             -7.51%     0.00%     0.00%    -7.51%
+
+  Property tax:  (SALT at floor ($10,000), total SALT $18,056 exceeds effective limit - no marginal benefit)
+    Additional    Federal   NY State        NYC   Combined
+    $0 - ...       0.00%     0.00%     0.00%     0.00%
+
+  Foreign tax credit:  (Dollar-for-dollar credit against federal tax (Form 1116 limit not implemented))
+    Additional    Federal   NY State        NYC   Combined
+    $0 - ...    -100.00%     0.00%     0.00%  -100.00%
 

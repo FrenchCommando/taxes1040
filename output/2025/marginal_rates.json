@@ -9,401 +9,540 @@
         "net_ltcg": 12247,
         "ny_agi": 1136994.0,
         "ny_taxable": 567354.0,
-        "salt_regime": "floor"
+        "salt_regime": "floor",
+        "salt_total": 18056.0,
+        "salt_deduction": 10000,
+        "foreign_tax": 801.0,
+        "mortgage_deduction_ratio": 0.7506004803843075
     },
     "marginal_rates": {
-        "W2 Wages": [
-            {
-                "from": 0,
-                "to": 1020392,
-                "rates": {
-                    "federal": 0.379,
-                    "ny_state": 0.03425,
-                    "nyc": 0.01938,
-                    "combined": 0.43263
+        "W2 Wages": {
+            "note": "37% bracket + 0.9% Additional Medicare Tax (wages > $200k)",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 1020392,
+                    "rates": {
+                        "federal": 0.379,
+                        "ny_state": 0.03425,
+                        "nyc": 0.01938,
+                        "combined": 0.43263
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
-                "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
-            },
-            {
-                "from": 1020392,
-                "to": 8863006,
-                "rates": {
-                    "federal": 0.379,
-                    "ny_state": 0.04825,
-                    "nyc": 0.01938,
-                    "combined": 0.44663
+                {
+                    "from": 1020392,
+                    "to": 8863006,
+                    "rates": {
+                        "federal": 0.379,
+                        "ny_state": 0.04825,
+                        "nyc": 0.01938,
+                        "combined": 0.44663
+                    },
+                    "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
-                "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
-            },
-            {
-                "from": 8863006,
-                "to": 32196339,
-                "rates": {
-                    "federal": 0.379,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.48532
+                {
+                    "from": 8863006,
+                    "to": 32196339,
+                    "rates": {
+                        "federal": 0.379,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.48532
+                    },
+                    "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
-                "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
-            },
-            {
-                "from": 32196339,
-                "to": null,
-                "rates": {
-                    "federal": 0.379,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.48532
+                {
+                    "from": 32196339,
+                    "to": null,
+                    "rates": {
+                        "federal": 0.379,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.48532
+                    }
                 }
-            }
-        ],
-        "Short-term capital gain": [
-            {
-                "from": 0,
-                "to": 1020392,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.03425,
-                    "nyc": 0.01938,
-                    "combined": 0.42363
+            ]
+        },
+        "Short-term capital gain": {
+            "note": "Taxed as ordinary income",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 1020392,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.03425,
+                        "nyc": 0.01938,
+                        "combined": 0.42363
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
-                "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
-            },
-            {
-                "from": 1020392,
-                "to": 8863006,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.04825,
-                    "nyc": 0.01938,
-                    "combined": 0.43763
+                {
+                    "from": 1020392,
+                    "to": 8863006,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.04825,
+                        "nyc": 0.01938,
+                        "combined": 0.43763
+                    },
+                    "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
-                "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
-            },
-            {
-                "from": 8863006,
-                "to": 32196339,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.47632
+                {
+                    "from": 8863006,
+                    "to": 32196339,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.47632
+                    },
+                    "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
-                "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
-            },
-            {
-                "from": 32196339,
-                "to": null,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.47632
+                {
+                    "from": 32196339,
+                    "to": null,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.47632
+                    }
                 }
-            }
-        ],
-        "Long-term capital gain": [
-            {
-                "from": 0,
-                "to": 1020392,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.03425,
-                    "nyc": 0.01938,
-                    "combined": 0.25363
+            ]
+        },
+        "Long-term capital gain": {
+            "note": "20% preferential rate (taxable income > $533,400)",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 1020392,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.03425,
+                        "nyc": 0.01938,
+                        "combined": 0.25363
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
-                "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
-            },
-            {
-                "from": 1020392,
-                "to": 8863006,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.04825,
-                    "nyc": 0.01938,
-                    "combined": 0.26763
+                {
+                    "from": 1020392,
+                    "to": 8863006,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.04825,
+                        "nyc": 0.01938,
+                        "combined": 0.26763
+                    },
+                    "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
-                "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
-            },
-            {
-                "from": 8863006,
-                "to": 32196339,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.30632
+                {
+                    "from": 8863006,
+                    "to": 32196339,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.30632
+                    },
+                    "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
-                "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
-            },
-            {
-                "from": 32196339,
-                "to": null,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.30632
+                {
+                    "from": 32196339,
+                    "to": null,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.30632
+                    }
                 }
-            }
-        ],
-        "Qualified dividends": [
-            {
-                "from": 0,
-                "to": 1020392,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.03425,
-                    "nyc": 0.01938,
-                    "combined": 0.25363
+            ]
+        },
+        "Qualified dividends": {
+            "note": "20% preferential rate (taxable income > $533,400)",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 1020392,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.03425,
+                        "nyc": 0.01938,
+                        "combined": 0.25363
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
-                "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
-            },
-            {
-                "from": 1020392,
-                "to": 8863006,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.04825,
-                    "nyc": 0.01938,
-                    "combined": 0.26763
+                {
+                    "from": 1020392,
+                    "to": 8863006,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.04825,
+                        "nyc": 0.01938,
+                        "combined": 0.26763
+                    },
+                    "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
-                "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
-            },
-            {
-                "from": 8863006,
-                "to": 32196339,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.30632
+                {
+                    "from": 8863006,
+                    "to": 32196339,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.30632
+                    },
+                    "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
-                "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
-            },
-            {
-                "from": 32196339,
-                "to": null,
-                "rates": {
-                    "federal": 0.2,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.30632
+                {
+                    "from": 32196339,
+                    "to": null,
+                    "rates": {
+                        "federal": 0.2,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.30632
+                    }
                 }
-            }
-        ],
-        "Ordinary dividends (non-qualified)": [
-            {
-                "from": 0,
-                "to": 1020392,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.03425,
-                    "nyc": 0.01938,
-                    "combined": 0.42363
+            ]
+        },
+        "Ordinary dividends (non-qualified)": {
+            "note": "Taxed as ordinary income",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 1020392,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.03425,
+                        "nyc": 0.01938,
+                        "combined": 0.42363
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
-                "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
-            },
-            {
-                "from": 1020392,
-                "to": 8863006,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.04825,
-                    "nyc": 0.01938,
-                    "combined": 0.43763
+                {
+                    "from": 1020392,
+                    "to": 8863006,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.04825,
+                        "nyc": 0.01938,
+                        "combined": 0.43763
+                    },
+                    "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
-                "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
-            },
-            {
-                "from": 8863006,
-                "to": 32196339,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.47632
+                {
+                    "from": 8863006,
+                    "to": 32196339,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.47632
+                    },
+                    "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
-                "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
-            },
-            {
-                "from": 32196339,
-                "to": null,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.47632
+                {
+                    "from": 32196339,
+                    "to": null,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.47632
+                    }
                 }
-            }
-        ],
-        "Interest income": [
-            {
-                "from": 0,
-                "to": 1020392,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.03425,
-                    "nyc": 0.01938,
-                    "combined": 0.42363
+            ]
+        },
+        "Interest income": {
+            "note": "Taxed as ordinary income",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 1020392,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.03425,
+                        "nyc": 0.01938,
+                        "combined": 0.42363
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
-                "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
-            },
-            {
-                "from": 1020392,
-                "to": 8863006,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.04825,
-                    "nyc": 0.01938,
-                    "combined": 0.43763
+                {
+                    "from": 1020392,
+                    "to": 8863006,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.04825,
+                        "nyc": 0.01938,
+                        "combined": 0.43763
+                    },
+                    "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
-                "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
-            },
-            {
-                "from": 8863006,
-                "to": 32196339,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.47632
+                {
+                    "from": 8863006,
+                    "to": 32196339,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.47632
+                    },
+                    "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
-                "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
-            },
-            {
-                "from": 32196339,
-                "to": null,
-                "rates": {
-                    "federal": 0.37,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.47632
+                {
+                    "from": 32196339,
+                    "to": null,
+                    "rates": {
+                        "federal": 0.37,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.47632
+                    }
                 }
-            }
-        ],
-        "1256 contracts": [
-            {
-                "from": 0,
-                "to": 1020392,
-                "rates": {
-                    "federal": 0.268,
-                    "ny_state": 0.03425,
-                    "nyc": 0.01938,
-                    "combined": 0.32163
+            ]
+        },
+        "1256 contracts": {
+            "note": "60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8%",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 1020392,
+                    "rates": {
+                        "federal": 0.268,
+                        "ny_state": 0.03425,
+                        "nyc": 0.01938,
+                        "combined": 0.32163
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
-                "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
-            },
-            {
-                "from": 1020392,
-                "to": 8863006,
-                "rates": {
-                    "federal": 0.268,
-                    "ny_state": 0.04825,
-                    "nyc": 0.01938,
-                    "combined": 0.33563
+                {
+                    "from": 1020392,
+                    "to": 8863006,
+                    "rates": {
+                        "federal": 0.268,
+                        "ny_state": 0.04825,
+                        "nyc": 0.01938,
+                        "combined": 0.33563
+                    },
+                    "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
-                "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
-            },
-            {
-                "from": 8863006,
-                "to": 32196339,
-                "rates": {
-                    "federal": 0.268,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.37432
+                {
+                    "from": 8863006,
+                    "to": 32196339,
+                    "rates": {
+                        "federal": 0.268,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.37432
+                    },
+                    "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
-                "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
-            },
-            {
-                "from": 32196339,
-                "to": null,
-                "rates": {
-                    "federal": 0.268,
-                    "ny_state": 0.07725,
-                    "nyc": 0.02907,
-                    "combined": 0.37432
+                {
+                    "from": 32196339,
+                    "to": null,
+                    "rates": {
+                        "federal": 0.268,
+                        "ny_state": 0.07725,
+                        "nyc": 0.02907,
+                        "combined": 0.37432
+                    }
                 }
-            }
-        ],
-        "Charitable contributions": [
-            {
-                "from": 0,
-                "to": 493765,
-                "rates": {
-                    "federal": -0.37,
-                    "ny_state": 0,
-                    "nyc": 0,
-                    "combined": -0.37
+            ]
+        },
+        "Charitable contributions": {
+            "note": "Itemized deduction, $1-for-$1. NY: 0% (50% AGI cap at NYAGI > $1M)",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 493765,
+                    "rates": {
+                        "federal": -0.37,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.37
+                    },
+                    "next_knot": "Federal bracket at taxable $626,350"
                 },
-                "next_knot": "Federal bracket at taxable $626,350"
-            },
-            {
-                "from": 493765,
-                "to": 869590,
-                "rates": {
-                    "federal": -0.35,
-                    "ny_state": 0,
-                    "nyc": 0,
-                    "combined": -0.35
+                {
+                    "from": 493765,
+                    "to": 869590,
+                    "rates": {
+                        "federal": -0.35,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.35
+                    },
+                    "next_knot": "Federal bracket at taxable $250,525"
                 },
-                "next_knot": "Federal bracket at taxable $250,525"
-            },
-            {
-                "from": 869590,
-                "to": 922815,
-                "rates": {
-                    "federal": -0.32,
-                    "ny_state": 0,
-                    "nyc": 0,
-                    "combined": -0.32
+                {
+                    "from": 869590,
+                    "to": 922815,
+                    "rates": {
+                        "federal": -0.32,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.32
+                    },
+                    "next_knot": "Federal bracket at taxable $197,300"
                 },
-                "next_knot": "Federal bracket at taxable $197,300"
-            },
-            {
-                "from": 922815,
-                "to": 1016765,
-                "rates": {
-                    "federal": -0.24,
-                    "ny_state": 0,
-                    "nyc": 0,
-                    "combined": -0.24
+                {
+                    "from": 922815,
+                    "to": 1016765,
+                    "rates": {
+                        "federal": -0.24,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.24
+                    },
+                    "next_knot": "Federal bracket at taxable $103,350"
                 },
-                "next_knot": "Federal bracket at taxable $103,350"
-            },
-            {
-                "from": 1016765,
-                "to": 1071640,
-                "rates": {
-                    "federal": -0.22,
-                    "ny_state": 0,
-                    "nyc": 0,
-                    "combined": -0.22
+                {
+                    "from": 1016765,
+                    "to": 1071640,
+                    "rates": {
+                        "federal": -0.22,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.22
+                    },
+                    "next_knot": "Federal bracket at taxable $48,475"
                 },
-                "next_knot": "Federal bracket at taxable $48,475"
-            },
-            {
-                "from": 1071640,
-                "to": 1108190,
-                "rates": {
-                    "federal": -0.12,
-                    "ny_state": 0,
-                    "nyc": 0,
-                    "combined": -0.12
+                {
+                    "from": 1071640,
+                    "to": 1108190,
+                    "rates": {
+                        "federal": -0.12,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.12
+                    },
+                    "next_knot": "Federal bracket at taxable $11,925"
                 },
-                "next_knot": "Federal bracket at taxable $11,925"
-            },
-            {
-                "from": 1108190,
-                "to": null,
-                "rates": {
-                    "federal": -0.1,
-                    "ny_state": 0,
-                    "nyc": 0,
-                    "combined": -0.1
+                {
+                    "from": 1108190,
+                    "to": null,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.1
+                    }
                 }
-            }
-        ]
+            ]
+        },
+        "Mortgage interest": {
+            "note": "Deduction ratio 75.1% (qualified limit $750k / loan balance). Effective rate = bracket * 0.751",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 657827,
+                    "rates": {
+                        "federal": -0.277722,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.277722
+                    },
+                    "next_knot": "Federal bracket at taxable $626,350"
+                },
+                {
+                    "from": 657827,
+                    "to": 1158526,
+                    "rates": {
+                        "federal": -0.26271,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.26271
+                    },
+                    "next_knot": "Federal bracket at taxable $250,525"
+                },
+                {
+                    "from": 1158526,
+                    "to": 1229436,
+                    "rates": {
+                        "federal": -0.241932,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.241932
+                    },
+                    "next_knot": "Federal bracket at taxable $197,300"
+                },
+                {
+                    "from": 1229436,
+                    "to": 1354602,
+                    "rates": {
+                        "federal": -0.180144,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.180144
+                    },
+                    "next_knot": "Federal bracket at taxable $103,350"
+                },
+                {
+                    "from": 1354602,
+                    "to": 1427710,
+                    "rates": {
+                        "federal": -0.170198,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.170198
+                    },
+                    "next_knot": "Federal bracket at taxable $48,475"
+                },
+                {
+                    "from": 1427710,
+                    "to": 1476405,
+                    "rates": {
+                        "federal": -0.122915,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.122915
+                    },
+                    "next_knot": "Federal bracket at taxable $11,925"
+                },
+                {
+                    "from": 1476405,
+                    "to": null,
+                    "rates": {
+                        "federal": -0.07506,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -0.07506
+                    }
+                }
+            ]
+        },
+        "Property tax": {
+            "note": "SALT at floor ($10,000), total SALT $18,056 exceeds effective limit - no marginal benefit",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": null,
+                    "rates": {
+                        "federal": 0,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": 0
+                    }
+                }
+            ]
+        },
+        "Foreign tax credit": {
+            "note": "Dollar-for-dollar credit against federal tax (Form 1116 limit not implemented)",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": null,
+                    "rates": {
+                        "federal": -1.0,
+                        "ny_state": 0,
+                        "nyc": 0,
+                        "combined": -1.0
+                    }
+                }
+            ]
+        }
     }
 }

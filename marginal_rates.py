@@ -66,7 +66,8 @@ import os
 
 from pipeline.fill_taxes import gather_inputs, FILL_FUNCTIONS
 from computation.form_worksheet_names import (
-    k_1040, k_1040sa, k_1040sd, k_it201,
+    k_1040, k_1040sa, k_1040sd, k_1040s3, k_it201,
+    w_salt_deduction,
 )
 from computation.forms_functions import (
     computation_2025, computation_2025_ny, computation_2025_ny_recapture,
@@ -133,7 +134,7 @@ def _salt_agi_at_floor(config):
     return config['salt_phaseout_start'] + (config['salt_limit'] - config['salt_floor']) / config['salt_phaseout_rate']
 
 
-def _extract_baseline(forms_state, base_data, config):
+def _extract_baseline(forms_state, worksheets, base_data, config):
     """Extract all baseline values needed for analytical computation."""
     agi = forms_state[k_1040].get('11', forms_state[k_1040].get('11_a', 0))
     taxable_income = forms_state[k_1040]['15']
@@ -154,36 +155,105 @@ def _extract_baseline(forms_state, base_data, config):
     ny_taxable = forms_state.get(k_it201, {}).get('37', 0)
     medicare_wages = sum(w['Medicare_wages'] for w in base_data['W2'])
 
+    # SALT: total vs effective deduction
+    salt_total = forms_state.get(k_1040sa, {}).get('5_d', 0)
+    salt_deduction = forms_state.get(k_1040sa, {}).get('5_e', 0)
+
+    # Foreign tax credit
+    foreign_tax = forms_state.get(k_1040s3, {}).get('1', 0) if k_1040s3 in forms_state else 0
+
+    # Mortgage interest deduction ratio (qualified_limit / total_balance)
+    # If ratio < 1, only that fraction of interest is deductible
+    from computation.form_worksheet_names import w_mortgage_interest_deduction
+    mortgage_worksheet = worksheets.get(w_mortgage_interest_deduction, [])
+    if len(mortgage_worksheet) > 14 and mortgage_worksheet[12] > 0:
+        mortgage_deduction_ratio = min(1.0, mortgage_worksheet[11] / mortgage_worksheet[12])
+    else:
+        mortgage_deduction_ratio = 1.0
+
     return dict(
         agi=agi, taxable_income=taxable_income, is_itemizing=is_itemizing,
         itemized=itemized, net_stcg=net_stcg, net_ltcg=net_ltcg, net_capital=net_capital,
         total_qualified=total_qualified, ny_agi=ny_agi, ny_taxable=ny_taxable,
-        medicare_wages=medicare_wages,
+        medicare_wages=medicare_wages, salt_total=salt_total, salt_deduction=salt_deduction,
+        foreign_tax=foreign_tax, mortgage_deduction_ratio=mortgage_deduction_ratio,
     )
 
 
-def _rate_at(additional, baseline, config, fed_rate_type, is_charitable=False, is_wages=False):
+def _rate_at(additional, baseline, config, fed_rate_type,
+             mode='income', is_wages=False):
     """Compute the exact marginal rate at `additional` dollars above baseline.
 
     fed_rate_type: 'ordinary', 'preferential', 'ltcg_or_loss', '1256', 'stcg_or_loss'
+    mode: 'income' (increases AGI), 'deduction' (reduces taxable via itemized, e.g. charitable/mortgage),
+          'property_tax' (increases SALT total), 'foreign_tax_credit' (dollar-for-dollar credit)
     """
-    if is_charitable:
-        # Charitable doesn't change AGI; it changes itemized deductions
-        fed_taxable = baseline['taxable_income'] - additional
+    if mode == 'foreign_tax_credit':
+        # $1 foreign tax → $1 reduction in federal tax (direct credit, not deduction)
+        # No NY/NYC impact (NY doesn't allow federal foreign tax credit)
+        return dict(federal=-1.0, ny_state=0, nyc=0, combined=-1.0)
+
+    if mode == 'property_tax':
+        # Property tax increases SALT total (Schedule A line 5_d).
+        # Whether it changes the SALT deduction depends on the SALT regime:
+        #   - salt_total < effective_limit: $1 more property tax → $1 more SALT deduction
+        #   - salt_total >= effective_limit: no effect (capped)
+        # The effective limit = max(floor, cap - phaseout_rate * (AGI - phaseout_start))
+        agi = baseline['agi']
+        if agi <= config['salt_phaseout_start']:
+            effective_limit = config['salt_limit']
+        else:
+            effective_limit = max(
+                config['salt_floor'],
+                config['salt_limit'] - config['salt_phaseout_rate'] * (agi - config['salt_phaseout_start']),
+            )
+        new_salt_total = baseline['salt_total'] + additional
+        if new_salt_total <= effective_limit and baseline['is_itemizing']:
+            # Extra property tax increases SALT deduction → reduces taxable income
+            fed_taxable = baseline['taxable_income'] - additional
+            fed_rate = _bracket_rate(config['computation'], fed_taxable)
+            return dict(
+                federal=round(-fed_rate, 6),
+                ny_state=0, nyc=0,
+                combined=round(-fed_rate, 6),
+            )
+        else:
+            # SALT capped — no marginal benefit
+            return dict(federal=0, ny_state=0, nyc=0, combined=0)
+
+    if mode == 'mortgage':
+        # Mortgage interest: only the qualified fraction is deductible
+        ratio = baseline['mortgage_deduction_ratio']
+        deductible = additional * ratio
+        fed_taxable = baseline['taxable_income'] - deductible
         if not baseline['is_itemizing']:
-            # Check if additional charitable would push us into itemizing
-            new_itemized = baseline['itemized'] + additional
+            new_itemized = baseline['itemized'] + deductible
             if new_itemized > config['standard_deduction']:
-                # Start itemizing — marginal benefit is the bracket rate
                 fed_rate = _bracket_rate(config['computation'], fed_taxable)
             else:
                 return dict(federal=0, ny_state=0, nyc=0, combined=0)
         else:
             fed_rate = _bracket_rate(config['computation'], fed_taxable)
 
-        # NY: at NYAGI > $1M, deduction = 50% of AGI (not affected by charitable amount)
-        # Below $1M, charitable is part of NY itemized but the worksheet adjustment
-        # makes the marginal impact complex — approximate as 0 for now
+        return dict(
+            federal=round(-fed_rate * ratio, 6),
+            ny_state=0, nyc=0,
+            combined=round(-fed_rate * ratio, 6),
+        )
+
+    if mode == 'deduction':
+        # Charitable: doesn't change AGI, reduces taxable via itemized ($1 for $1)
+        fed_taxable = baseline['taxable_income'] - additional
+        if not baseline['is_itemizing']:
+            new_itemized = baseline['itemized'] + additional
+            if new_itemized > config['standard_deduction']:
+                fed_rate = _bracket_rate(config['computation'], fed_taxable)
+            else:
+                return dict(federal=0, ny_state=0, nyc=0, combined=0)
+        else:
+            fed_rate = _bracket_rate(config['computation'], fed_taxable)
+
+        # NY: at NYAGI > $1M, deduction = 50% of AGI (not affected by deduction amount)
         return dict(
             federal=round(-fed_rate, 6),
             ny_state=0, nyc=0,
@@ -420,7 +490,62 @@ def _find_knots_charitable(baseline, config):
     return knots
 
 
-def _build_segments(knots, baseline, config, fed_rate_type, is_charitable=False, is_wages=False):
+def _find_knots_mortgage(baseline, config):
+    """Find knots for mortgage interest (deductible fraction reduces taxable income)."""
+    knots = []
+    fed_taxable_0 = baseline['taxable_income']
+    ratio = baseline['mortgage_deduction_ratio']
+
+    if ratio <= 0:
+        return knots
+
+    # Federal bracket transitions (going down, scaled by deduction ratio)
+    for bracket in reversed(FED_BRACKETS):
+        if bracket < fed_taxable_0:
+            # Need additional * ratio = fed_taxable_0 - bracket
+            additional = (fed_taxable_0 - bracket) / ratio
+            knots.append((round(additional), f'Federal bracket at taxable ${bracket:,}'))
+
+    knots.sort()
+    return knots
+
+
+def _find_knots_property_tax(baseline, config):
+    """Find knots for property tax (feeds into SALT).
+
+    Three regimes:
+      - salt_total < effective_limit: $1 property tax → $1 more SALT deduction
+      - salt_total >= effective_limit: $0 effect (capped)
+    The knot is where salt_total crosses the effective SALT limit.
+    """
+    knots = []
+    agi = baseline['agi']
+    if agi <= config['salt_phaseout_start']:
+        effective_limit = config['salt_limit']
+    else:
+        effective_limit = max(
+            config['salt_floor'],
+            config['salt_limit'] - config['salt_phaseout_rate'] * (agi - config['salt_phaseout_start']),
+        )
+
+    if baseline['salt_total'] < effective_limit:
+        # Currently below cap — additional property tax has effect until salt_total hits limit
+        headroom = effective_limit - baseline['salt_total']
+        knots.append((round(headroom), f'SALT total reaches effective limit ${effective_limit:,.0f}'))
+        # After that, also add federal bracket knots for the deduction portion
+        fed_taxable_0 = baseline['taxable_income']
+        for bracket in reversed(FED_BRACKETS):
+            if bracket < fed_taxable_0:
+                additional = fed_taxable_0 - bracket
+                if additional < headroom:
+                    knots.append((round(additional), f'Federal bracket at taxable ${bracket:,}'))
+        knots.sort()
+    # If already at or above effective limit, no knots (always 0%)
+
+    return knots
+
+
+def _build_segments(knots, baseline, config, fed_rate_type, mode='income', is_wages=False):
     """Build segments between knots with the marginal rate in each segment."""
     segments = []
     boundaries = [0] + [x for x, _ in knots]
@@ -433,7 +558,7 @@ def _build_segments(knots, baseline, config, fed_rate_type, is_charitable=False,
         # Evaluate rate at a point inside this segment
         eval_point = start + 1  # just past the boundary
         rates = _rate_at(eval_point, baseline, config, fed_rate_type,
-                         is_charitable=is_charitable, is_wages=is_wages)
+                         mode=mode, is_wages=is_wages)
 
         segment = {'from': start, 'to': end, 'rates': rates}
         if description:
@@ -449,7 +574,7 @@ def compute_analytical_marginal_rates(year):
     base_data = gather_inputs(year)
     fill_func = FILL_FUNCTIONS[year]
     forms_state, worksheets, summary, carryover = fill_func(d=copy.deepcopy(base_data))
-    baseline = _extract_baseline(forms_state, base_data, config)
+    baseline = _extract_baseline(forms_state, worksheets, base_data, config)
 
     d_salt = _salt_d_agi(baseline['agi'], config)
     salt_regime = ('floor' if d_salt == 0 and baseline['agi'] > config['salt_phaseout_start']
@@ -462,25 +587,82 @@ def compute_analytical_marginal_rates(year):
     stcg_in_loss = baseline['net_stcg'] < 0
     ltcg_in_loss = baseline['net_ltcg'] < 0 or baseline['net_capital'] < 0
 
+    # Property tax knots: SALT regime transitions
+    property_tax_knots = _find_knots_property_tax(baseline, config)
+
+    # Foreign tax credit: no knots (constant $1-for-$1 until credit exceeds tax liability)
+    foreign_tax_knots = []
+
+    # Build notes explaining key drivers
+    mortgage_ratio = baseline['mortgage_deduction_ratio']
+    salt_note = (f'SALT at floor (${config["salt_floor"]:,}), total SALT ${baseline["salt_total"]:,.0f} '
+                 f'exceeds effective limit - no marginal benefit')
+    if baseline['salt_total'] < config['salt_floor']:
+        salt_note = f'SALT total ${baseline["salt_total"]:,.0f} below floor - full marginal benefit'
+
     categories = {
-        'W2 Wages': _build_segments(
-            wages_knots, baseline, config, fed_rate_type='ordinary', is_wages=True),
-        'Short-term capital gain': _build_segments(
-            income_knots, baseline, config,
-            fed_rate_type='stcg_or_loss' if stcg_in_loss else 'ordinary'),
-        'Long-term capital gain': _build_segments(
-            income_knots, baseline, config,
-            fed_rate_type='ltcg_or_loss' if ltcg_in_loss else 'preferential'),
-        'Qualified dividends': _build_segments(
-            income_knots, baseline, config, fed_rate_type='preferential'),
-        'Ordinary dividends (non-qualified)': _build_segments(
-            income_knots, baseline, config, fed_rate_type='ordinary'),
-        'Interest income': _build_segments(
-            income_knots, baseline, config, fed_rate_type='ordinary'),
-        '1256 contracts': _build_segments(
-            income_knots, baseline, config, fed_rate_type='1256'),
-        'Charitable contributions': _build_segments(
-            charitable_knots, baseline, config, fed_rate_type='ordinary', is_charitable=True),
+        'W2 Wages': {
+            'note': f'37% bracket + 0.9% Additional Medicare Tax (wages > $200k)',
+            'segments': _build_segments(
+                wages_knots, baseline, config, fed_rate_type='ordinary', is_wages=True),
+        },
+        'Short-term capital gain': {
+            'note': 'Taxed as ordinary income' + ('; net STCG in loss' if stcg_in_loss else ''),
+            'segments': _build_segments(
+                income_knots, baseline, config,
+                fed_rate_type='stcg_or_loss' if stcg_in_loss else 'ordinary'),
+        },
+        'Long-term capital gain': {
+            'note': ('Net losses absorb gain - taxed at ordinary rates' if ltcg_in_loss
+                     else '20% preferential rate (taxable income > $533,400)'),
+            'segments': _build_segments(
+                income_knots, baseline, config,
+                fed_rate_type='ltcg_or_loss' if ltcg_in_loss else 'preferential'),
+        },
+        'Qualified dividends': {
+            'note': '20% preferential rate (taxable income > $533,400)',
+            'segments': _build_segments(
+                income_knots, baseline, config, fed_rate_type='preferential'),
+        },
+        'Ordinary dividends (non-qualified)': {
+            'note': 'Taxed as ordinary income',
+            'segments': _build_segments(
+                income_knots, baseline, config, fed_rate_type='ordinary'),
+        },
+        'Interest income': {
+            'note': 'Taxed as ordinary income',
+            'segments': _build_segments(
+                income_knots, baseline, config, fed_rate_type='ordinary'),
+        },
+        '1256 contracts': {
+            'note': '60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8%',
+            'segments': _build_segments(
+                income_knots, baseline, config, fed_rate_type='1256'),
+        },
+        'Charitable contributions': {
+            'note': ('Itemized deduction, $1-for-$1. NY: 0% (50% AGI cap at NYAGI > $1M)'
+                     if baseline['ny_agi'] > 1_000_000
+                     else 'Itemized deduction, $1-for-$1'),
+            'segments': _build_segments(
+                charitable_knots, baseline, config, fed_rate_type='ordinary', mode='deduction'),
+        },
+        'Mortgage interest': {
+            'note': (f'Deduction ratio {mortgage_ratio:.1%} (qualified limit $750k / '
+                     f'loan balance). Effective rate = bracket * {mortgage_ratio:.3f}'),
+            'segments': _build_segments(
+                _find_knots_mortgage(baseline, config), baseline, config,
+                fed_rate_type='ordinary', mode='mortgage'),
+        },
+        'Property tax': {
+            'note': salt_note,
+            'segments': _build_segments(
+                property_tax_knots, baseline, config, fed_rate_type='ordinary', mode='property_tax'),
+        },
+        'Foreign tax credit': {
+            'note': 'Dollar-for-dollar credit against federal tax (Form 1116 limit not implemented)',
+            'segments': _build_segments(
+                foreign_tax_knots, baseline, config, fed_rate_type='ordinary', mode='foreign_tax_credit'),
+        },
     }
 
     results = {
@@ -495,6 +677,10 @@ def compute_analytical_marginal_rates(year):
             'ny_agi': baseline['ny_agi'],
             'ny_taxable': baseline['ny_taxable'],
             'salt_regime': salt_regime,
+            'salt_total': baseline['salt_total'],
+            'salt_deduction': baseline['salt_deduction'],
+            'foreign_tax': baseline['foreign_tax'],
+            'mortgage_deduction_ratio': baseline['mortgage_deduction_ratio'],
         },
         'marginal_rates': categories,
     }
@@ -540,8 +726,13 @@ def format_results(results):
                  f"SALT={base['salt_regime']}, NY taxable=${base['ny_taxable']:,.0f}")
     lines.append('')
 
-    for name, segments in results['marginal_rates'].items():
-        lines.append(f"  {name}:")
+    for name, category in results['marginal_rates'].items():
+        segments = category['segments'] if isinstance(category, dict) else category
+        note = category.get('note', '') if isinstance(category, dict) else ''
+        header = f"  {name}:"
+        if note:
+            header += f"  ({note})"
+        lines.append(header)
         range_strs = []
         for seg in segments:
             range_strs.append(f"{_format_amount(seg['from'])} - {_format_amount(seg['to'])}")
