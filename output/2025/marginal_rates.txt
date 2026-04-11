@@ -74,7 +74,7 @@ Baseline: AGI=$1,139,279, taxable=$1,120,115, SALT=floor, NY taxable=$567,354
     Additional    Federal   NY State        NYC   Combined
     $0 - ...       0.00%     0.00%     0.00%     0.00%
 
-  Foreign tax credit:  (Dollar-for-dollar credit against federal tax (Form 1116 limit not implemented))
+  Foreign tax credit:  (At Form 1116 limit (credit $627 < tax paid $801) - no marginal benefit)
     Additional    Federal   NY State        NYC   Combined
-    $0 - ...    -100.00%     0.00%     0.00%  -100.00%
+    $0 - ...       0.00%     0.00%     0.00%     0.00%
 

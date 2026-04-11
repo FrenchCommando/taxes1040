@@ -380,15 +380,130 @@ def fill_taxes(d, config):
             summary_info[f"{self.key} 21 Total Other Taxes"] = self.d['21']
             Form(k_1040, get_existing=True).push_to_dict('23', self.d['21'])
 
+    class Form1116(Form):
+        def __init__(self):
+            Form.__init__(self, k_1116)
+
+        def build(self):
+            self.push_name_ssn()
+
+            # Passive category income (box c)
+            self.push_to_dict('c', True)
+
+            # Part I: Foreign source income from 1099s that report foreign tax
+            # Only include income from 1099 entries that paid foreign tax
+            foreign_source_dividends = 0
+            foreign_source_interest = 0
+            foreign_country = None
+            for entry in d['1099']:
+                if entry.get('Foreign Tax Paid', 0) > 0:
+                    foreign_source_dividends += entry.get('Ordinary Dividends', 0)
+                    foreign_source_interest += entry.get('Interest', 0)
+                    foreign_country = entry.get('Foreign Country', foreign_country)
+
+            foreign_source_income = foreign_source_dividends + foreign_source_interest
+            if foreign_country:
+                self.d['i_a'] = foreign_country
+            self.d['i_1a_source'] = 'Dividends, Interest'
+            self.push_to_dict('i_1a_a', foreign_source_income)
+            self.push_to_dict('i_1a_total', foreign_source_income)
+
+            # Line 3a: certain itemized deductions (medical, sales tax, real estate, property tax)
+            # Apportioned by ratio of foreign source income to total gross income
+            agi = forms_state[k_1040]['11']
+            gross_income = forms_state[k_1040]['9']
+            if gross_income > 0:
+                apportionment_ratio = round(foreign_source_income / gross_income, 4)
+            else:
+                apportionment_ratio = 0
+
+            # Line 3a: standard deduction or certain itemized deductions, apportioned
+            deduction = forms_state[k_1040]['12']
+            line_3a = round(deduction * apportionment_ratio, 2) if gross_income > 5000 else deduction
+            self.push_to_dict('2_a', line_3a)
+
+            # Line 3d: gross foreign source income in this category
+            self.push_to_dict('i_1a_a', foreign_source_income)
+
+            # Line 3e: gross income from all sources
+            # (same amount in every column of every Form 1116)
+
+            # Line 7 (total): foreign source income minus deductions
+            self.push_to_dict('7_total', foreign_source_income - line_3a)
+
+            # Part II: Foreign taxes paid
+            # Using "Paid" method (box j)
+            self.push_to_dict('j', True)
+            if foreign_country:
+                self.d['a_l'] = foreign_country
+            self.push_to_dict('a_t', foreign_tax)
+            self.push_to_dict('8', foreign_tax)
+
+            # Part III: Figuring the credit
+            self.push_to_dict('9', foreign_tax)  # line 8 carried forward
+            # line 10: carryover (not implemented)
+            self.push_to_dict('11', foreign_tax)  # line 9 + line 10
+            # line 12: reductions (not applicable)
+            self.push_to_dict('13', 0)  # adjustments for high-taxed income
+            self.push_to_dict('14', foreign_tax)  # line 11 - line 12 - line 13
+
+            # Line 15-17: foreign source taxable income
+            self.push_to_dict('15', foreign_source_income - line_3a)
+            # line 16: adjustments (loss allocation, recapture - not applicable)
+            self.push_to_dict('17', max(0, self.d['15']))
+
+            # Line 18: taxable income from all sources
+            taxable_income = forms_state[k_1040]['15']
+            self.push_to_dict('18', taxable_income)
+
+            # Line 19: line 17 / line 18 (limitation fraction)
+            if taxable_income > 0:
+                limitation_fraction = round(self.d['17'] / taxable_income, 4)
+                limitation_fraction = min(limitation_fraction, 1.0)
+            else:
+                limitation_fraction = 0
+            self.push_to_dict('19', limitation_fraction, round_i=4)
+
+            # Line 20: US regular tax (form 1040 line 16)
+            us_tax = forms_state[k_1040]['16']
+            self.push_to_dict('20', us_tax)
+
+            # Line 21: line 19 * line 20 (maximum credit)
+            max_credit = round(limitation_fraction * us_tax)
+            self.push_to_dict('21', max_credit)
+
+            # Line 22: section 960(c) increase (not applicable)
+            # Line 23: line 21 + line 22
+            self.push_to_dict('23', max_credit)
+
+            # Line 24: smaller of line 14 or line 23
+            credit = min(self.d['14'], self.d['23'])
+            self.push_to_dict('24', credit)
+
+            # Part IV: summary (only one Form 1116)
+            self.push_to_dict('25', credit)
+            self.push_to_dict('32', credit)
+            self.push_to_dict('33', min(us_tax, credit))
+            self.push_to_dict('35', 0)  # reduction for international boycott
+
+            # Summary info
+            summary_info[f"{self.key} 17 Foreign source taxable income"] = self.d['17']
+            summary_info[f"{self.key} 19 Limitation fraction"] = limitation_fraction
+            summary_info[f"{self.key} 21 Maximum credit"] = max_credit
+            summary_info[f"{self.key} 24 Foreign tax credit"] = credit
+            if credit < foreign_tax:
+                summary_info[f"{self.key} Excess foreign tax (carryforward)"] = foreign_tax - credit
+
+            return credit
+
     class Form1040s3(Form):
         def __init__(self):
             Form.__init__(self, k_1040s3)
 
         def build(self):
             self.push_name_ssn()
-            # I don't need the 1116
-            # https://turbotax.intuit.com/tax-tips/military/filing-irs-form-1116-to-claim-the-foreign-tax-credit/L2ODfqp89
-            self.push_to_dict('1', foreign_tax)
+            credit = Form1116().build()
+            self.push_to_dict('1', credit)
             self.push_sum('8', ['1', '2', '3', '4', '5', '7'])  # 1040 line 20
             Form(k_1040, get_existing=True).push_to_dict('20', self.d.get('8', 0))
 
@@ -1379,11 +1494,17 @@ def fill_taxes(d, config):
 
     # forms_state[k_1040]['married_filling_separately'] = True
 
+    # Foreign tax credit carryforward (Form 1116: tax paid minus credit allowed)
+    foreign_tax_paid = sum(i.get('Foreign Tax Paid', 0) for i in d.get('1099', []))
+    foreign_tax_credit = forms_state.get(k_1040s3, {}).get('1', 0)
+    foreign_tax_carryforward = max(0, round(foreign_tax_paid - foreign_tax_credit))
+
     carryover = {
         'taxable_income': forms_state[k_1040].get('15', 0),
         'schedule_d_net_short_term': forms_state.get(k_1040sd, {}).get('7', 0),
         'schedule_d_net_long_term': forms_state.get(k_1040sd, {}).get('15', 0),
         'schedule_d_loss_deduction': forms_state.get(k_1040sd, {}).get('21', 0),
+        'foreign_tax_credit_carryforward': foreign_tax_carryforward,
     }
 
     field_maps = config.get('field_maps')

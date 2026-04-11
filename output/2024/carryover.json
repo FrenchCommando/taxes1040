@@ -2,5 +2,6 @@
     "taxable_income": 983620.0,
     "schedule_d_net_short_term": -72110,
     "schedule_d_net_long_term": -12000,
-    "schedule_d_loss_deduction": 3000
+    "schedule_d_loss_deduction": 3000,
+    "foreign_tax_credit_carryforward": 157
 }

@@ -12,7 +12,7 @@
         "salt_regime": "floor",
         "salt_total": 18056.0,
         "salt_deduction": 10000,
-        "foreign_tax": 801.0,
+        "foreign_tax": 627,
         "mortgage_deduction_ratio": 0.7506004803843075
     },
     "marginal_rates": {
@@ -530,16 +530,16 @@
             ]
         },
         "Foreign tax credit": {
-            "note": "Dollar-for-dollar credit against federal tax (Form 1116 limit not implemented)",
+            "note": "At Form 1116 limit (credit $627 < tax paid $801) - no marginal benefit",
             "segments": [
                 {
                     "from": 0,
                     "to": null,
                     "rates": {
-                        "federal": -1.0,
+                        "federal": 0,
                         "ny_state": 0,
                         "nyc": 0,
-                        "combined": -1.0
+                        "combined": 0
                     }
                 }
             ]

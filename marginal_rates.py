@@ -159,8 +159,10 @@ def _extract_baseline(forms_state, worksheets, base_data, config):
     salt_total = forms_state.get(k_1040sa, {}).get('5_d', 0)
     salt_deduction = forms_state.get(k_1040sa, {}).get('5_e', 0)
 
-    # Foreign tax credit
-    foreign_tax = forms_state.get(k_1040s3, {}).get('1', 0) if k_1040s3 in forms_state else 0
+    # Foreign tax credit (Form 1116 limitation)
+    foreign_tax_paid = sum(i.get('Foreign Tax Paid', 0) for i in base_data.get('1099', []))
+    foreign_tax_credit = forms_state.get(k_1040s3, {}).get('1', 0) if k_1040s3 in forms_state else 0
+    foreign_tax_limited = foreign_tax_paid > foreign_tax_credit  # at the Form 1116 limit
 
     # Mortgage interest deduction ratio (qualified_limit / total_balance)
     # If ratio < 1, only that fraction of interest is deductible
@@ -176,7 +178,9 @@ def _extract_baseline(forms_state, worksheets, base_data, config):
         itemized=itemized, net_stcg=net_stcg, net_ltcg=net_ltcg, net_capital=net_capital,
         total_qualified=total_qualified, ny_agi=ny_agi, ny_taxable=ny_taxable,
         medicare_wages=medicare_wages, salt_total=salt_total, salt_deduction=salt_deduction,
-        foreign_tax=foreign_tax, mortgage_deduction_ratio=mortgage_deduction_ratio,
+        foreign_tax=foreign_tax_credit, foreign_tax_paid=foreign_tax_paid,
+        foreign_tax_limited=foreign_tax_limited,
+        mortgage_deduction_ratio=mortgage_deduction_ratio,
     )
 
 
@@ -189,8 +193,11 @@ def _rate_at(additional, baseline, config, fed_rate_type,
           'property_tax' (increases SALT total), 'foreign_tax_credit' (dollar-for-dollar credit)
     """
     if mode == 'foreign_tax_credit':
-        # $1 foreign tax → $1 reduction in federal tax (direct credit, not deduction)
-        # No NY/NYC impact (NY doesn't allow federal foreign tax credit)
+        # Form 1116 limits the credit to (foreign source taxable / worldwide taxable) * US tax.
+        # If already at the limit, additional foreign tax has 0% marginal benefit (carries forward).
+        # If below the limit, $1 foreign tax → $1 credit → -100%.
+        if baseline['foreign_tax_limited']:
+            return dict(federal=0, ny_state=0, nyc=0, combined=0)
         return dict(federal=-1.0, ny_state=0, nyc=0, combined=-1.0)
 
     if mode == 'property_tax':
@@ -659,7 +666,10 @@ def compute_analytical_marginal_rates(year):
                 property_tax_knots, baseline, config, fed_rate_type='ordinary', mode='property_tax'),
         },
         'Foreign tax credit': {
-            'note': 'Dollar-for-dollar credit against federal tax (Form 1116 limit not implemented)',
+            'note': (f'At Form 1116 limit (credit ${baseline["foreign_tax"]:,.0f} < '
+                     f'tax paid ${baseline["foreign_tax_paid"]:,.0f}) - no marginal benefit'
+                     if baseline['foreign_tax_limited']
+                     else 'Dollar-for-dollar credit against federal tax (below Form 1116 limit)'),
             'segments': _build_segments(
                 foreign_tax_knots, baseline, config, fed_rate_type='ordinary', mode='foreign_tax_credit'),
         },
