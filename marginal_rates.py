@@ -355,15 +355,22 @@ def _rate_at(additional, baseline, config, fed_rate_type,
 
     new_ny_taxable = new_ny_agi - ny_deduction if new_ny_agi > 1_000_000 else baseline['ny_taxable'] + additional * d_ny_taxable
 
-    ny_rate = _bracket_rate(config['computation_ny'], new_ny_taxable) * d_ny_taxable
-    nyc_rate = _bracket_rate(config['computation_nyc'], new_ny_taxable) * d_ny_taxable
+    ny_bracket = _bracket_rate(config['computation_ny'], new_ny_taxable)
+    nyc_bracket = _bracket_rate(config['computation_nyc'], new_ny_taxable)
+    ny_rate = ny_bracket * d_ny_taxable
+    nyc_rate = nyc_bracket * d_ny_taxable
 
     federal = round(fed_rate + extra_fed, 6)
     ny_state = round(ny_rate, 6)
     nyc = round(nyc_rate, 6)
     combined = round(federal + ny_state + nyc, 6)
 
-    return dict(federal=federal, ny_state=ny_state, nyc=nyc, combined=combined)
+    result = dict(federal=federal, ny_state=ny_state, nyc=nyc, combined=combined)
+    if d_ny_taxable < 1:
+        result['ny_bracket'] = round(ny_bracket, 6)
+        result['nyc_bracket'] = round(nyc_bracket, 6)
+        result['ny_multiplier'] = d_ny_taxable
+    return result
 
 
 def _find_knots_income(baseline, config, is_wages=False):
@@ -691,6 +698,21 @@ def compute_analytical_marginal_rates(year):
             'salt_deduction': baseline['salt_deduction'],
             'foreign_tax': baseline['foreign_tax'],
             'mortgage_deduction_ratio': baseline['mortgage_deduction_ratio'],
+            'ny_deduction_regime': (
+                '25% of AGI (NYAGI > $10M)' if baseline['ny_agi'] > 10_000_000
+                else '50% of AGI (NYAGI > $1M)' if baseline['ny_agi'] > 1_000_000
+                else 'worksheet adjustment (NYAGI > $100k)' if baseline['ny_agi'] > 100_000
+                else 'full deduction'
+            ),
+            'ny_effective_rate_note': (
+                'NY/NYC rates = bracket rate * 0.75 (each $1 income raises AGI by $1, '
+                'but 25% AGI cap raises deduction by $0.25, so NY taxable rises by $0.75)'
+                if baseline['ny_agi'] > 10_000_000
+                else 'NY/NYC rates = bracket rate * 0.50 (each $1 income raises AGI by $1, '
+                'but 50% AGI cap raises deduction by $0.50, so NY taxable rises by $0.50)'
+                if baseline['ny_agi'] > 1_000_000
+                else None
+            ),
         },
         'marginal_rates': categories,
     }
@@ -734,6 +756,9 @@ def format_results(results):
     lines.append(f"Marginal tax rates (analytical, year={results['year']})")
     lines.append(f"Baseline: AGI=${base['agi']:,.0f}, taxable=${base['taxable_income']:,.0f}, "
                  f"SALT={base['salt_regime']}, NY taxable=${base['ny_taxable']:,.0f}")
+    if base.get('ny_effective_rate_note'):
+        lines.append(f"NY deduction regime: {base['ny_deduction_regime']} -- "
+                     f"{base['ny_effective_rate_note']}")
     lines.append('')
 
     for name, category in results['marginal_rates'].items():
@@ -752,6 +777,10 @@ def format_results(results):
             rates = seg['rates']
             line = (f"    {range_str:<{col_width}} {rates['federal']:>9.2%} {rates['ny_state']:>9.2%}"
                     f" {rates['nyc']:>9.2%} {rates['combined']:>9.2%}")
+            if 'ny_multiplier' in rates:
+                m = rates['ny_multiplier']
+                line += (f"  [NY {rates['ny_bracket']:.2%}*{m}, "
+                         f"NYC {rates['nyc_bracket']:.2%}*{m}]")
             if 'next_knot' in seg:
                 line += f"  <- {seg['next_knot']}"
             lines.append(line)

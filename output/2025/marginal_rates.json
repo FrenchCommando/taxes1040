@@ -13,7 +13,9 @@
         "salt_total": 18056.0,
         "salt_deduction": 10000,
         "foreign_tax": 627,
-        "mortgage_deduction_ratio": 0.7506004803843075
+        "mortgage_deduction_ratio": 0.7506004803843075,
+        "ny_deduction_regime": "50% of AGI (NYAGI > $1M)",
+        "ny_effective_rate_note": "NY/NYC rates = bracket rate * 0.50 (each $1 income raises AGI by $1, but 50% AGI cap raises deduction by $0.50, so NY taxable rises by $0.50)"
     },
     "marginal_rates": {
         "W2 Wages": {
@@ -26,7 +28,10 @@
                         "federal": 0.379,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.43263
+                        "combined": 0.43263,
+                        "ny_bracket": 0.0685,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
@@ -37,7 +42,10 @@
                         "federal": 0.379,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.44663
+                        "combined": 0.44663,
+                        "ny_bracket": 0.0965,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
@@ -48,7 +56,10 @@
                         "federal": 0.379,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.48532
+                        "combined": 0.48532,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     },
                     "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
@@ -59,7 +70,10 @@
                         "federal": 0.379,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.48532
+                        "combined": 0.48532,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     }
                 }
             ]
@@ -74,7 +88,10 @@
                         "federal": 0.37,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.42363
+                        "combined": 0.42363,
+                        "ny_bracket": 0.0685,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
@@ -85,7 +102,10 @@
                         "federal": 0.37,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.43763
+                        "combined": 0.43763,
+                        "ny_bracket": 0.0965,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
@@ -96,7 +116,10 @@
                         "federal": 0.37,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632
+                        "combined": 0.47632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     },
                     "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
@@ -107,7 +130,10 @@
                         "federal": 0.37,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632
+                        "combined": 0.47632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     }
                 }
             ]
@@ -122,7 +148,10 @@
                         "federal": 0.2,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.25363
+                        "combined": 0.25363,
+                        "ny_bracket": 0.0685,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
@@ -133,7 +162,10 @@
                         "federal": 0.2,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.26763
+                        "combined": 0.26763,
+                        "ny_bracket": 0.0965,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
@@ -144,7 +176,10 @@
                         "federal": 0.2,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632
+                        "combined": 0.30632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     },
                     "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
@@ -155,7 +190,10 @@
                         "federal": 0.2,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632
+                        "combined": 0.30632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     }
                 }
             ]
@@ -170,7 +208,10 @@
                         "federal": 0.2,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.25363
+                        "combined": 0.25363,
+                        "ny_bracket": 0.0685,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
@@ -181,7 +222,10 @@
                         "federal": 0.2,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.26763
+                        "combined": 0.26763,
+                        "ny_bracket": 0.0965,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
@@ -192,7 +236,10 @@
                         "federal": 0.2,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632
+                        "combined": 0.30632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     },
                     "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
@@ -203,7 +250,10 @@
                         "federal": 0.2,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632
+                        "combined": 0.30632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     }
                 }
             ]
@@ -218,7 +268,10 @@
                         "federal": 0.37,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.42363
+                        "combined": 0.42363,
+                        "ny_bracket": 0.0685,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
@@ -229,7 +282,10 @@
                         "federal": 0.37,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.43763
+                        "combined": 0.43763,
+                        "ny_bracket": 0.0965,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
@@ -240,7 +296,10 @@
                         "federal": 0.37,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632
+                        "combined": 0.47632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     },
                     "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
@@ -251,7 +310,10 @@
                         "federal": 0.37,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632
+                        "combined": 0.47632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     }
                 }
             ]
@@ -266,7 +328,10 @@
                         "federal": 0.37,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.42363
+                        "combined": 0.42363,
+                        "ny_bracket": 0.0685,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
@@ -277,7 +342,10 @@
                         "federal": 0.37,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.43763
+                        "combined": 0.43763,
+                        "ny_bracket": 0.0965,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
@@ -288,7 +356,10 @@
                         "federal": 0.37,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632
+                        "combined": 0.47632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     },
                     "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
@@ -299,7 +370,10 @@
                         "federal": 0.37,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632
+                        "combined": 0.47632,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     }
                 }
             ]
@@ -314,7 +388,10 @@
                         "federal": 0.268,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.32163
+                        "combined": 0.32163,
+                        "ny_bracket": 0.0685,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NY bracket at taxable $1,077,550; NY recapture cliff at NY taxable $1,077,550"
                 },
@@ -325,7 +402,10 @@
                         "federal": 0.268,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.33563
+                        "combined": 0.33563,
+                        "ny_bracket": 0.0965,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.5
                     },
                     "next_knot": "NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)"
                 },
@@ -336,7 +416,10 @@
                         "federal": 0.268,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.37432
+                        "combined": 0.37432,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     },
                     "next_knot": "NY bracket at taxable $25,000,000; NY recapture cliff at NY taxable $25,000,000"
                 },
@@ -347,7 +430,10 @@
                         "federal": 0.268,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.37432
+                        "combined": 0.37432,
+                        "ny_bracket": 0.103,
+                        "nyc_bracket": 0.03876,
+                        "ny_multiplier": 0.75
                     }
                 }
             ]
