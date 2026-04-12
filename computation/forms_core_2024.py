@@ -30,6 +30,7 @@ CONFIG_2024 = dict(
     ny_itemized_deduction_threshold=330_200,
     mortgage_limit=750_000,
     ny_mortgage_limit=1_000_000,
+    hsa_max_contribution=4_150,  # self-only
 )
 
 

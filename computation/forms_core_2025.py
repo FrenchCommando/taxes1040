@@ -32,6 +32,7 @@ CONFIG_2025 = dict(
     ny_itemized_deduction_threshold=340_700,
     mortgage_limit=750_000,
     ny_mortgage_limit=1_000_000,
+    hsa_max_contribution=4_300,  # self-only
     trades_per_page_limit=11,
     field_maps={
         k_1040: {

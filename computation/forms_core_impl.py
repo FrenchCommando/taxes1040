@@ -70,6 +70,8 @@ def fill_taxes(d, config):
     has_1099 = '1099' in d
     dividends_qualified = None
     additional_income = None
+    # input keys: health_savings_account (bool), health_savings_account_contributions,
+    # health_savings_account_employer_contributions, health_savings_account_distributions
     health_savings_account = d.get('health_savings_account', False)
     capital_gains = None
     contract1256 = None
@@ -92,7 +94,7 @@ def fill_taxes(d, config):
 
     standard_deduction = config['standard_deduction']
     qualified_business_deduction = 0
-    health_savings_account_max_contribution = 0
+    health_savings_account_max_contribution = config.get('hsa_max_contribution', 0)
 
     forms_state = {}  # mapping name of forms with content
     worksheets = {}  # worksheets need not be printed
@@ -312,6 +314,7 @@ def fill_taxes(d, config):
                     self.push_to_dict('8_e', hsa_taxable_distribution)
                 if forms_state[k_8889].get('13', 0) == 0 and forms_state[k_8889].get('16', 0) == 0:
                     del forms_state[k_8889]
+            # 8a, 8d, 8s are losses/subtractions on the IRS form
             self.push_to_dict('9',
                               - self.d.get('8_a', 0)
                               + self.d.get('8_b', 0)
@@ -329,6 +332,12 @@ def fill_taxes(d, config):
                               + self.d.get('8_n', 0)
                               + self.d.get('8_o', 0)
                               + self.d.get('8_p', 0)
+                              + self.d.get('8_q', 0)
+                              + self.d.get('8_r', 0)
+                              - self.d.get('8_s', 0)
+                              + self.d.get('8_t', 0)
+                              + self.d.get('8_u', 0)
+                              + self.d.get('8_v', 0)
                               + self.d.get('8_z', 0)
                               )
             self.push_sum('10', ['1', '2_a', '3', '4', '5', '6', '7', '9'])
@@ -842,22 +851,22 @@ def fill_taxes(d, config):
             self.push_to_dict('2', d.get('health_savings_account_contributions', 0))
             self.push_to_dict('3', health_savings_account_max_contribution)
             self.push_to_dict('4', 0)
-            self.push_to_dict('5', self.d['3'] - self.d.get('4', 0))
-            self.push_to_dict('6', self.d['5'])  # except if you have separate for spouse
+            self.push_to_dict('5', self.d.get('3', 0) - self.d.get('4', 0))
+            self.push_to_dict('6', self.d.get('5', 0))  # except if you have separate for spouse
             self.push_to_dict('7', 0)
             self.push_sum('8', ['6', '7'])
             self.push_to_dict('9', d.get('health_savings_account_employer_contributions', 0))
             self.push_to_dict('10', 0)
             self.push_sum('11', ['9', '10'])
-            self.push_to_dict('12', max(0, self.d['8'] - self.d['11']))
-            self.push_to_dict('13', min(self.d.get('2', 0), self.d['12']))  # to Schedule 1-II-12
+            self.push_to_dict('12', max(0, self.d.get('8', 0) - self.d.get('11', 0)))
+            self.push_to_dict('13', min(self.d.get('2', 0), self.d.get('12', 0)))  # to Schedule 1-II-12
 
             self.push_to_dict('14_a', d.get('health_savings_account_distributions', 0))
             self.push_to_dict('14_b', 0)  # distribution rolled over
-            self.push_to_dict('14_c', self.d['14_a'] - self.d.get('14_b', 0))
-            self.push_to_dict('15', self.d['14_c'])  # I don't assume it to be different
+            self.push_to_dict('14_c', self.d.get('14_a', 0) - self.d.get('14_b', 0))
+            self.push_to_dict('15', self.d.get('14_c', 0))  # I don't assume it to be different
 
-            self.push_to_dict('16', self.d['14_c'] - self.d['15'])
+            self.push_to_dict('16', self.d.get('14_c', 0) - self.d.get('15', 0))
             # if positive, Schedule 1-I-8 HSA
 
             # Then is part III, not implemented
@@ -899,11 +908,19 @@ def fill_taxes(d, config):
                 del forms_state[k_8949]
             elif len(trades_subsets) == 1:
                 # if few enough trades
-                forms_state[k_8949] = self.build_one(trades_subsets[0])
+                result = self.build_one(trades_subsets[0])
+                if result is None:
+                    del forms_state[k_8949]
+                else:
+                    forms_state[k_8949] = result
             else:
                 # if many -> use a list of content dictionaries
                 ll = [self.build_one(lll) for lll in trades_subsets]
-                forms_state[k_8949] = [lll for lll in ll if lll is not None]
+                ll = [lll for lll in ll if lll is not None]
+                if len(ll) == 0:
+                    del forms_state[k_8949]
+                else:
+                    forms_state[k_8949] = ll
 
         def build_one(self, code_trades):
             code, trades = code_trades

@@ -69,49 +69,12 @@ from computation.form_worksheet_names import (
     k_1040, k_1040sa, k_1040sd, k_1040s3, k_it201,
     w_salt_deduction,
 )
-from computation.forms_functions import (
-    computation_2025, computation_2025_ny, computation_2025_ny_recapture,
-    computation_2025_nyc,
-    computation_2024, computation_2024_ny, computation_2024_ny_recapture,
-    computation_2024_nyc,
-)
-
+from computation.forms_core_2025 import CONFIG_2025
+from computation.forms_core_2024 import CONFIG_2024
 
 YEAR_CONFIGS = {
-    '2025': dict(
-        computation=computation_2025,
-        computation_ny=computation_2025_ny,
-        computation_ny_recapture=computation_2025_ny_recapture,
-        computation_nyc=computation_2025_nyc,
-        standard_deduction=15_750,
-        salt_limit=40_000,
-        salt_phaseout_start=500_000,
-        salt_phaseout_rate=0.30,
-        salt_floor=10_000,
-        qualified_div_0pct=48_350,
-        qualified_div_20pct=533_400,
-        ny_recapture_brackets=[215_400, 1_077_550, 5_000_000, 25_000_000],
-        ny_standard_deduction=8_000,
-        mortgage_limit=750_000,
-        ny_mortgage_limit=1_000_000,
-    ),
-    '2024': dict(
-        computation=computation_2024,
-        computation_ny=computation_2024_ny,
-        computation_ny_recapture=computation_2024_ny_recapture,
-        computation_nyc=computation_2024_nyc,
-        standard_deduction=15_200,
-        salt_limit=10_000,
-        salt_phaseout_start=500_000,
-        salt_phaseout_rate=0.30,
-        salt_floor=10_000,
-        qualified_div_0pct=47_025,
-        qualified_div_20pct=518_900,
-        ny_recapture_brackets=[215_400, 1_077_550, 5_000_000, 25_000_000],
-        ny_standard_deduction=8_000,
-        mortgage_limit=750_000,
-        ny_mortgage_limit=1_000_000,
-    ),
+    '2025': {**CONFIG_2025, 'ny_recapture_brackets': [215_400, 1_077_550, 5_000_000, 25_000_000]},
+    '2024': {**CONFIG_2024, 'ny_recapture_brackets': [215_400, 1_077_550, 5_000_000, 25_000_000]},
 }
 
 FED_BRACKETS = [11_925, 48_475, 103_350, 197_300, 250_525, 626_350]
@@ -216,6 +179,28 @@ def _rate_at(additional, baseline, config, fed_rate_type,
         if baseline['foreign_tax_limited']:
             return dict(federal=0, ny_state=0, nyc=0, combined=0)
         return dict(federal=-1.0, ny_state=0, nyc=0, combined=-1.0)
+
+    if mode == 'hsa':
+        # HSA: above-the-line deduction, reduces AGI by $1 per $1 contributed
+        # Mirror of income mode with flipped sign
+        new_agi = baseline['agi'] - additional
+        d_salt = _salt_d_agi(new_agi, config)
+        if baseline['is_itemizing']:
+            d_fed_taxable = 1 - d_salt
+        else:
+            d_fed_taxable = 1
+        fed_taxable = baseline['taxable_income'] - additional * d_fed_taxable
+        fed_rate = _bracket_rate(config['computation'], fed_taxable) * d_fed_taxable
+        # NY: HSA reduces NYAGI (flows through IT-201 line 19 -> 33)
+        new_ny_agi = baseline['ny_agi'] - additional
+        new_ny_taxable = baseline['ny_taxable'] - additional
+        ny_rate = _bracket_rate(config['computation_ny'], new_ny_taxable)
+        nyc_rate = _bracket_rate(config['computation_nyc'], new_ny_taxable)
+        federal = round(-fed_rate, 6)
+        ny_state = round(-ny_rate, 6)
+        nyc = round(-nyc_rate, 6)
+        return dict(federal=federal, ny_state=ny_state, nyc=nyc,
+                    combined=round(federal + ny_state + nyc, 6))
 
     if mode == 'property_tax':
         # Property tax increases SALT total (Schedule A line 5_d).
@@ -618,6 +603,40 @@ def _find_knots_mortgage(baseline, config):
     return knots
 
 
+def _find_knots_hsa(baseline, config):
+    """Find knots for HSA contributions (above-the-line deduction, reduces AGI)."""
+    knots = []
+    fed_taxable_0 = baseline['taxable_income']
+    ny_taxable_0 = baseline['ny_taxable']
+
+    # Federal bracket transitions (going down)
+    for bracket in reversed(FED_BRACKETS):
+        if bracket < fed_taxable_0:
+            additional = fed_taxable_0 - bracket
+            knots.append((round(additional), f'Federal bracket at taxable ${bracket:,}'))
+
+    # NY/NYC bracket transitions (going down)
+    for bracket in reversed(NY_BRACKETS):
+        if bracket < ny_taxable_0:
+            additional = ny_taxable_0 - bracket
+            if additional > 0:
+                knots.append((round(additional), f'NY bracket at taxable ${bracket:,}'))
+    for bracket in reversed(NYC_BRACKETS):
+        if bracket < ny_taxable_0:
+            additional = ny_taxable_0 - bracket
+            if additional > 0:
+                knots.append((round(additional), f'NYC bracket at taxable ${bracket:,}'))
+
+    # HSA max contribution limit -- discard knots beyond it
+    hsa_max = config.get('hsa_max_contribution', 0)
+    if hsa_max > 0:
+        knots = [(x, desc) for x, desc in knots if x < hsa_max]
+        knots.append((hsa_max, f'HSA max contribution ${hsa_max:,}'))
+
+    knots.sort()
+    return knots
+
+
 def _find_knots_property_tax(baseline, config):
     """Find knots for property tax (feeds into SALT).
 
@@ -717,6 +736,9 @@ def compute_analytical_marginal_rates(year):
     stcg_in_loss = baseline['net_stcg'] < 0
     ltcg_in_loss = baseline['net_ltcg'] < 0 or baseline['net_capital'] < 0
 
+    # HSA knots: federal and NY bracket transitions as AGI decreases
+    hsa_knots = _find_knots_hsa(baseline, config)
+
     # Property tax knots: SALT regime transitions
     property_tax_knots = _find_knots_property_tax(baseline, config)
 
@@ -768,6 +790,12 @@ def compute_analytical_marginal_rates(year):
             'note': '60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8% + 3.8% NIIT',
             'segments': _build_segments(
                 income_knots, baseline, config, fed_rate_type='1256'),
+        },
+        'HSA contribution': {
+            'note': f'Above-the-line deduction, reduces AGI (max ${config.get("hsa_max_contribution", 0):,} self-only)',
+            'segments': [s for s in _build_segments(
+                hsa_knots, baseline, config, fed_rate_type='ordinary', mode='hsa')
+                if s['from'] < config.get('hsa_max_contribution', 0)],
         },
         'Charitable contributions': {
             'note': ('Itemized deduction, $1-for-$1. NY: limited to 50% of charitable (NYAGI > $1M)'

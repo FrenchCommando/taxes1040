@@ -21,6 +21,7 @@ Scenarios:
     many_trades            - 20 trades across short/long term, multiple 8949 pages
     low_income_itemized    - NY AGI under $100k with NY itemization (tests NY line 46 guard)
     high_income_ny        - NYAGI > $1M, tests IT-196 line 47 = 50% of charitable gifts
+    hsa_contribution      - HSA self-only contribution, employer contribution, distribution
     amt_exemption_phaseout - high income pushes AMTI above $626,350, AMT exemption phased out
 """
 import json
@@ -328,6 +329,14 @@ SCENARIOS = {
             },
         ],
         "Other": [{"PropertyTax": 8000}],
+    },
+    "hsa_contribution": {
+        # HSA self-only: $4,300 contribution, $500 employer, $200 distribution
+        "W2": [BASE_W2],
+        "health_savings_account": True,
+        "health_savings_account_contributions": 4300,
+        "health_savings_account_employer_contributions": 500,
+        "health_savings_account_distributions": 200,
     },
     "amt_exemption_phaseout": {
         # High income pushes AMTI above $626,350 exemption phaseout start

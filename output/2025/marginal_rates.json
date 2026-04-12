@@ -354,6 +354,22 @@
                 }
             ]
         },
+        "HSA contribution": {
+            "note": "Above-the-line deduction, reduces AGI (max $4,300 self-only)",
+            "segments": [
+                {
+                    "from": 0,
+                    "to": 4300,
+                    "rates": {
+                        "federal": -0.37,
+                        "ny_state": -0.0965,
+                        "nyc": -0.03876,
+                        "combined": -0.50526
+                    },
+                    "next_knot": "HSA max contribution $4,300"
+                }
+            ]
+        },
         "Charitable contributions": {
             "note": "Itemized deduction, $1-for-$1. NY: limited to 50% of charitable (NYAGI > $1M)",
             "segments": [
