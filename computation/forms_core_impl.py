@@ -1121,12 +1121,12 @@ def fill_taxes(d, config):
             # Part I - Qualified Loan Limit
             self.d[1] = 0  # grandfathered
             self.d[2] = 0  # old
-            self.d[3] = 1_000_000
+            self.d[3] = 1_000_000  # pre-TCJA grandfathered debt ceiling (IRS Pub 936)
             self.d[4] = max(self.d[1], self.d[3])
             self.d[5] = self.d[1] + self.d[2]
             self.d[6] = min(self.d[4], self.d[5])
             self.d[7] = balance_start - 0.5 * principal_payments  # average balance
-            self.d[8] = 750_000
+            self.d[8] = config['mortgage_limit']
             self.d[9] = max(self.d[6], self.d[8])
             self.d[10] = self.d[6] + self.d[7]
             self.d[11] = min(self.d[9], self.d[10])
@@ -1409,10 +1409,15 @@ def fill_taxes(d, config):
 
             self.push_sum('9', ['5', '6', '7', '8'])
 
-            # interest
+            # interest: NY uses pre-TCJA $1M mortgage limit, not federal $750k
+            # worksheet line 3 has the same $1M value, but config is the source of truth
             if w_mortgage_interest_deduction in worksheets:
-                # cap is 1mil - need to be applied
-                self.push_to_dict('10', worksheets[w_mortgage_interest_deduction][13])
+                if worksheets[w_mortgage_interest_deduction][12] <= config['ny_mortgage_limit']:
+                    self.push_to_dict('10', worksheets[w_mortgage_interest_deduction][13])
+                else:
+                    self.push_to_dict('10', worksheets[w_mortgage_interest_deduction][13]
+                                      * config['ny_mortgage_limit']
+                                      / worksheets[w_mortgage_interest_deduction][12])
             self.push_sum('15', ['10', '11', '12', '14'])
 
             # gifts (IT-196 lines 16-19)

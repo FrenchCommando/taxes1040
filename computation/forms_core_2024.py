@@ -28,6 +28,8 @@ CONFIG_2024 = dict(
     salt_floor=10_000,
     ny_standard_deduction=8_000,
     ny_itemized_deduction_threshold=330_200,
+    mortgage_limit=750_000,
+    ny_mortgage_limit=1_000_000,
 )
 
 
