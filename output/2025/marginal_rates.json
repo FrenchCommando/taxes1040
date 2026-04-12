@@ -355,16 +355,38 @@
             ]
         },
         "Charitable contributions": {
-            "note": "Itemized deduction, $1-for-$1. NY: 0% (50% AGI cap at NYAGI > $1M)",
+            "note": "Itemized deduction, $1-for-$1. NY: limited to 50% of charitable (NYAGI > $1M)",
             "segments": [
                 {
                     "from": 0,
-                    "to": 493765,
+                    "to": 15848,
                     "rates": {
                         "federal": -0.37,
                         "ny_state": 0,
                         "nyc": 0,
                         "combined": -0.37
+                    },
+                    "next_knot": "NY itemized (50% charitable) exceeds NY standard deduction $8,000"
+                },
+                {
+                    "from": 15848,
+                    "to": 102888,
+                    "rates": {
+                        "federal": -0.37,
+                        "ny_state": -0.04825,
+                        "nyc": -0.01938,
+                        "combined": -0.43763
+                    },
+                    "next_knot": "NY bracket at taxable $1,077,550"
+                },
+                {
+                    "from": 102888,
+                    "to": 493765,
+                    "rates": {
+                        "federal": -0.37,
+                        "ny_state": 0.09625,
+                        "nyc": -0.01938,
+                        "combined": -0.29313
                     },
                     "next_knot": "Federal bracket at taxable $626,350"
                 },
@@ -373,9 +395,9 @@
                     "to": 869590,
                     "rates": {
                         "federal": -0.35,
-                        "ny_state": 0,
-                        "nyc": 0,
-                        "combined": -0.35
+                        "ny_state": -0.03425,
+                        "nyc": -0.01938,
+                        "combined": -0.40363
                     },
                     "next_knot": "Federal bracket at taxable $250,525"
                 },
@@ -384,9 +406,9 @@
                     "to": 922815,
                     "rates": {
                         "federal": -0.32,
-                        "ny_state": 0,
-                        "nyc": 0,
-                        "combined": -0.32
+                        "ny_state": -0.03425,
+                        "nyc": -0.01938,
+                        "combined": -0.37363
                     },
                     "next_knot": "Federal bracket at taxable $197,300"
                 },
@@ -395,9 +417,9 @@
                     "to": 1016765,
                     "rates": {
                         "federal": -0.24,
-                        "ny_state": 0,
-                        "nyc": 0,
-                        "combined": -0.24
+                        "ny_state": -0.03425,
+                        "nyc": -0.01938,
+                        "combined": -0.29363
                     },
                     "next_knot": "Federal bracket at taxable $103,350"
                 },
@@ -406,9 +428,9 @@
                     "to": 1071640,
                     "rates": {
                         "federal": -0.22,
-                        "ny_state": 0,
-                        "nyc": 0,
-                        "combined": -0.22
+                        "ny_state": -0.03425,
+                        "nyc": -0.01938,
+                        "combined": -0.27363
                     },
                     "next_knot": "Federal bracket at taxable $48,475"
                 },
@@ -417,20 +439,108 @@
                     "to": 1108190,
                     "rates": {
                         "federal": -0.12,
-                        "ny_state": 0,
-                        "nyc": 0,
-                        "combined": -0.12
+                        "ny_state": -0.03425,
+                        "nyc": -0.01938,
+                        "combined": -0.17363
                     },
                     "next_knot": "Federal bracket at taxable $11,925"
                 },
                 {
                     "from": 1108190,
+                    "to": 1827188,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": -0.03425,
+                        "nyc": -0.01938,
+                        "combined": -0.15363
+                    },
+                    "next_knot": "NY bracket at taxable $215,400"
+                },
+                {
+                    "from": 1827188,
+                    "to": 2096688,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": -0.032125,
+                        "nyc": -0.01938,
+                        "combined": -0.151505
+                    },
+                    "next_knot": "NY bracket at taxable $80,650"
+                },
+                {
+                    "from": 2096688,
+                    "to": 2157988,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": 0.09625,
+                        "nyc": -0.01938,
+                        "combined": -0.02313
+                    },
+                    "next_knot": "NYC bracket at taxable $50,000"
+                },
+                {
+                    "from": 2157988,
+                    "to": 2207988,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": -0.0275,
+                        "nyc": -0.144238,
+                        "combined": -0.271738
+                    },
+                    "next_knot": "NYC bracket at taxable $25,000"
+                },
+                {
+                    "from": 2207988,
+                    "to": 2230188,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": -0.0275,
+                        "nyc": 0.011048,
+                        "combined": -0.116452
+                    },
+                    "next_knot": "NY bracket at taxable $13,900"
+                },
+                {
+                    "from": 2230188,
+                    "to": 2233988,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": -0.276875,
+                        "nyc": -0.01881,
+                        "combined": -0.395685
+                    },
+                    "next_knot": "NYC bracket at taxable $12,000"
+                },
+                {
+                    "from": 2233988,
+                    "to": 2234588,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": -0.02625,
+                        "nyc": 0.1629,
+                        "combined": 0.03665
+                    },
+                    "next_knot": "NY bracket at taxable $11,700"
+                },
+                {
+                    "from": 2234588,
+                    "to": 2240988,
+                    "rates": {
+                        "federal": -0.1,
+                        "ny_state": -0.024375,
+                        "nyc": -0.01539,
+                        "combined": -0.139765
+                    },
+                    "next_knot": "NY bracket at taxable $8,500"
+                },
+                {
+                    "from": 2240988,
                     "to": null,
                     "rates": {
                         "federal": -0.1,
-                        "ny_state": 0,
-                        "nyc": 0,
-                        "combined": -0.1
+                        "ny_state": -0.02125,
+                        "nyc": -0.01539,
+                        "combined": -0.13664
                     }
                 }
             ]

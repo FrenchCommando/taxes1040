@@ -91,6 +91,7 @@ YEAR_CONFIGS = {
         qualified_div_0pct=48_350,
         qualified_div_20pct=533_400,
         ny_recapture_brackets=[215_400, 1_077_550, 5_000_000, 25_000_000],
+        ny_standard_deduction=8_000,
     ),
     '2024': dict(
         computation=computation_2024,
@@ -105,6 +106,7 @@ YEAR_CONFIGS = {
         qualified_div_0pct=47_025,
         qualified_div_20pct=518_900,
         ny_recapture_brackets=[215_400, 1_077_550, 5_000_000, 25_000_000],
+        ny_standard_deduction=8_000,
     ),
 }
 
@@ -265,12 +267,27 @@ def _rate_at(additional, baseline, config, fed_rate_type,
         else:
             fed_rate = _bracket_rate(config['computation'], fed_taxable)
 
-        # NY: at NYAGI > $1M, deduction = 50% of AGI (not affected by deduction amount)
-        return dict(
-            federal=round(-fed_rate, 6),
-            ny_state=0, nyc=0,
-            combined=round(-fed_rate, 6),
-        )
+        # NY: for NYAGI > $1M, IT-196 line 47 = fraction of charitable (line 19)
+        # Each $1 charitable increases NY deduction by 0.50 (or 0.25 for >$10M)
+        # but only if the NY itemized deduction exceeds the NY standard deduction
+        ny_agi = baseline['ny_agi']
+        ny_rate = 0
+        nyc_rate = 0
+        if ny_agi > 1_000_000:
+            fraction = 0.25 if ny_agi > 10_000_000 else 0.50
+            new_ny_charitable = baseline['charitable_ny'] + additional
+            new_ny_itemized = new_ny_charitable * fraction
+            if new_ny_itemized > config['ny_standard_deduction']:
+                # NY taxable decreases by fraction of additional charitable
+                new_ny_taxable = baseline['ny_taxable'] - additional * fraction
+                ny_rate = _bracket_rate(config['computation_ny'], new_ny_taxable) * fraction
+                nyc_rate = _bracket_rate(config['computation_nyc'], new_ny_taxable) * fraction
+
+        federal = round(-fed_rate, 6)
+        ny_state = round(-ny_rate, 6)
+        nyc = round(-nyc_rate, 6)
+        return dict(federal=federal, ny_state=ny_state, nyc=nyc,
+                    combined=round(federal + ny_state + nyc, 6))
 
     # Income types: $1 input → $1 AGI
     new_agi = baseline['agi'] + additional
@@ -467,14 +484,37 @@ def _find_knots_charitable(baseline, config):
             additional = fed_taxable_0 - bracket
             knots.append((additional, f'Federal bracket at taxable ${bracket:,}'))
 
-    # Itemized → standard deduction crossover
+    # Itemized → standard deduction crossover (federal)
     if baseline['is_itemizing']:
         excess = baseline['itemized'] - config['standard_deduction']
         if excess > 0:
-            # This would only trigger if charitable is the bulk of itemized deductions
-            # and removing it drops below standard. But we're adding charitable, so
-            # we move further into itemizing. No crossover for adding charitable.
+            # Adding charitable moves further into itemizing. No crossover.
             pass
+
+    # NY: charitable deduction crossover (NYAGI > $1M)
+    ny_agi = baseline['ny_agi']
+    if ny_agi > 1_000_000:
+        fraction = 0.25 if ny_agi > 10_000_000 else 0.50
+        current_ny_itemized = baseline['charitable_ny'] * fraction
+        ny_std = config['ny_standard_deduction']
+        if current_ny_itemized <= ny_std:
+            # Additional charitable needed for NY itemized to beat standard
+            # fraction * (charitable + additional) > ny_std
+            additional_needed = (ny_std / fraction) - baseline['charitable_ny']
+            if additional_needed > 0:
+                knots.append((additional_needed,
+                              f'NY itemized (50% charitable) exceeds NY standard deduction ${ny_std:,}'))
+
+        # NY bracket transitions (charitable reduces NY taxable by fraction)
+        ny_taxable_0 = baseline['ny_taxable']
+        for bracket in reversed(NY_BRACKETS):
+            if bracket < ny_taxable_0:
+                additional = (ny_taxable_0 - bracket) / fraction
+                knots.append((additional, f'NY bracket at taxable ${bracket:,}'))
+        for bracket in reversed(NYC_BRACKETS):
+            if bracket < ny_taxable_0:
+                additional = (ny_taxable_0 - bracket) / fraction
+                knots.append((additional, f'NYC bracket at taxable ${bracket:,}'))
 
     knots = [(round(x), desc) for x, desc in knots if x > 0]
     knots.sort()
@@ -631,7 +671,7 @@ def compute_analytical_marginal_rates(year):
                 income_knots, baseline, config, fed_rate_type='1256'),
         },
         'Charitable contributions': {
-            'note': ('Itemized deduction, $1-for-$1. NY: 0% (50% AGI cap at NYAGI > $1M)'
+            'note': ('Itemized deduction, $1-for-$1. NY: limited to 50% of charitable (NYAGI > $1M)'
                      if baseline['ny_agi'] > 1_000_000
                      else 'Itemized deduction, $1-for-$1'),
             'segments': _build_segments(
