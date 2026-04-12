@@ -364,6 +364,11 @@ def fill_taxes(d, config):
                     and forms_state[k_8959]['24'] == 0:
                 del forms_state[k_8959]
 
+            Form8960().build()  # Net Investment Income Tax - fills 12
+            if forms_state.get(k_8960, {}).get('17', 0) == 0:
+                if k_8960 in forms_state:
+                    del forms_state[k_8960]
+
             self.push_sum(key='18', it=[
                 f'17_{letter}' for letter in [
                     'a_value',
@@ -999,6 +1004,54 @@ def fill_taxes(d, config):
             if '24' in self.d:
                 summary_info[f"{self.key} 24 Total Additional Medicare Tax withholding"] = self.d['24']
             Form(k_1040, get_existing=True).push_to_dict('25_c', self.d['24'])
+
+    class Form8960(Form):
+        def __init__(self):
+            Form.__init__(self, k_8960)
+
+        def build(self):
+            self.push_name_ssn()
+
+            # Part I - Net Investment Income
+            # Line 1: taxable interest (1040 line 2b)
+            self.push_to_dict('1', forms_state[k_1040].get('2_b', 0))
+            # Line 2: ordinary dividends (1040 line 3b)
+            self.push_to_dict('2', forms_state[k_1040].get('3_b', 0))
+            # Line 3: annuities
+            # Line 4a: rental, royalty, partnership, S corp (Schedule 1 lines 3, 5)
+            self.push_to_dict('4_a', 0)
+            # Line 4b: adjustment for non-section 1411 trade or business
+            self.push_to_dict('4_b', 0)
+            self.push_sum('4_c', ['4_a', '4_b'])
+            # Line 5a: net gain/loss from disposition of property (1040 line 7)
+            self.push_to_dict('5_a', forms_state[k_1040].get('7_value', 0))
+            # Line 5b-5c: excluded gains/losses, partnership adjustments
+            self.push_sum('5_d', ['5_a', '5_b', '5_c'])
+            # Line 6: CFC/PFIC adjustments
+            # Line 7: other modifications
+            self.push_sum('8', ['1', '2', '3', '4_c', '5_d', '6', '7'])
+
+            # Part II - Investment Expenses
+            # Line 9a: investment interest expense (Schedule A line 9)
+            # Line 9b: state/local/foreign income tax allocable to NII
+            # Line 9c: miscellaneous investment expenses (suspended through 2025)
+            self.push_sum('9_d', ['9_a', '9_b', '9_c'])
+            # Line 10: additional modifications
+            self.push_to_dict('11', max(0, self.d.get('8', 0) - self.d.get('9_d', 0) - self.d.get('10', 0)))
+            summary_info[f"{self.key} 8 Net investment income"] = self.d.get('8', 0)
+
+            # Part III - Tax Computation (Individuals)
+            self.push_to_dict('12', self.d.get('11', 0))
+            # Line 13: MAGI (= AGI for simple case, no section 911 or CFC/PFIC)
+            self.push_to_dict('13', forms_state[k_1040].get('11', 0))
+            self.push_to_dict('14', config.get('niit_threshold', 200_000))
+            self.push_to_dict('15', max(0, self.d.get('13', 0) - self.d.get('14', 0)))
+            self.push_to_dict('16', min(self.d.get('12', 0), self.d.get('15', 0)))
+            niit = round(self.d.get('16', 0) * 0.038)
+            self.push_to_dict('17', niit)
+            summary_info[f"{self.key} 17 Net Investment Income Tax"] = niit
+            # Push to Schedule 2 line 12
+            Form(k_1040s2, get_existing=True).push_to_dict('12', niit)
 
     class Worksheet:
         def __init__(self, key, n):

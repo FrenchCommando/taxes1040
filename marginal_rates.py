@@ -333,6 +333,11 @@ def _rate_at(additional, baseline, config, fed_rate_type,
     if is_wages and baseline['medicare_wages'] + additional > 200_000:
         extra_fed = 0.009
 
+    # NIIT (3.8% on investment income when MAGI > $200k)
+    niit_threshold = config.get('niit_threshold', 200_000)
+    if not is_wages and mode == 'income' and new_agi > niit_threshold:
+        extra_fed += 0.038
+
     # NY deduction regime at new NYAGI
     new_ny_agi = baseline['ny_agi'] + additional
     if new_ny_agi > 10_000_000:
@@ -412,6 +417,11 @@ def _find_knots_income(baseline, config, is_wages=False):
     # Medicare threshold (W2 only)
     if is_wages and baseline['medicare_wages'] < 200_000:
         knots.append((200_000 - baseline['medicare_wages'], 'Additional Medicare Tax begins ($200k)'))
+
+    # NIIT threshold (investment income only)
+    niit_threshold = config.get('niit_threshold', 200_000)
+    if not is_wages and agi_0 < niit_threshold:
+        knots.append((niit_threshold - agi_0, f'NIIT begins (MAGI > ${niit_threshold:,})'))
 
     # NY deduction regime transitions
     if ny_agi_0 <= 1_000_000:
@@ -621,35 +631,35 @@ def compute_analytical_marginal_rates(year):
                 wages_knots, baseline, config, fed_rate_type='ordinary', is_wages=True),
         },
         'Short-term capital gain': {
-            'note': 'Taxed as ordinary income' + ('; net STCG in loss' if stcg_in_loss else ''),
+            'note': 'Taxed as ordinary income + 3.8% NIIT' + ('; net STCG in loss' if stcg_in_loss else ''),
             'segments': _build_segments(
                 income_knots, baseline, config,
                 fed_rate_type='stcg_or_loss' if stcg_in_loss else 'ordinary'),
         },
         'Long-term capital gain': {
-            'note': ('Net losses absorb gain - taxed at ordinary rates' if ltcg_in_loss
-                     else '20% preferential rate (taxable income > $533,400)'),
+            'note': ('Net losses absorb gain - taxed at ordinary rates + 3.8% NIIT' if ltcg_in_loss
+                     else '20% preferential rate (taxable income > $533,400) + 3.8% NIIT'),
             'segments': _build_segments(
                 income_knots, baseline, config,
                 fed_rate_type='ltcg_or_loss' if ltcg_in_loss else 'preferential'),
         },
         'Qualified dividends': {
-            'note': '20% preferential rate (taxable income > $533,400)',
+            'note': '20% preferential rate (taxable income > $533,400) + 3.8% NIIT',
             'segments': _build_segments(
                 income_knots, baseline, config, fed_rate_type='preferential'),
         },
         'Ordinary dividends (non-qualified)': {
-            'note': 'Taxed as ordinary income',
+            'note': 'Taxed as ordinary income + 3.8% NIIT',
             'segments': _build_segments(
                 income_knots, baseline, config, fed_rate_type='ordinary'),
         },
         'Interest income': {
-            'note': 'Taxed as ordinary income',
+            'note': 'Taxed as ordinary income + 3.8% NIIT',
             'segments': _build_segments(
                 income_knots, baseline, config, fed_rate_type='ordinary'),
         },
         '1256 contracts': {
-            'note': '60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8%',
+            'note': '60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8% + 3.8% NIIT',
             'segments': _build_segments(
                 income_knots, baseline, config, fed_rate_type='1256'),
         },

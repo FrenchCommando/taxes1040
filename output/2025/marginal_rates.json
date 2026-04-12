@@ -79,16 +79,16 @@
             ]
         },
         "Short-term capital gain": {
-            "note": "Taxed as ordinary income",
+            "note": "Taxed as ordinary income + 3.8% NIIT",
             "segments": [
                 {
                     "from": 0,
                     "to": 1020392,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.42363,
+                        "combined": 0.46163,
                         "ny_bracket": 0.0685,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -99,10 +99,10 @@
                     "from": 1020392,
                     "to": 8863006,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.43763,
+                        "combined": 0.47563,
                         "ny_bracket": 0.0965,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -113,10 +113,10 @@
                     "from": 8863006,
                     "to": 32196339,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632,
+                        "combined": 0.51432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -127,10 +127,10 @@
                     "from": 32196339,
                     "to": null,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632,
+                        "combined": 0.51432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -139,16 +139,16 @@
             ]
         },
         "Long-term capital gain": {
-            "note": "20% preferential rate (taxable income > $533,400)",
+            "note": "20% preferential rate (taxable income > $533,400) + 3.8% NIIT",
             "segments": [
                 {
                     "from": 0,
                     "to": 1020392,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.25363,
+                        "combined": 0.29163,
                         "ny_bracket": 0.0685,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -159,10 +159,10 @@
                     "from": 1020392,
                     "to": 8863006,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.26763,
+                        "combined": 0.30563,
                         "ny_bracket": 0.0965,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -173,10 +173,10 @@
                     "from": 8863006,
                     "to": 32196339,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632,
+                        "combined": 0.34432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -187,10 +187,10 @@
                     "from": 32196339,
                     "to": null,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632,
+                        "combined": 0.34432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -199,16 +199,16 @@
             ]
         },
         "Qualified dividends": {
-            "note": "20% preferential rate (taxable income > $533,400)",
+            "note": "20% preferential rate (taxable income > $533,400) + 3.8% NIIT",
             "segments": [
                 {
                     "from": 0,
                     "to": 1020392,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.25363,
+                        "combined": 0.29163,
                         "ny_bracket": 0.0685,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -219,10 +219,10 @@
                     "from": 1020392,
                     "to": 8863006,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.26763,
+                        "combined": 0.30563,
                         "ny_bracket": 0.0965,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -233,10 +233,10 @@
                     "from": 8863006,
                     "to": 32196339,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632,
+                        "combined": 0.34432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -247,10 +247,10 @@
                     "from": 32196339,
                     "to": null,
                     "rates": {
-                        "federal": 0.2,
+                        "federal": 0.238,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.30632,
+                        "combined": 0.34432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -259,16 +259,16 @@
             ]
         },
         "Ordinary dividends (non-qualified)": {
-            "note": "Taxed as ordinary income",
+            "note": "Taxed as ordinary income + 3.8% NIIT",
             "segments": [
                 {
                     "from": 0,
                     "to": 1020392,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.42363,
+                        "combined": 0.46163,
                         "ny_bracket": 0.0685,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -279,10 +279,10 @@
                     "from": 1020392,
                     "to": 8863006,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.43763,
+                        "combined": 0.47563,
                         "ny_bracket": 0.0965,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -293,10 +293,10 @@
                     "from": 8863006,
                     "to": 32196339,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632,
+                        "combined": 0.51432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -307,10 +307,10 @@
                     "from": 32196339,
                     "to": null,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632,
+                        "combined": 0.51432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -319,16 +319,16 @@
             ]
         },
         "Interest income": {
-            "note": "Taxed as ordinary income",
+            "note": "Taxed as ordinary income + 3.8% NIIT",
             "segments": [
                 {
                     "from": 0,
                     "to": 1020392,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.42363,
+                        "combined": 0.46163,
                         "ny_bracket": 0.0685,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -339,10 +339,10 @@
                     "from": 1020392,
                     "to": 8863006,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.43763,
+                        "combined": 0.47563,
                         "ny_bracket": 0.0965,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -353,10 +353,10 @@
                     "from": 8863006,
                     "to": 32196339,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632,
+                        "combined": 0.51432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -367,10 +367,10 @@
                     "from": 32196339,
                     "to": null,
                     "rates": {
-                        "federal": 0.37,
+                        "federal": 0.408,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.47632,
+                        "combined": 0.51432,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -379,16 +379,16 @@
             ]
         },
         "1256 contracts": {
-            "note": "60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8%",
+            "note": "60/40 split: 60% at 20% LTCG + 40% at 37% ordinary = 26.8% + 3.8% NIIT",
             "segments": [
                 {
                     "from": 0,
                     "to": 1020392,
                     "rates": {
-                        "federal": 0.268,
+                        "federal": 0.306,
                         "ny_state": 0.03425,
                         "nyc": 0.01938,
-                        "combined": 0.32163,
+                        "combined": 0.35963,
                         "ny_bracket": 0.0685,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -399,10 +399,10 @@
                     "from": 1020392,
                     "to": 8863006,
                     "rates": {
-                        "federal": 0.268,
+                        "federal": 0.306,
                         "ny_state": 0.04825,
                         "nyc": 0.01938,
-                        "combined": 0.33563,
+                        "combined": 0.37363,
                         "ny_bracket": 0.0965,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.5
@@ -413,10 +413,10 @@
                     "from": 8863006,
                     "to": 32196339,
                     "rates": {
-                        "federal": 0.268,
+                        "federal": 0.306,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.37432,
+                        "combined": 0.41232,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
@@ -427,10 +427,10 @@
                     "from": 32196339,
                     "to": null,
                     "rates": {
-                        "federal": 0.268,
+                        "federal": 0.306,
                         "ny_state": 0.07725,
                         "nyc": 0.02907,
-                        "combined": 0.37432,
+                        "combined": 0.41232,
                         "ny_bracket": 0.103,
                         "nyc_bracket": 0.03876,
                         "ny_multiplier": 0.75
