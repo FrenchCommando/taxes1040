@@ -20,6 +20,7 @@ Scenarios:
     contract_1256          - Section 1256 futures contracts via Form 6781
     many_trades            - 20 trades across short/long term, multiple 8949 pages
     low_income_itemized    - NY AGI under $100k with NY itemization (tests NY line 46 guard)
+    high_income_ny        - NYAGI > $1M, tests IT-196 line 47 = 50% of charitable gifts
     amt_exemption_phaseout - high income pushes AMTI above $626,350, AMT exemption phased out
 """
 import json
@@ -288,6 +289,45 @@ SCENARIOS = {
             },
         ],
         "Other": [{"PropertyTax": 3000, "CoopStateTaxes": 50}],
+    },
+    "high_income_ny": {
+        # NYAGI > $1M: IT-196 line 47 = 50% of charitable gifts (line 19)
+        # Tests that NY deduction uses charitable gifts, not 50% of AGI
+        "W2": [{
+            **BASE_W2,
+            "Wages": 1100000,
+            "SocialSecurity_wages": 176100,
+            "Medicare_wages": 1100000,
+            "Federal_tax": 300000,
+            "SocialSecurity_tax": 10918,
+            "Medicare_tax": 15950,
+            "State_tax": 60000,
+            "Local_tax": 25000,
+        }],
+        "1099": [
+            {
+                "Interest": 500,
+                "Qualified Dividends": 2000,
+                "Ordinary Dividends": 3000,
+                "Institution": "Brokerage",
+            },
+        ],
+        "Charitable": [
+            {"Entity": "Red Cross", "Amount": 5000},
+            {"Entity": "Local Food Bank", "Amount": 1000},
+        ],
+        "1098": [
+            {
+                "Payments": [
+                    {"Date": "2025/06/01", "InterestAmount": 8000, "PrincipalAmount": 2000},
+                    {"Date": "2025/12/01", "InterestAmount": 8000, "PrincipalAmount": 2000},
+                ],
+                "PrincipalBalance": 600000,
+                "LoanNumber": "999888",
+                "Recipient": "Mortgage Bank",
+            },
+        ],
+        "Other": [{"PropertyTax": 8000}],
     },
     "amt_exemption_phaseout": {
         # High income pushes AMTI above $626,350 exemption phaseout start
