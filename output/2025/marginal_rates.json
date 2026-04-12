@@ -546,7 +546,7 @@
             ]
         },
         "Mortgage interest": {
-            "note": "Deduction ratio 75.1% (qualified limit $750k / loan balance). Effective rate = bracket * 0.751",
+            "note": "Federal ratio 75.1% (limit $750,000 / balance), NY ratio 100.0% (limit $1,000,000 / balance)",
             "segments": [
                 {
                     "from": 0,

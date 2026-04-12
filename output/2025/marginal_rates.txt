@@ -71,7 +71,7 @@ NY deduction regime: 50% of charitable gifts (NYAGI > $1M) -- NY deduction = 50%
     $2,250,436 - $2,256,836     -10.00%    -2.25%    -1.54%   -13.79%  <- NY bracket at taxable $8,500
     $2,256,836 - ...            -10.00%    -2.00%    -1.54%   -13.54%
 
-  Mortgage interest:  (Deduction ratio 75.1% (qualified limit $750k / loan balance). Effective rate = bracket * 0.751)
+  Mortgage interest:  (Federal ratio 75.1% (limit $750,000 / balance), NY ratio 100.0% (limit $1,000,000 / balance))
     Additional                   Federal   NY State        NYC   Combined
     $0 - $657,827               -27.77%     0.00%     0.00%   -27.77%  <- Federal bracket at taxable $626,350
     $657,827 - $1,158,526       -26.27%     0.00%     0.00%   -26.27%  <- Federal bracket at taxable $250,525
