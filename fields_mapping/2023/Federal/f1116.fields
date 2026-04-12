@@ -2,9 +2,14 @@ name
 ssn
 a
 b
+c
+d
+e
+f
+g
 h
 i a b c
-i_1a source a b c total
+i_1a source1 source2 source3 a b c total
 i_b_check
 2 a b c
 2_a a b c

@@ -5,7 +5,7 @@ from computation.forms_functions import (
     computation_2025_nyc,
 )
 from computation.forms_core_impl import fill_taxes
-from computation.form_worksheet_names import k_1040, k_6251
+from computation.form_worksheet_names import k_1040, k_1116, k_6251
 
 CONFIG_2025 = dict(
     year='2025',
@@ -45,6 +45,9 @@ CONFIG_2025 = dict(
             '1_value': '1_a',
             **{f'2{c}_value': f'2_{c}' for c in 'abcdefghijklmnopqrst'},
             **{f'{n}_value': str(n) for n in range(3, 12)},
+        },
+        k_1116: {
+            'i_1a_source1': 'i_1a_source',  # 2024 has 3 source fields, 2025 merged to 1
         },
     },
 )

@@ -404,7 +404,7 @@ def fill_taxes(d, config):
             foreign_source_income = foreign_source_dividends + foreign_source_interest
             if foreign_country:
                 self.d['i_a'] = foreign_country
-            self.d['i_1a_source'] = 'Dividends, Interest'
+            self.d['i_1a_source1'] = 'Dividends, Interest'
             self.push_to_dict('i_1a_a', foreign_source_income)
             self.push_to_dict('i_1a_total', foreign_source_income)
 

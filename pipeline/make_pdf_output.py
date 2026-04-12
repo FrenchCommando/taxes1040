@@ -28,6 +28,10 @@ def fill_pdfs(year):
 
         def fill_one_pdf(contents, suffix=""):
             logger = logging.getLogger('output_pdf')
+            custom_missing = {k for k in contents if k.startswith('custom_missing_')}
+            if custom_missing:
+                logger.warning("%s %s - skipping custom_missing keys: %s", year, f, sorted(custom_missing))
+            contents = {k: v for k, v in contents.items() if k not in custom_missing}
             keys_expected = {val[0] for val in d_mapping.values()}
             unmatched = set(contents.keys()) - keys_expected
             if unmatched:
