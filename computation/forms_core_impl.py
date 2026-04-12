@@ -1454,7 +1454,7 @@ def fill_taxes(d, config):
 
         def build(self):
             line1 = sum(forms_state[k_it196].get(entry, 0) for entry in ['4', '9', '15', '19', '20', '28', '39'])
-            line2 = sum(forms_state[k_it196].get(entry, 0) for entry in ['4', '14', '16_a', '20', '29', '30', '37'])
+            line2 = sum(forms_state[k_it196].get(entry, 0) for entry in ['4', '14', '16_value', '20', '29', '30', '37'])
             self.d[1] = line1
             self.d[2] = line2
             if line1 <= line2:
@@ -1488,8 +1488,11 @@ def fill_taxes(d, config):
                 Form(k_it196, get_existing=True).push_to_dict('41', taxes_subtracted)
                 return
 
-            # self.push_to_dict('41', state_tax + local_tax)
-            # ny_agi = forms_state[k_it201]['33']
+            # no reduction was applied in Line 40 worksheet (line1 <= line2)
+            if worksheets[w_ny_line40_itemized_deductions][1] <= worksheets[w_ny_line40_itemized_deductions][2]:
+                Form(k_it196, get_existing=True).push_to_dict('41', taxes_subtracted)
+                return
+
             self.d[1] = worksheets[w_ny_line40_itemized_deductions][9]
             self.d[2] = worksheets[w_ny_line40_itemized_deductions][3]
             self.d[3] = round(self.d[1] / self.d[2], 4)
