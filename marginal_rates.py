@@ -173,6 +173,10 @@ def _extract_baseline(forms_state, worksheets, base_data, config):
     else:
         mortgage_deduction_ratio = 1.0
 
+    # NY charitable gifts (IT-196 line 19)
+    from computation.form_worksheet_names import k_it196
+    charitable_ny = forms_state.get(k_it196, {}).get('19', 0)
+
     return dict(
         agi=agi, taxable_income=taxable_income, is_itemizing=is_itemizing,
         itemized=itemized, net_stcg=net_stcg, net_ltcg=net_ltcg, net_capital=net_capital,
@@ -181,6 +185,7 @@ def _extract_baseline(forms_state, worksheets, base_data, config):
         foreign_tax=foreign_tax_credit, foreign_tax_paid=foreign_tax_paid,
         foreign_tax_limited=foreign_tax_limited,
         mortgage_deduction_ratio=mortgage_deduction_ratio,
+        charitable_ny=charitable_ny,
     )
 
 
@@ -339,43 +344,25 @@ def _rate_at(additional, baseline, config, fed_rate_type,
         extra_fed += 0.038
 
     # NY deduction regime at new NYAGI
+    # For NYAGI > $1M, IT-196 line 47 = fraction of charitable gifts (IT-196 line 19),
+    # not a fraction of AGI. The deduction is fixed w.r.t. income, so d_ny_taxable = 1.
     new_ny_agi = baseline['ny_agi'] + additional
-    if new_ny_agi > 10_000_000:
-        d_ny_taxable = 0.75
-    elif new_ny_agi > 1_000_000:
-        d_ny_taxable = 0.50
-    else:
-        d_ny_taxable = 1  # below $1M, deduction is roughly fixed
+    d_ny_taxable = 1  # deduction doesn't change with income in any regime
 
-    # NY taxable at this position (approximate for bracket lookup)
-    # Can't simply add additional * d_ny because the regime may have changed.
-    # Use the direct formula: ny_deduction = fraction * agi
-    if new_ny_agi > 10_000_000:
-        ny_deduction = 0.25 * (baseline['agi'] + additional)
-    elif new_ny_agi > 1_000_000:
-        ny_deduction = 0.50 * (baseline['agi'] + additional)
-    else:
-        ny_deduction = baseline['agi'] + additional - baseline['ny_agi'] + baseline['ny_agi'] - baseline['ny_taxable']
-        # ≈ fixed deduction
+    # NY taxable at this position
+    # For NYAGI > $1M: deduction = fraction of charitable (fixed), so ny_taxable = ny_agi - fixed_deduction
+    # For NYAGI <= $1M: deduction is roughly fixed (worksheet adjustments don't depend on income linearly)
+    new_ny_taxable = baseline['ny_taxable'] + additional
 
-    new_ny_taxable = new_ny_agi - ny_deduction if new_ny_agi > 1_000_000 else baseline['ny_taxable'] + additional * d_ny_taxable
-
-    ny_bracket = _bracket_rate(config['computation_ny'], new_ny_taxable)
-    nyc_bracket = _bracket_rate(config['computation_nyc'], new_ny_taxable)
-    ny_rate = ny_bracket * d_ny_taxable
-    nyc_rate = nyc_bracket * d_ny_taxable
+    ny_rate = _bracket_rate(config['computation_ny'], new_ny_taxable)
+    nyc_rate = _bracket_rate(config['computation_nyc'], new_ny_taxable)
 
     federal = round(fed_rate + extra_fed, 6)
     ny_state = round(ny_rate, 6)
     nyc = round(nyc_rate, 6)
     combined = round(federal + ny_state + nyc, 6)
 
-    result = dict(federal=federal, ny_state=ny_state, nyc=nyc, combined=combined)
-    if d_ny_taxable < 1:
-        result['ny_bracket'] = round(ny_bracket, 6)
-        result['nyc_bracket'] = round(nyc_bracket, 6)
-        result['ny_multiplier'] = d_ny_taxable
-    return result
+    return dict(federal=federal, ny_state=ny_state, nyc=nyc, combined=combined)
 
 
 def _find_knots_income(baseline, config, is_wages=False):
@@ -424,56 +411,36 @@ def _find_knots_income(baseline, config, is_wages=False):
         knots.append((niit_threshold - agi_0, f'NIIT begins (MAGI > ${niit_threshold:,})'))
 
     # NY deduction regime transitions
+    # For NYAGI > $1M, deduction = fraction of charitable gifts (fixed w.r.t. income).
+    # For NYAGI > $10M, fraction drops from 50% to 25% — a cliff on charitable deduction,
+    # but only matters if charitable gifts > 0. The deduction doesn't scale with income.
     if ny_agi_0 <= 1_000_000:
-        knots.append((1_000_000 - ny_agi_0, 'NYAGI crosses $1M - deduction caps at 50% of AGI'))
+        knots.append((1_000_000 - ny_agi_0, 'NYAGI crosses $1M - deduction limited to 50% of charitable'))
     if ny_agi_0 <= 10_000_000:
-        knots.append((10_000_000 - ny_agi_0, 'NYAGI crosses $10M - deduction drops to 25% of AGI (cliff)'))
+        charitable_ny = baseline.get('charitable_ny', 0)
+        if charitable_ny > 0:
+            knots.append((10_000_000 - ny_agi_0,
+                          'NYAGI crosses $10M - deduction drops to 25% of charitable (cliff)'))
 
-    # NY bracket transitions
-    # Before NYAGI $10M: d_ny_taxable = 0.50 (when NYAGI > $1M)
-    # After NYAGI $10M: d_ny_taxable = 0.75
-    ny_10m_additional = 10_000_000 - ny_agi_0 if ny_agi_0 <= 10_000_000 else 0
-
-    if ny_agi_0 > 1_000_000:
-        d_ny = 0.50
-    else:
-        d_ny = 1  # below $1M, deduction roughly fixed
-
+    # NY bracket transitions ($1 income -> $1 NY taxable, deduction is fixed)
     for bracket in NY_BRACKETS:
         if bracket <= ny_taxable_0:
             continue
-        additional = (bracket - ny_taxable_0) / d_ny
-        if ny_10m_additional > 0 and additional > ny_10m_additional:
-            # This bracket would be crossed after the $10M regime change
-            # Recompute with post-$10M regime
-            # At $10M crossing: ny_taxable ≈ 0.50 * $10M = $5M (for >$1M baseline)
-            ny_taxable_at_10m = 0.50 * 10_000_000 if ny_agi_0 > 1_000_000 else ny_taxable_0 + ny_10m_additional
-            # After cliff, ny_taxable jumps to 0.75 * $10M = $7.5M
-            ny_taxable_post_cliff = 0.75 * 10_000_000
-            if bracket <= ny_taxable_post_cliff:
-                continue  # bracket crossed by the cliff jump itself
-            remaining = (bracket - ny_taxable_post_cliff) / 0.75
-            additional = ny_10m_additional + remaining
+        additional = bracket - ny_taxable_0
         knots.append((additional, f'NY bracket at taxable ${bracket:,}'))
 
     # NYC bracket transitions (same taxable as NY)
     for bracket in NYC_BRACKETS:
         if bracket <= ny_taxable_0:
             continue
-        additional = (bracket - ny_taxable_0) / d_ny
+        additional = bracket - ny_taxable_0
         knots.append((additional, f'NYC bracket at taxable ${bracket:,}'))
 
     # NY recapture cliffs (when NY taxable crosses recapture bracket boundaries)
     for bracket in config['ny_recapture_brackets']:
         if bracket <= ny_taxable_0:
             continue
-        additional = (bracket - ny_taxable_0) / d_ny
-        if ny_10m_additional > 0 and additional > ny_10m_additional:
-            ny_taxable_post_cliff = 0.75 * 10_000_000
-            if bracket <= ny_taxable_post_cliff:
-                continue
-            remaining = (bracket - ny_taxable_post_cliff) / 0.75
-            additional = ny_10m_additional + remaining
+        additional = bracket - ny_taxable_0
         knots.append((additional, f'NY recapture cliff at NY taxable ${bracket:,}'))
 
     # Deduplicate by additional value and sort
@@ -709,17 +676,17 @@ def compute_analytical_marginal_rates(year):
             'foreign_tax': baseline['foreign_tax'],
             'mortgage_deduction_ratio': baseline['mortgage_deduction_ratio'],
             'ny_deduction_regime': (
-                '25% of AGI (NYAGI > $10M)' if baseline['ny_agi'] > 10_000_000
-                else '50% of AGI (NYAGI > $1M)' if baseline['ny_agi'] > 1_000_000
+                '25% of charitable gifts (NYAGI > $10M)' if baseline['ny_agi'] > 10_000_000
+                else '50% of charitable gifts (NYAGI > $1M)' if baseline['ny_agi'] > 1_000_000
                 else 'worksheet adjustment (NYAGI > $100k)' if baseline['ny_agi'] > 100_000
                 else 'full deduction'
             ),
             'ny_effective_rate_note': (
-                'NY/NYC rates = bracket rate * 0.75 (each $1 income raises AGI by $1, '
-                'but 25% AGI cap raises deduction by $0.25, so NY taxable rises by $0.75)'
+                'NY deduction = 25% of charitable gifts (IT-196 line 19), fixed w.r.t. income. '
+                'NY/NYC rates = full bracket rate'
                 if baseline['ny_agi'] > 10_000_000
-                else 'NY/NYC rates = bracket rate * 0.50 (each $1 income raises AGI by $1, '
-                'but 50% AGI cap raises deduction by $0.50, so NY taxable rises by $0.50)'
+                else 'NY deduction = 50% of charitable gifts (IT-196 line 19), fixed w.r.t. income. '
+                'NY/NYC rates = full bracket rate'
                 if baseline['ny_agi'] > 1_000_000
                 else None
             ),
@@ -787,10 +754,6 @@ def format_results(results):
             rates = seg['rates']
             line = (f"    {range_str:<{col_width}} {rates['federal']:>9.2%} {rates['ny_state']:>9.2%}"
                     f" {rates['nyc']:>9.2%} {rates['combined']:>9.2%}")
-            if 'ny_multiplier' in rates:
-                m = rates['ny_multiplier']
-                line += (f"  [NY {rates['ny_bracket']:.2%}*{m}, "
-                         f"NYC {rates['nyc_bracket']:.2%}*{m}]")
             if 'next_knot' in seg:
                 line += f"  <- {seg['next_knot']}"
             lines.append(line)

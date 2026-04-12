@@ -1440,9 +1440,9 @@ def fill_taxes(d, config):
             elif ny_agi <= 1_000_000:
                 self.push_to_dict('47', self.d['45'] - self.d.get('46', 0))
             elif ny_agi <= 10_000_000:
-                self.push_to_dict('47', forms_state[k_it201]['19'] * 0.50)
+                self.push_to_dict('47', self.d.get('19', 0) * 0.50)
             else:
-                self.push_to_dict('47', forms_state[k_it201]['19'] * 0.25)
+                self.push_to_dict('47', self.d.get('19', 0) * 0.25)
             # 48
             self.push_sum('49', ['47', '48'])
 
