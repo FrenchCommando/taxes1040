@@ -26,8 +26,8 @@ python main.py
 # Dev mode: set dev_mode = True in main.py to regenerate .keys from .fields
 
 # Compute marginal tax rates
-python marginal_rates.py                  # default: $100 delta, 2025
-python marginal_rates.py --delta 10000    # larger delta for more precision
+# Compute marginal tax rates
+python marginal_rates.py                  # default: 2025
 python marginal_rates.py --year 2024      # different year
 
 # Run tests
@@ -107,7 +107,7 @@ taxes1040/
 2. **Debug PDF (human-readable names)** - `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct. Gitignored.
 3. **Final output PDFs** - `make_pdf_output.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name -> human_readable_name` with `forms_state[human_readable_name] -> computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `output/{year}/forms.pdf`.
 
-**Marginal rate analysis (`marginal_rates.py`):** Standalone script that computes marginal tax rates by finite difference. For each input category (W2 wages, short/long-term capital gains, dividends, interest, 1256 contracts, charitable contributions), it perturbs the input by a configurable delta, re-runs `fill_taxes`, and measures the change in federal, NY state, and NYC tax. Outputs to `output/{year}/marginal_rates.json`. Runs independently of the main pipeline — does not load prior-year carryover.
+**Marginal rate analysis (`marginal_rates.py`):** Standalone script that computes marginal tax rates analytically. Runs `fill_taxes` once to determine the baseline position (brackets, SALT regime, etc.), then derives exact marginal rates for each input category (W2 wages, short/long-term capital gains, dividends, interest, 1256 contracts, charitable contributions, mortgage interest, property tax, foreign tax credit). For each category, outputs segmented rates with knots at every threshold where the rate changes (federal brackets, SALT transitions, NY bracket/recapture boundaries, NIIT threshold). Includes 3.8% NIIT on investment income (not wages). For charitable contributions at NYAGI > $1M, models the IT-196 line 47 rule (NY deduction = fraction of charitable gifts) including the crossover where NY itemized exceeds the NY standard deduction. Outputs to `output/{year}/marginal_rates.json` and `.txt`. Runs independently of the main pipeline.
 
 **Core computation:** Each tax year has its own `computation/forms_core_{year}.py` containing a single `fill_taxes_{year}(d)` function. Old years (2018-2023) are frozen monoliths in `computation/legacy/` - large single functions that compute every form line by line. Years 2024+ use thin config wrappers that call `computation/forms_core_impl.py` - the shared implementation - with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
 

@@ -54,22 +54,22 @@ NY deduction regime: 50% of charitable gifts (NYAGI > $1M) -- NY deduction = 50%
   Charitable contributions:  (Itemized deduction, $1-for-$1. NY: limited to 50% of charitable (NYAGI > $1M))
     Additional                   Federal   NY State        NYC   Combined
     $0 - $15,848                -37.00%     0.00%     0.00%   -37.00%  <- NY itemized (50% charitable) exceeds NY standard deduction $8,000
-    $15,848 - $102,888          -37.00%    -4.83%    -1.94%   -43.76%  <- NY bracket at taxable $1,077,550
-    $102,888 - $493,765         -37.00%     9.62%    -1.94%   -29.31%  <- Federal bracket at taxable $626,350
+    $15,848 - $118,736          -37.00%    -4.83%    -1.94%   -43.76%  <- NY bracket at taxable $1,077,550
+    $118,736 - $493,765         -37.00%    -3.43%    -1.94%   -42.36%  <- Federal bracket at taxable $626,350
     $493,765 - $869,590         -35.00%    -3.43%    -1.94%   -40.36%  <- Federal bracket at taxable $250,525
     $869,590 - $922,815         -32.00%    -3.43%    -1.94%   -37.36%  <- Federal bracket at taxable $197,300
     $922,815 - $1,016,765       -24.00%    -3.43%    -1.94%   -29.36%  <- Federal bracket at taxable $103,350
     $1,016,765 - $1,071,640     -22.00%    -3.43%    -1.94%   -27.36%  <- Federal bracket at taxable $48,475
     $1,071,640 - $1,108,190     -12.00%    -3.43%    -1.94%   -17.36%  <- Federal bracket at taxable $11,925
-    $1,108,190 - $1,827,188     -10.00%    -3.43%    -1.94%   -15.36%  <- NY bracket at taxable $215,400
-    $1,827,188 - $2,096,688     -10.00%    -3.21%    -1.94%   -15.15%  <- NY bracket at taxable $80,650
-    $2,096,688 - $2,157,988     -10.00%     9.62%    -1.94%    -2.31%  <- NYC bracket at taxable $50,000
-    $2,157,988 - $2,207,988     -10.00%    -2.75%   -14.42%   -27.17%  <- NYC bracket at taxable $25,000
-    $2,207,988 - $2,230,188     -10.00%    -2.75%     1.10%   -11.65%  <- NY bracket at taxable $13,900
-    $2,230,188 - $2,233,988     -10.00%   -27.69%    -1.88%   -39.57%  <- NYC bracket at taxable $12,000
-    $2,233,988 - $2,234,588     -10.00%    -2.62%    16.29%     3.67%  <- NY bracket at taxable $11,700
-    $2,234,588 - $2,240,988     -10.00%    -2.44%    -1.54%   -13.98%  <- NY bracket at taxable $8,500
-    $2,240,988 - ...            -10.00%    -2.12%    -1.54%   -13.66%
+    $1,108,190 - $1,843,036     -10.00%    -3.43%    -1.94%   -15.36%  <- NY bracket at taxable $215,400
+    $1,843,036 - $2,112,536     -10.00%    -3.00%    -1.94%   -14.94%  <- NY bracket at taxable $80,650
+    $2,112,536 - $2,173,836     -10.00%    -2.75%    -1.94%   -14.69%  <- NYC bracket at taxable $50,000
+    $2,173,836 - $2,223,836     -10.00%    -2.75%    -1.91%   -14.66%  <- NYC bracket at taxable $25,000
+    $2,223,836 - $2,246,036     -10.00%    -2.75%    -1.88%   -14.63%  <- NY bracket at taxable $13,900
+    $2,246,036 - $2,249,836     -10.00%    -2.62%    -1.88%   -14.51%  <- NYC bracket at taxable $12,000
+    $2,249,836 - $2,250,436     -10.00%    -2.62%    -1.54%   -14.16%  <- NY bracket at taxable $11,700
+    $2,250,436 - $2,256,836     -10.00%    -2.25%    -1.54%   -13.79%  <- NY bracket at taxable $8,500
+    $2,256,836 - ...            -10.00%    -2.00%    -1.54%   -13.54%
 
   Mortgage interest:  (Deduction ratio 75.1% (qualified limit $750k / loan balance). Effective rate = bracket * 0.751)
     Additional                   Federal   NY State        NYC   Combined

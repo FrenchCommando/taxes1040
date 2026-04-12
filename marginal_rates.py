@@ -278,8 +278,9 @@ def _rate_at(additional, baseline, config, fed_rate_type,
             new_ny_charitable = baseline['charitable_ny'] + additional
             new_ny_itemized = new_ny_charitable * fraction
             if new_ny_itemized > config['ny_standard_deduction']:
-                # NY taxable decreases by fraction of additional charitable
-                new_ny_taxable = baseline['ny_taxable'] - additional * fraction
+                # NY taxable = NYAGI - itemized deduction
+                # baseline NY taxable used standard deduction, so recompute from NYAGI
+                new_ny_taxable = ny_agi - new_ny_itemized
                 ny_rate = _bracket_rate(config['computation_ny'], new_ny_taxable) * fraction
                 nyc_rate = _bracket_rate(config['computation_nyc'], new_ny_taxable) * fraction
 
@@ -506,15 +507,21 @@ def _find_knots_charitable(baseline, config):
                               f'NY itemized (50% charitable) exceeds NY standard deduction ${ny_std:,}'))
 
         # NY bracket transitions (charitable reduces NY taxable by fraction)
-        ny_taxable_0 = baseline['ny_taxable']
+        # NY taxable = NYAGI - max(ny_std, charitable * fraction)
+        # At the crossover point, NY taxable = NYAGI - ny_std
+        # After crossover: NY taxable = NYAGI - (charitable + additional) * fraction
+        # So bracket crossing: NYAGI - (charitable + additional) * fraction = bracket
+        #   additional = (NYAGI - bracket) / fraction - charitable
         for bracket in reversed(NY_BRACKETS):
-            if bracket < ny_taxable_0:
-                additional = (ny_taxable_0 - bracket) / fraction
-                knots.append((additional, f'NY bracket at taxable ${bracket:,}'))
+            if bracket < ny_agi:
+                additional = (ny_agi - bracket) / fraction - baseline['charitable_ny']
+                if additional > 0:
+                    knots.append((additional, f'NY bracket at taxable ${bracket:,}'))
         for bracket in reversed(NYC_BRACKETS):
-            if bracket < ny_taxable_0:
-                additional = (ny_taxable_0 - bracket) / fraction
-                knots.append((additional, f'NYC bracket at taxable ${bracket:,}'))
+            if bracket < ny_agi:
+                additional = (ny_agi - bracket) / fraction - baseline['charitable_ny']
+                if additional > 0:
+                    knots.append((additional, f'NYC bracket at taxable ${bracket:,}'))
 
     knots = [(round(x), desc) for x, desc in knots if x > 0]
     knots.sort()
@@ -586,8 +593,14 @@ def _build_segments(knots, baseline, config, fed_rate_type, mode='income', is_wa
         end = boundaries[idx + 1] if idx + 1 < len(boundaries) else None
         description = knots[idx][1] if idx < len(knots) else None
 
-        # Evaluate rate at a point inside this segment
-        eval_point = start + 1  # just past the boundary
+        # ceil(1/fraction)+1: ensures _bracket_rate evaluates fully past bracket boundaries
+        # when $1 additional moves NY taxable by less than $1 (e.g. 0.50 for charitable)
+        if mode == 'deduction' and baseline['ny_agi'] > 1_000_000:
+            fraction = 0.25 if baseline['ny_agi'] > 10_000_000 else 0.50
+            from math import ceil
+            eval_point = start + ceil(1 / fraction) + 1
+        else:
+            eval_point = start + 1
         rates = _rate_at(eval_point, baseline, config, fed_rate_type,
                          mode=mode, is_wages=is_wages)
 
