@@ -219,6 +219,7 @@ def fill_taxes(d, config):
                 self.push_to_dict('12', itemized_deduction)
             else:
                 self.push_to_dict('12', standard_deduction)
+                del forms_state[k_1040sa]
             summary_info[f"{self.key} 12 Standard deduction or itemized deductions"] = self.d['12']
 
             self.push_to_dict('13', qualified_business_deduction)
@@ -716,8 +717,7 @@ def fill_taxes(d, config):
             # Line 1: taxable income from f1040 line 15
             self.push_to_dict('1_value', forms_state[k_1040]['15'])
             # Line 2a: add back SALT deduction (Schedule A line 7) - only when itemizing
-            # Schedule A is always built, but only used when it beats standard deduction
-            if forms_state[k_1040]['12'] == forms_state[k_1040sa].get('17', 0):
+            if k_1040sa in forms_state:
                 self.push_to_dict('2a_value', forms_state[k_1040sa]['7'])
             # Lines 2b-2t, 3: other AMT preference items (not yet implemented)
             # Line 4: AMTI = sum of lines 1 through 3
@@ -1241,7 +1241,7 @@ def fill_taxes(d, config):
         def build(self):
             # Line 1-3: if itemizing, start from taxable income + SALT add-back;
             # otherwise start from AGI (standard deduction not allowed for AMT)
-            itemized = forms_state[k_1040]['12'] == forms_state[k_1040sa].get('17', 0)
+            itemized = k_1040sa in forms_state
             if itemized:
                 self.d[1] = forms_state[k_1040]['15']
                 self.d[2] = forms_state[k_1040sa]['7']
@@ -1311,6 +1311,7 @@ def fill_taxes(d, config):
                 self.push_to_dict('34', itemized_deduction_ny)
             else:
                 self.push_to_dict('34', standard_deduction_ny)
+                del forms_state[k_it196]
             if '34' in self.d:
                 summary_info[f"{self.key} 34 Standard/Itemized deduction"] = self.d['34']
             self.push_to_dict('35', self.d.get('33', 0) - self.d.get('34', 0))
@@ -1416,7 +1417,11 @@ def fill_taxes(d, config):
             # taxes (NY has no SALT cap)
             self.push_to_dict('5', state_tax + local_tax)
             # line 6: real estate taxes (same as federal Sch A line 5c)
-            self.push_to_dict('6', forms_state[k_1040sa].get('5_c', 0))
+            property_tax = 0
+            if "Other" in d:
+                for line in d["Other"]:
+                    property_tax += line.get("PropertyTax", 0)
+            self.push_to_dict('6', property_tax)
             # line 7: personal property taxes (co-op state taxes)
             property_tax_state = 0
             if "Other" in d:
