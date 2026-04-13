@@ -107,9 +107,9 @@ def _extract_baseline(forms_state, worksheets, base_data, config):
     """Extract all baseline values needed for analytical computation."""
     agi = forms_state[k_1040].get('11', forms_state[k_1040].get('11_a', 0))
     taxable_income = forms_state[k_1040]['15']
-    itemized = forms_state[k_1040sa].get('17', 0)
+    itemized = forms_state.get(k_1040sa, {}).get('17', 0)
     line_12_key = '12_e' if '12_e' in forms_state[k_1040] else '12'
-    is_itemizing = forms_state[k_1040][line_12_key] == itemized
+    is_itemizing = k_1040sa in forms_state
 
     has_schedule_d = k_1040sd in forms_state
     net_stcg = forms_state.get(k_1040sd, {}).get('7', 0) if has_schedule_d else 0
@@ -125,8 +125,19 @@ def _extract_baseline(forms_state, worksheets, base_data, config):
     medicare_wages = sum(w['Medicare_wages'] for w in base_data['W2'])
 
     # SALT: total vs effective deduction
-    salt_total = forms_state.get(k_1040sa, {}).get('5_d', 0)
-    salt_deduction = forms_state.get(k_1040sa, {}).get('5_e', 0)
+    # Schedule A may be deleted when not itemizing; reconstruct from input/worksheets
+    if k_1040sa in forms_state:
+        salt_total = forms_state[k_1040sa].get('5_d', 0)
+        salt_deduction = forms_state[k_1040sa].get('5_e', 0)
+    else:
+        state_tax = sum(w['State_tax'] for w in base_data['W2'])
+        local_tax = sum(w['Local_tax'] for w in base_data['W2'])
+        property_tax = sum(
+            line.get("PropertyTax", 0)
+            for line in base_data.get("Other", [])
+        )
+        salt_total = state_tax + local_tax + property_tax
+        salt_deduction = worksheets.get(w_salt_deduction, {}).get(10, salt_total)
 
     # Foreign tax credit (Form 1116 limitation)
     foreign_tax_paid = sum(i.get('Foreign Tax Paid', 0) for i in base_data.get('1099', []))
@@ -146,9 +157,36 @@ def _extract_baseline(forms_state, worksheets, base_data, config):
         ny_mortgage_deduction_ratio = 1.0
 
     # NY itemized deduction (IT-196 line 49) and charitable gifts (line 19)
+    # IT-196 may be deleted from forms_state when not NY-itemizing,
+    # but marginal analysis still needs these values as the baseline
     from computation.form_worksheet_names import k_it196
-    ny_itemized = forms_state.get(k_it196, {}).get('49', 0)
-    charitable_ny = forms_state.get(k_it196, {}).get('19', 0)
+    if k_it196 in forms_state:
+        ny_itemized = forms_state[k_it196].get('49', 0)
+        charitable_ny = forms_state[k_it196].get('19', 0)
+    else:
+        charitable_ny = sum(c.get('Amount', 0) for c in base_data.get('Charitable', []))
+        # Reconstruct NY itemized from input data
+        # mirrors IT-196 line 47 logic based on NYAGI thresholds
+        if ny_agi > 10_000_000:
+            ny_itemized = charitable_ny * 0.25
+        elif ny_agi > 1_000_000:
+            ny_itemized = charitable_ny * 0.50
+        else:
+            # NY taxes are uncapped (no SALT limit)
+            state_tax_ny = sum(w['State_tax'] for w in base_data['W2'])
+            local_tax_ny = sum(w['Local_tax'] for w in base_data['W2'])
+            property_tax_ny = sum(
+                line.get("PropertyTax", 0) + line.get("CoopStateTaxes", 0)
+                for line in base_data.get("Other", [])
+            )
+            ny_itemized = state_tax_ny + local_tax_ny + property_tax_ny + charitable_ny
+            if w_mortgage_interest_deduction in worksheets:
+                ws = worksheets[w_mortgage_interest_deduction]
+                if len(ws) > 13:
+                    if ws[12] <= config['ny_mortgage_limit']:
+                        ny_itemized += ws[13]
+                    else:
+                        ny_itemized += ws[13] * config['ny_mortgage_limit'] / ws[12]
 
     return dict(
         agi=agi, taxable_income=taxable_income, is_itemizing=is_itemizing,
