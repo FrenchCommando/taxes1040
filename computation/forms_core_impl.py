@@ -360,7 +360,7 @@ def fill_taxes(d, config):
                     self.push_to_dict('13', hsa_deduction)
                 hsa_taxable_distribution = forms_state[k_8889].get('16', 0)
                 if hsa_taxable_distribution > 0:
-                    self.push_to_dict('8_e', hsa_taxable_distribution)
+                    self.push_to_dict('8_f', hsa_taxable_distribution)  # income from Form 8889
                 if forms_state[k_8889].get('13', 0) == 0 and forms_state[k_8889].get('16', 0) == 0:
                     del forms_state[k_8889]
             # 8a, 8d, 8s are losses/subtractions on the IRS form
@@ -1341,7 +1341,11 @@ def fill_taxes(d, config):
             self.push_to_dict('2', forms_state[k_1040].get('2_b', 0))
             self.push_to_dict('3', forms_state[k_1040].get('3_b', 0))
             self.push_to_dict('7', forms_state[k_1040].get('7_value', 0))
-            self.push_sum('17', ['1', '2', '3', '7'])
+            # line 16: other income = federal Schedule 1 additional income (1040 line 8), e.g. taxable HSA
+            self.push_to_dict('16', forms_state[k_1040].get('8', 0))
+            self.push_sum('17', ['1', '2', '3', '7', '16'])
+            # line 18: total federal adjustments to income (1040 line 10), e.g. HSA deduction
+            self.push_to_dict('18', forms_state[k_1040].get('10', 0))
             self.push_to_dict('19', self.d.get('17', 0) - self.d.get('18', 0))
             # line 28: interest on U.S. government bonds (subtracted from NY income)
             # TreasuryDirect interest (by institution name) + broker-reported amounts

@@ -17,8 +17,8 @@ name		Name		/Tx
 12		Line12		/Tx
 14		Line14		/Tx
 15		Line15		/Tx
-16_a		Line16		/Tx
-16		line16a		/Tx
+16_value		Line16		/Tx
+16_a		line16a		/Tx
 17		Line17		/Tx
 18		Line18		/Tx
 19		Line19		/Tx
