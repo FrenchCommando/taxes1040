@@ -14,7 +14,7 @@ def gather_inputs(input_year_folder):
         j = json.load(file_reader)
 
     additional_info = {
-        'single': True,  # if you're not single too bad for you
+        'filing_status': 'single',  # or 'married_filing_jointly' (set in input.json, with a 'spouse' block)
         'dependents': False,  # same if you have dependents
         'occupation': "Analyst",
         'full_year_health_coverage_or_exempt': True,  # ignored starting 2019
@@ -45,8 +45,9 @@ def gather_inputs(input_year_folder):
     }
 
     data = {}
-    data.update(j)
     data.update(additional_info)
+    data.update(j)  # input.json overrides defaults (e.g. filing_status)
+    data['single'] = data['filing_status'] == 'single'  # legacy (2018-2023) computations read d['single']
     data[override_keyword] = override_stuff
 
     if '1099' not in data:

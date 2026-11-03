@@ -23,6 +23,11 @@ Scenarios:
     high_income_ny        - NYAGI > $1M, tests IT-196 line 47 = 50% of charitable gifts
     hsa_contribution      - HSA self-only contribution, employer contribution, distribution
     amt_exemption_phaseout - high income pushes AMTI above $626,350, AMT exemption phased out
+    mfj_two_w2            - married filing jointly, one W2 each, standard deduction
+    mfj_high_income       - MFJ above $250k: Additional Medicare Tax, NIIT, itemized, NY recapture
+    mfj_hsa_family        - MFJ HSA family coverage limit
+    mfj_ny_itemized_under_200k - MFJ NYAGI $100k-$200k: no IT-196 line 46 adjustment (MFJ start is $200k)
+    mfj_capital_loss      - MFJ capital loss limited to $3,000
 """
 import json
 import os
@@ -61,6 +66,37 @@ BASE_W2 = {
     "State_tax": 7000,
     "Local_tax": 3000,
     "Locality": "NEW YORK",
+}
+
+# Married filing jointly: spouse identity + a spouse W2 tagged with Owner
+MFJ = {
+    "filing_status": "married_filing_jointly",
+    "spouse": {
+        "first_name": "Jane",
+        "initial": "Q",
+        "last_name": "Commando",
+        "ssn": "XXXXX6666",
+        "occupation": "Engineer",
+        "presidential_election": False,
+    },
+}
+
+SPOUSE_W2 = {
+    **BASE_W2,
+    "Owner": "spouse",
+    "Company": "Other Company Inc",
+    "FullName": "Jane Q Commando",
+    "FirstName": "Jane",
+    "LastName": "Commando",
+    "SSN": "XXXXX6666",
+    "Wages": 120000,
+    "SocialSecurity_wages": 120000,
+    "Medicare_wages": 120000,
+    "Federal_tax": 20000,
+    "SocialSecurity_tax": 7440,
+    "Medicare_tax": 1740,
+    "State_tax": 6000,
+    "Local_tax": 2500,
 }
 
 SCENARIOS = {
@@ -364,6 +400,115 @@ SCENARIOS = {
             },
         ],
         "Other": [{"PropertyTax": 10000}],
+    },
+    "mfj_two_w2": {
+        # $150k + $120k wages, MFJ standard deduction, both W2s summed
+        **MFJ,
+        "W2": [BASE_W2, SPOUSE_W2],
+    },
+    "mfj_high_income": {
+        # $300k + $200k Medicare wages > $250k MFJ threshold (Additional Medicare Tax),
+        # investment income with MAGI > $250k (NIIT), itemized, NY recapture
+        **MFJ,
+        "W2": [
+            {
+                **BASE_W2,
+                "Wages": 300000,
+                "SocialSecurity_wages": 176100,
+                "Medicare_wages": 300000,
+                "Federal_tax": 70000,
+                "SocialSecurity_tax": 10918,
+                "Medicare_tax": 4350,
+                "State_tax": 20000,
+                "Local_tax": 10000,
+            },
+            {
+                **SPOUSE_W2,
+                "Wages": 200000,
+                "SocialSecurity_wages": 176100,
+                "Medicare_wages": 200000,
+                "Federal_tax": 45000,
+                "SocialSecurity_tax": 10918,
+                "Medicare_tax": 2900,
+                "State_tax": 13000,
+                "Local_tax": 6500,
+            },
+        ],
+        "1099": [
+            {
+                "Interest": 3000,
+                "Qualified Dividends": 15000,
+                "Ordinary Dividends": 20000,
+                "Institution": "Brokerage",
+            },
+        ],
+        "Charitable": [{"Entity": "Red Cross", "Amount": 10000}],
+        "1098": [
+            {
+                "Payments": [
+                    {"Date": "2025/06/01", "InterestAmount": 15000, "PrincipalAmount": 3000},
+                    {"Date": "2025/12/01", "InterestAmount": 15000, "PrincipalAmount": 3000},
+                ],
+                "PrincipalBalance": 900000,
+                "LoanNumber": "555666",
+                "Recipient": "Mortgage Bank",
+            },
+        ],
+        "Other": [{"PropertyTax": 12000}],
+    },
+    "mfj_hsa_family": {
+        # family coverage: $8,550 limit, $1,000 employer contribution
+        **MFJ,
+        "W2": [BASE_W2, SPOUSE_W2],
+        "health_savings_account": True,
+        "health_savings_account_coverage": "family",
+        "health_savings_account_contributions": 7550,
+        "health_savings_account_employer_contributions": 1000,
+        "health_savings_account_distributions": 0,
+    },
+    "mfj_ny_itemized_under_200k": {
+        # NYAGI ~$150k: single would get a line 46 adjustment, MFJ starts at $200k
+        **MFJ,
+        "W2": [
+            {**BASE_W2, "Wages": 90000, "Medicare_wages": 90000, "SocialSecurity_wages": 90000,
+             "State_tax": 5000, "Local_tax": 2500},
+            {**SPOUSE_W2, "Wages": 60000, "Medicare_wages": 60000, "SocialSecurity_wages": 60000,
+             "State_tax": 3000, "Local_tax": 1500},
+        ],
+        "1098": [
+            {
+                "Payments": [
+                    {"Date": "2025/06/01", "InterestAmount": 12000, "PrincipalAmount": 2000},
+                    {"Date": "2025/12/01", "InterestAmount": 12000, "PrincipalAmount": 2000},
+                ],
+                "PrincipalBalance": 700000,
+                "LoanNumber": "777888",
+                "Recipient": "Mortgage Bank",
+            },
+        ],
+        "Other": [{"PropertyTax": 9000}],
+    },
+    "mfj_capital_loss": {
+        **MFJ,
+        "W2": [BASE_W2, SPOUSE_W2],
+        "1099": [
+            {
+                "Interest": 50,
+                "Institution": "Big Bank",
+                "Trades": [
+                    {
+                        "SalesDescription": "LOSING STOCK",
+                        "Shares": "100",
+                        "DateAcquired": "2025/01/15",
+                        "DateSold": "2025/06/15",
+                        "Proceeds": 5000,
+                        "Cost": 15000,
+                        "LongShort": "SHORT",
+                        "FormCode": "A",
+                    },
+                ],
+            },
+        ],
     },
 }
 

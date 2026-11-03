@@ -7,6 +7,7 @@ def get_main_info(d):
     # gets name ssn address etc from w2
 
     # check that info matches between several W2
+    # spouse W2s (MFJ, "Owner": "spouse") are excluded - spouse identity comes from d['spouse']
     keys_to_compare = {
         'FullName', 'FirstName', 'LastName',
         'Address', 'Address_apt',
@@ -14,6 +15,8 @@ def get_main_info(d):
     }
     one_map = {}
     for w in d['W2']:
+        if w.get('Owner', 'self') == 'spouse':
+            continue
         for k in keys_to_compare:
             if k in w:
                 val = w[k]
@@ -282,3 +285,99 @@ def computation_2025_nyc(amount):
     if amount <= 50_000:
         return 858 + (amount - 25_000) * 0.03_819
     return 1_813 + (amount - 50_000) * 0.03_876
+
+
+# Married filing jointly / qualifying surviving spouse
+
+def computation_2024_mfj(amount):
+    # 1040 instructions 2024, Tax Computation Worksheet Section B
+    if amount <= 23_200:
+        return amount * 0.10
+    if amount <= 94_300:
+        return 2_320 + (amount - 23_200) * 0.12
+    if amount <= 201_050:
+        return 10_852 + (amount - 94_300) * 0.22
+    if amount <= 383_900:
+        return 34_337 + (amount - 201_050) * 0.24
+    if amount <= 487_450:
+        return 78_221 + (amount - 383_900) * 0.32
+    if amount <= 731_200:
+        return 111_357 + (amount - 487_450) * 0.35
+    return 196_669.50 + (amount - 731_200) * 0.37
+
+
+def computation_2025_mfj(amount):
+    # 1040 instructions 2025, Tax Computation Worksheet Section B
+    if amount <= 23_850:
+        return amount * 0.10
+    if amount <= 96_950:
+        return 2_385 + (amount - 23_850) * 0.12
+    if amount <= 206_700:
+        return 11_157 + (amount - 96_950) * 0.22
+    if amount <= 394_600:
+        return 35_302 + (amount - 206_700) * 0.24
+    if amount <= 501_050:
+        return 80_398 + (amount - 394_600) * 0.32
+    if amount <= 751_600:
+        return 114_462 + (amount - 501_050) * 0.35
+    return 202_154.50 + (amount - 751_600) * 0.37
+
+
+def computation_2024_ny_mfj(amount):
+    # IT-201-I, NYS tax rate schedule, filing status 2 and 5 (unchanged 2024 -> 2025)
+    if amount <= 17_150:
+        return amount * 0.04
+    if amount <= 23_600:
+        return 686 + (amount - 17_150) * 0.045
+    if amount <= 27_900:
+        return 976 + (amount - 23_600) * 0.05_25
+    if amount <= 161_550:
+        return 1_202 + (amount - 27_900) * 0.05_50
+    if amount <= 323_200:
+        return 8_553 + (amount - 161_550) * 0.06
+    if amount <= 2_155_350:
+        return 18_252 + (amount - 323_200) * 0.06_85
+    if amount <= 5_000_000:
+        return 143_754 + (amount - 2_155_350) * 0.09_65
+    if amount <= 25_000_000:
+        return 418_263 + (amount - 5_000_000) * 0.10_30
+    return 2_478_263 + (amount - 25_000_000) * 0.10_90
+
+
+def computation_2024_ny_recapture_mfj(amount, gross):
+    # IT-201-I tax computation worksheets 1-6 (married filing jointly / qualifying surviving spouse)
+    # recapture triggers on AGI (gross), not taxable income (amount)
+    if gross <= 107_650:
+        return 0
+    if amount <= 161_550:
+        tax = computation_2024_ny_mfj(amount=amount)
+        if gross >= 157_650:
+            return 0.055 * amount - tax
+        return (0.055 * amount - tax) * round((gross - 107_650) / 50_000, 4)
+    if amount <= 323_200:
+        return 333 + 807 * round(min(50_000, gross - 161_550) / 50_000, 4)
+    if amount <= 2_155_350:
+        return 1_140 + 2_747 * round(min(50_000, gross - 323_200) / 50_000, 4)
+    if amount <= 5_000_000:
+        return 3_887 + 60_350 * round(min(50_000, gross - 2_155_350) / 50_000, 4)
+    if amount <= 25_000_000:
+        return 64_237 + 32_500 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
+    # worksheet 6: flat 10.9% of taxable income
+    return 0.10_90 * amount - computation_2024_ny_mfj(amount=amount)
+
+
+def computation_2024_nyc_mfj(amount):
+    # IT-201-I, NYC tax rate schedule, filing status 2 and 5 (unchanged 2024 -> 2025)
+    if amount <= 21_600:
+        return amount * 0.03_078
+    if amount <= 45_000:
+        return 665 + (amount - 21_600) * 0.03_762
+    if amount <= 90_000:
+        return 1_545 + (amount - 45_000) * 0.03_819
+    return 3_264 + (amount - 90_000) * 0.03_876
+
+
+# NY / NYC married filing jointly schedules are identical in 2024 and 2025 (IT-201-I)
+computation_2025_ny_mfj = computation_2024_ny_mfj
+computation_2025_ny_recapture_mfj = computation_2024_ny_recapture_mfj
+computation_2025_nyc_mfj = computation_2024_nyc_mfj

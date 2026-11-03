@@ -35,6 +35,7 @@ python -m unittest tests.test_computation -v
 
 # Regenerate test expected outputs after computation changes
 python tests/generate_scenarios_2025.py
+python tests/generate_scenarios_2024.py
 ```
 
 The entry point is `main.py` with two modes:
@@ -82,8 +83,9 @@ taxes1040/
 |-- tests/                      # test suite
 |   |-- test_computation.py     # scenario-based tests (discovers scenarios/<year>/) + real data test
 |   |-- generate_scenarios_2025.py  # generates/regenerates 2025 expected outputs
+|   |-- generate_scenarios_2024.py  # 2024 subset (reuses 2025 inputs), single + MFJ
 |   +-- scenarios/              # scenarios organized by year
-|       +-- 2025/               # each scenario has input.json + expected JSONs
+|       +-- 2024/, 2025/        # each scenario has input.json + expected JSONs
 |-- forms/                      # blank PDFs + committed .keys files, by year
 |-- fields_mapping/             # .fields files (positional annotation mappings), by year
 |-- input_data/                 # input JSON, by year
@@ -152,18 +154,20 @@ taxes1040/
 ## Important Caveats
 
 - Tax tables (for taxable income under ~$100k) are not parsed; bracket-based computation is used instead
-- Currently configured for **single filer, no dependents, resident**
+- Supports **single** and **married filing jointly** (2024+ only; legacy 2018-2023 monoliths are single only), no dependents, resident. MFS/HoH/QSS are not implemented.
+- Filing status: input key `filing_status` (`single` default, or `married_filing_jointly`). MFJ needs a `spouse` block (`first_name`, `initial`, `last_name`, `ssn`, `occupation`, `presidential_election`); spouse W2s go in the same `W2` list tagged `"Owner": "spouse"` (excluded from the primary identity check in `get_main_info`, included in all sums). Year configs keep single values at the top level and MFJ values in `filing_status_overrides['married_filing_jointly']`; `forms_core_impl.resolve_config()` overlays them (also used by `marginal_rates.py`). Keys absent from the overrides (SALT cap/phaseout/floor, AMT 28% threshold, mortgage limits, capital loss limit) are the same for single and MFJ. Schedule names use "First & Spouse Last" (or both full names when last names differ); the primary SSN is used on schedules.
+- NY/NYC MFJ schedules are identical in 2024 and 2025 (`computation_2025_ny_mfj = computation_2024_ny_mfj` aliases in `forms_functions.py`).
 - NY IT-196 (itemized deductions) has `.fields`/`.keys` mappings and PDF filling for 2024-2025. Other NY forms (IT-201, IT-2) are "enhanced" PDFs that can't be filled directly; the code computes NY values for JSON output only
 - Intermediate artifacts are gitignored: `key_mapping/` (raw `.keys` with integer indices, regenerated from blank PDFs each dev run) and debug PDFs in `fields_mapping/`. The final `.keys` with human-readable names live in `forms/{year}/` and are committed.
 - The field mapping layer only handles renamed fields. New fields requiring new computation logic need code additions to `forms_core_impl.py`.
 - Form 6251: Part I line 2a (SALT add-back when itemizing) is implemented. Lines 2b-2t (other AMT preference items like depreciation, ISO, passive activities) are not yet implemented. Part II handles exemption phaseout and Part III applies preferential capital gain rates when qualified dividends or Schedule D gains are present. The ShouldFill6251Worksheet screens whether Form 6251 is needed.
-- NY IT-196 line 46/47: implements Worksheets 3 and 4 (itemized deduction adjustment for NYAGI $100k-$1M) and the high-income rules (50% of charitable gifts for NYAGI $1M-$10M, 25% for >$10M per IT-196 line 47 instructions referencing IT-196 line 19). The `ny_itemized_deduction_threshold` config controls the line 40/41 overall limit threshold.
+- NY IT-196 line 46/47: implements Worksheets 3 and 4 (itemized deduction adjustment for NYAGI `ny_itemized_adjustment_start` ($100k single, $200k MFJ) to $1M) and the high-income rules (50% of charitable gifts for NYAGI $1M-$10M, 25% for >$10M per IT-196 line 47 instructions referencing IT-196 line 19). The `ny_itemized_deduction_threshold` config controls the line 40/41 overall limit threshold.
 - Form 6781: supports both `Contract1256` (individual contracts) and `Realized1256`/`Unrealized1256` (aggregate broker amounts) in 1099 input. The 40/60 split (lines 8/9) flows directly to Schedule D lines 4 (short-term) and 11 (long-term), bypassing Form 8949. When only 1256 contracts exist (no regular trades), Form 8949 is omitted.
 - 1099 input: `InterestBondsObligations` (US government bond interest) flows to federal Schedule B and is subtracted on NY IT-201 line 28. `Interest` and `InterestBondsObligations` are separate amounts (Box 1 and Box 3 on 1099-INT).
 - Charitable contributions: Schedule A line 11 (cash) is implemented, sourced from the `Charitable` list in input JSON (each entry has `Entity` and `Amount`). Lines 12 (other than cash) and 13 (carryover) are not filled but are included in the line 14 sum. NY IT-196 line 16 mirrors federal line 11.
 - Mortgage interest: the MortgageInterestDeductionWorksheet (IRS Pub 936) prorates interest when the mortgage balance exceeds `mortgage_limit` (federal, $750k TCJA). NY IT-196 line 10 uses `ny_mortgage_limit` ($1M pre-TCJA) separately. The worksheet also has a $1M pre-TCJA grandfathered debt ceiling (line 3) which is hardcoded since it is part of the IRS worksheet structure.
 - Form 1116: computes the foreign tax credit limitation for passive category income. Foreign source income is identified from 1099 entries that have `Foreign Tax Paid`. The limitation fraction (foreign source taxable / worldwide taxable) caps the credit; excess carries forward (saved in `carryover.json`). Schedule B (Form 1116) for carryover tracking and the qualified dividend adjustment (0.5405 multiplier) are not implemented. The adjustment exception applies when foreign source qualified dividends + net capital gain < $20,000 and QDCG worksheet line 5 ≤ $197,300.
-- Form 8889: HSA deduction. Input keys: `health_savings_account` (bool), `health_savings_account_contributions`, `health_savings_account_employer_contributions`, `health_savings_account_distributions`. Max contribution is `hsa_max_contribution` in config ($4,300 self-only for 2025). Deduction flows to Schedule 1 line 13 -> 1040 line 10. Part III (additional tax on excess contributions) is not implemented.
-- Form 8960: computes Net Investment Income Tax (NIIT) at 3.8% on the lesser of net investment income (interest + dividends + capital gains) or MAGI - $200k (single). Flows to Schedule 2 line 12. Skipped when NIIT is zero. The $200k threshold is not inflation-indexed. Passive activity income, annuities, and Part II deductions (9b state tax allocation, 9c misc expenses) are not implemented.
+- Form 8889: HSA deduction. Input keys: `health_savings_account` (bool), `health_savings_account_contributions`, `health_savings_account_employer_contributions`, `health_savings_account_distributions`, `health_savings_account_coverage` (`self` default or `family`). Max contribution is `hsa_max_contribution` in config ($4,300 self-only for 2025) or `hsa_max_contribution_family` ($8,550 for 2025); a family limit split between spouses is not supported. Deduction flows to Schedule 1 line 13 -> 1040 line 10. Part III (additional tax on excess contributions) is not implemented.
+- Form 8960: computes Net Investment Income Tax (NIIT) at 3.8% on the lesser of net investment income (interest + dividends + capital gains) or MAGI - `niit_threshold` ($200k single, $250k MFJ). Flows to Schedule 2 line 12. Skipped when NIIT is zero. The threshold is not inflation-indexed. Form 8959 uses `additional_medicare_threshold` ($200k single, $250k MFJ). Passive activity income, annuities, and Part II deductions (9b state tax allocation, 9c misc expenses) are not implemented.
 - `make_pdf_output` filters out `custom_missing_*` keys from `data.json` with a warning log before PDF filling. These are computation-only flags (e.g. Form 1116 income category checkbox) that have no corresponding `.keys` entry.
 - `make_pdf_output` logs an error and skips when a computed form has no .keys file, rather than crashing.

@@ -9,7 +9,7 @@ Each test is a scenario in tests/scenarios/<year>/<name>/ containing:
 
 The test runner discovers year subfolders under tests/scenarios/, then
 discovers scenario directories within each year. It loads the input,
-merges it with filing defaults (single, no dependents, etc.), runs the
+merges it with filing defaults (filing_status single, no dependents, etc.), runs the
 year-specific computation, and asserts the output matches the expected
 files exactly.
 
@@ -31,7 +31,7 @@ SCENARIOS_DIR = os.path.join(os.path.dirname(__file__), 'scenarios')
 # Filing defaults applied to every scenario.
 # Scenarios can override these by including the same keys in input.json.
 DEFAULTS = {
-    'single': True,
+    'filing_status': 'single',
     'dependents': False,
     'occupation': "Analyst",
     'full_year_health_coverage_or_exempt': True,
@@ -61,6 +61,7 @@ def load_scenario_input(scenario_dir):
     data.update(DEFAULTS)
     # allow input.json to override defaults
     data.update(j)
+    data['single'] = data['filing_status'] == 'single'  # legacy computations read d['single']
 
     data[override_keyword] = {
         'address_street_and_number': next(iter(j['W2']))['Address'],

@@ -18,7 +18,7 @@ Each rate is decomposed as a product of known derivatives:
     $1 income -> AGI -> federal taxable income -> federal tax
                      -> NY taxable income -> NY tax + NYC tax
 
-Non-linear thresholds (2025, single filer):
+Non-linear thresholds (2025, single filer - MFJ values come from the config's filing_status_overrides):
 
     Federal income tax brackets (on taxable income):
         $11,925 / $48,475 / $103,350 / $197,300 / $250,525 / $626,350
@@ -71,15 +71,15 @@ from computation.form_worksheet_names import (
 )
 from computation.forms_core_2025 import CONFIG_2025
 from computation.forms_core_2024 import CONFIG_2024
+from computation.forms_core_impl import resolve_config, get_filing_status
 
+# bracket boundaries (fed_brackets, ny_brackets, nyc_brackets, ny_recapture_brackets) live in the
+# year configs and are resolved for the input's filing status (single or married_filing_jointly)
 YEAR_CONFIGS = {
-    '2025': {**CONFIG_2025, 'ny_recapture_brackets': [215_400, 1_077_550, 5_000_000, 25_000_000]},
-    '2024': {**CONFIG_2024, 'ny_recapture_brackets': [215_400, 1_077_550, 5_000_000, 25_000_000]},
+    '2025': CONFIG_2025,
+    '2024': CONFIG_2024,
 }
 
-FED_BRACKETS = [11_925, 48_475, 103_350, 197_300, 250_525, 626_350]
-NY_BRACKETS = [8_500, 11_700, 13_900, 80_650, 215_400, 1_077_550, 5_000_000, 25_000_000]
-NYC_BRACKETS = [12_000, 25_000, 50_000]
 PREFERENTIAL_BRACKETS_KEYS = ['qualified_div_0pct', 'qualified_div_20pct']
 
 
@@ -414,11 +414,11 @@ def _rate_at(additional, baseline, config, fed_rate_type,
 
     # Medicare (W2 only)
     extra_fed = 0
-    if is_wages and baseline['medicare_wages'] + additional > 200_000:
+    if is_wages and baseline['medicare_wages'] + additional > config['additional_medicare_threshold']:
         extra_fed = 0.009
 
-    # NIIT (3.8% on investment income when MAGI > $200k)
-    niit_threshold = config.get('niit_threshold', 200_000)
+    # NIIT (3.8% on investment income when MAGI > $200k single / $250k MFJ)
+    niit_threshold = config['niit_threshold']
     if not is_wages and mode == 'income' and new_agi > niit_threshold:
         extra_fed += 0.038
 
@@ -468,7 +468,7 @@ def _find_knots_income(baseline, config, is_wages=False):
     # For simplicity, compute fed bracket knots assuming current d_fed_taxable_d_agi.
     d_salt = _salt_d_agi(agi_0, config)
     d_fed = (1 - d_salt) if baseline['is_itemizing'] else 1
-    for bracket in FED_BRACKETS:
+    for bracket in config['fed_brackets']:
         if bracket > fed_taxable_0:
             additional = (bracket - fed_taxable_0) / d_fed
             knots.append((additional, f'Federal bracket at taxable ${bracket:,}'))
@@ -481,11 +481,13 @@ def _find_knots_income(baseline, config, is_wages=False):
             knots.append((additional, f'Preferential rate at taxable ${bracket:,}'))
 
     # Medicare threshold (W2 only)
-    if is_wages and baseline['medicare_wages'] < 200_000:
-        knots.append((200_000 - baseline['medicare_wages'], 'Additional Medicare Tax begins ($200k)'))
+    medicare_threshold = config['additional_medicare_threshold']
+    if is_wages and baseline['medicare_wages'] < medicare_threshold:
+        knots.append((medicare_threshold - baseline['medicare_wages'],
+                      f'Additional Medicare Tax begins (${medicare_threshold:,})'))
 
     # NIIT threshold (investment income only)
-    niit_threshold = config.get('niit_threshold', 200_000)
+    niit_threshold = config['niit_threshold']
     if not is_wages and agi_0 < niit_threshold:
         knots.append((niit_threshold - agi_0, f'NIIT begins (MAGI > ${niit_threshold:,})'))
 
@@ -502,14 +504,14 @@ def _find_knots_income(baseline, config, is_wages=False):
                           'NYAGI crosses $10M - deduction drops to 25% of charitable (cliff)'))
 
     # NY bracket transitions ($1 income -> $1 NY taxable, deduction is fixed)
-    for bracket in NY_BRACKETS:
+    for bracket in config['ny_brackets']:
         if bracket <= ny_taxable_0:
             continue
         additional = bracket - ny_taxable_0
         knots.append((additional, f'NY bracket at taxable ${bracket:,}'))
 
     # NYC bracket transitions (same taxable as NY)
-    for bracket in NYC_BRACKETS:
+    for bracket in config['nyc_brackets']:
         if bracket <= ny_taxable_0:
             continue
         additional = bracket - ny_taxable_0
@@ -541,7 +543,7 @@ def _find_knots_charitable(baseline, config):
     fed_taxable_0 = baseline['taxable_income']
 
     # Federal bracket transitions (going down)
-    for bracket in reversed(FED_BRACKETS):
+    for bracket in reversed(config['fed_brackets']):
         if bracket < fed_taxable_0:
             additional = fed_taxable_0 - bracket
             knots.append((additional, f'Federal bracket at taxable ${bracket:,}'))
@@ -573,12 +575,12 @@ def _find_knots_charitable(baseline, config):
         # After crossover: NY taxable = NYAGI - (charitable + additional) * fraction
         # So bracket crossing: NYAGI - (charitable + additional) * fraction = bracket
         #   additional = (NYAGI - bracket) / fraction - charitable
-        for bracket in reversed(NY_BRACKETS):
+        for bracket in reversed(config['ny_brackets']):
             if bracket < ny_agi:
                 additional = (ny_agi - bracket) / fraction - baseline['charitable_ny']
                 if additional > 0:
                     knots.append((additional, f'NY bracket at taxable ${bracket:,}'))
-        for bracket in reversed(NYC_BRACKETS):
+        for bracket in reversed(config['nyc_brackets']):
             if bracket < ny_agi:
                 additional = (ny_agi - bracket) / fraction - baseline['charitable_ny']
                 if additional > 0:
@@ -586,12 +588,12 @@ def _find_knots_charitable(baseline, config):
     elif ny_itemized_0 > ny_std:
         # NYAGI <= $1M: charitable is $1-for-$1 in NY itemized
         # NY taxable = NYAGI - (ny_itemized_0 + additional)
-        for bracket in reversed(NY_BRACKETS):
+        for bracket in reversed(config['ny_brackets']):
             if bracket < ny_agi - ny_itemized_0:
                 additional = ny_agi - ny_itemized_0 - bracket
                 if additional > 0:
                     knots.append((additional, f'NY bracket at taxable ${bracket:,}'))
-        for bracket in reversed(NYC_BRACKETS):
+        for bracket in reversed(config['nyc_brackets']):
             if bracket < ny_agi - ny_itemized_0:
                 additional = ny_agi - ny_itemized_0 - bracket
                 if additional > 0:
@@ -612,7 +614,7 @@ def _find_knots_mortgage(baseline, config):
         return knots
 
     # Federal bracket transitions (going down, scaled by deduction ratio)
-    for bracket in reversed(FED_BRACKETS):
+    for bracket in reversed(config['fed_brackets']):
         if bracket < fed_taxable_0:
             # Need additional * ratio = fed_taxable_0 - bracket
             additional = (fed_taxable_0 - bracket) / ratio
@@ -625,13 +627,13 @@ def _find_knots_mortgage(baseline, config):
             and baseline['ny_itemized'] > config['ny_standard_deduction']):
         ny_agi = baseline['ny_agi']
         ny_itemized_0 = baseline['ny_itemized']
-        for bracket in reversed(NY_BRACKETS):
+        for bracket in reversed(config['ny_brackets']):
             if bracket < ny_agi - ny_itemized_0:
                 # ny_taxable = ny_agi - (ny_itemized_0 + additional * ny_ratio) = bracket
                 additional = (ny_agi - ny_itemized_0 - bracket) / ny_ratio
                 if additional > 0:
                     knots.append((round(additional), f'NY bracket at taxable ${bracket:,}'))
-        for bracket in reversed(NYC_BRACKETS):
+        for bracket in reversed(config['nyc_brackets']):
             if bracket < ny_agi - ny_itemized_0:
                 additional = (ny_agi - ny_itemized_0 - bracket) / ny_ratio
                 if additional > 0:
@@ -648,18 +650,18 @@ def _find_knots_hsa(baseline, config):
     ny_taxable_0 = baseline['ny_taxable']
 
     # Federal bracket transitions (going down)
-    for bracket in reversed(FED_BRACKETS):
+    for bracket in reversed(config['fed_brackets']):
         if bracket < fed_taxable_0:
             additional = fed_taxable_0 - bracket
             knots.append((round(additional), f'Federal bracket at taxable ${bracket:,}'))
 
     # NY/NYC bracket transitions (going down)
-    for bracket in reversed(NY_BRACKETS):
+    for bracket in reversed(config['ny_brackets']):
         if bracket < ny_taxable_0:
             additional = ny_taxable_0 - bracket
             if additional > 0:
                 knots.append((round(additional), f'NY bracket at taxable ${bracket:,}'))
-    for bracket in reversed(NYC_BRACKETS):
+    for bracket in reversed(config['nyc_brackets']):
         if bracket < ny_taxable_0:
             additional = ny_taxable_0 - bracket
             if additional > 0:
@@ -699,7 +701,7 @@ def _find_knots_property_tax(baseline, config):
         knots.append((round(headroom), f'SALT total reaches effective limit ${effective_limit:,.0f}'))
         # After that, also add federal bracket knots for the deduction portion
         fed_taxable_0 = baseline['taxable_income']
-        for bracket in reversed(FED_BRACKETS):
+        for bracket in reversed(config['fed_brackets']):
             if bracket < fed_taxable_0:
                 additional = fed_taxable_0 - bracket
                 if additional < headroom:
@@ -711,12 +713,12 @@ def _find_knots_property_tax(baseline, config):
             and baseline['ny_itemized'] > config['ny_standard_deduction']):
         ny_agi = baseline['ny_agi']
         ny_itemized_0 = baseline['ny_itemized']
-        for bracket in reversed(NY_BRACKETS):
+        for bracket in reversed(config['ny_brackets']):
             if bracket < ny_agi - ny_itemized_0:
                 additional = ny_agi - ny_itemized_0 - bracket
                 if additional > 0:
                     knots.append((round(additional), f'NY bracket at taxable ${bracket:,}'))
-        for bracket in reversed(NYC_BRACKETS):
+        for bracket in reversed(config['nyc_brackets']):
             if bracket < ny_agi - ny_itemized_0:
                 additional = ny_agi - ny_itemized_0 - bracket
                 if additional > 0:
@@ -757,8 +759,9 @@ def _build_segments(knots, baseline, config, fed_rate_type, mode='income', is_wa
 
 def compute_analytical_marginal_rates(year):
     """Compute exact marginal rates and knots from a single baseline computation."""
-    config = YEAR_CONFIGS[year]
     base_data = gather_inputs(year)
+    filing_status = get_filing_status(base_data)
+    config = resolve_config(YEAR_CONFIGS[year], filing_status)
     fill_func = FILL_FUNCTIONS[year]
     forms_state, worksheets, summary, carryover = fill_func(d=copy.deepcopy(base_data))
     baseline = _extract_baseline(forms_state, worksheets, base_data, config)
@@ -790,9 +793,23 @@ def compute_analytical_marginal_rates(year):
     if baseline['salt_total'] < config['salt_floor']:
         salt_note = f'SALT total ${baseline["salt_total"]:,.0f} below floor - full marginal benefit'
 
+    # notes describe the baseline position (filing-status aware)
+    ordinary_bracket = _bracket_rate(config['computation'], baseline['taxable_income'])
+    wages_note = f'{ordinary_bracket:.0%} bracket'
+    if baseline['medicare_wages'] > config['additional_medicare_threshold']:
+        wages_note += (f' + 0.9% Additional Medicare Tax '
+                       f'(wages > ${config["additional_medicare_threshold"] // 1000}k)')
+    if baseline['taxable_income'] > config['qualified_div_20pct']:
+        preferential_note = f'20% preferential rate (taxable income > ${config["qualified_div_20pct"]:,})'
+    elif baseline['taxable_income'] > config['qualified_div_0pct']:
+        preferential_note = f'15% preferential rate (taxable income > ${config["qualified_div_0pct"]:,})'
+    else:
+        preferential_note = f'0% preferential rate (taxable income <= ${config["qualified_div_0pct"]:,})'
+    preferential_note += ' + 3.8% NIIT'
+
     categories = {
         'W2 Wages': {
-            'note': f'37% bracket + 0.9% Additional Medicare Tax (wages > $200k)',
+            'note': wages_note,
             'segments': _build_segments(
                 wages_knots, baseline, config, fed_rate_type='ordinary', is_wages=True),
         },
@@ -804,13 +821,13 @@ def compute_analytical_marginal_rates(year):
         },
         'Long-term capital gain': {
             'note': ('Net losses absorb gain - taxed at ordinary rates + 3.8% NIIT' if ltcg_in_loss
-                     else '20% preferential rate (taxable income > $533,400) + 3.8% NIIT'),
+                     else preferential_note),
             'segments': _build_segments(
                 income_knots, baseline, config,
                 fed_rate_type='ltcg_or_loss' if ltcg_in_loss else 'preferential'),
         },
         'Qualified dividends': {
-            'note': '20% preferential rate (taxable income > $533,400) + 3.8% NIIT',
+            'note': preferential_note,
             'segments': _build_segments(
                 income_knots, baseline, config, fed_rate_type='preferential'),
         },
@@ -867,6 +884,7 @@ def compute_analytical_marginal_rates(year):
 
     results = {
         'year': year,
+        'filing_status': filing_status,
         'method': 'analytical',
         'baseline': {
             'agi': baseline['agi'],
@@ -884,7 +902,8 @@ def compute_analytical_marginal_rates(year):
             'ny_deduction_regime': (
                 '25% of charitable gifts (NYAGI > $10M)' if baseline['ny_agi'] > 10_000_000
                 else '50% of charitable gifts (NYAGI > $1M)' if baseline['ny_agi'] > 1_000_000
-                else 'worksheet adjustment (NYAGI > $100k)' if baseline['ny_agi'] > 100_000
+                else f"worksheet adjustment (NYAGI > ${config['ny_itemized_adjustment_start']:,})"
+                if baseline['ny_agi'] > config['ny_itemized_adjustment_start']
                 else 'full deduction'
             ),
             'ny_effective_rate_note': (

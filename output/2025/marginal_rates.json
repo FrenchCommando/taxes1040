@@ -1,5 +1,6 @@
 {
     "year": "2025",
+    "filing_status": "single",
     "method": "analytical",
     "baseline": {
         "agi": 1139279.0,

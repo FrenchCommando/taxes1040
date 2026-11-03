@@ -28,6 +28,21 @@ def apply_field_maps(forms_state, field_maps):
             forms_state[form_key] = _remap_dict(form_data, field_map)
 
 
+FILING_STATUSES = ('single', 'married_filing_jointly')
+
+
+def resolve_config(config, filing_status):
+    """Overlay the filing-status-specific values on top of the (single) defaults."""
+    if filing_status not in FILING_STATUSES:
+        raise ValueError(f"Unsupported filing status {filing_status!r} - expected one of {FILING_STATUSES}")
+    overrides = config.get('filing_status_overrides', {}).get(filing_status, {})
+    return config | overrides
+
+
+def get_filing_status(d):
+    return d.get('filing_status', 'single')
+
+
 def extract_carryover(forms_state):
     """Extract carryover values from a year's forms_state (for bridging legacy years)."""
     return {
@@ -46,10 +61,21 @@ def fill_taxes(d, config):
         standard_deduction, amt_exemption, amt_28pct_threshold, amt_28pct_excess,
         qualified_div_0pct, qualified_div_20pct,
         should_fill_6251_exemption, should_fill_6251_phaseout, should_fill_6251_28pct,
+        filing_status_overrides: {filing_status: {key: value}} - replaces the single defaults
 
     d may contain 'prior_year' dict with keys:
         taxable_income, schedule_d_net_short_term, schedule_d_net_long_term, schedule_d_loss_deduction
+
+    d['filing_status'] is 'single' (default) or 'married_filing_jointly'.
+    For MFJ, d['spouse'] holds first_name, initial, last_name, ssn, occupation, presidential_election.
     """
+    filing_status = get_filing_status(d)
+    married_filing_jointly = filing_status == 'married_filing_jointly'
+    config = resolve_config(config, filing_status)
+    spouse = d.get('spouse', {}) if married_filing_jointly else {}
+    if married_filing_jointly and not spouse:
+        logger.error("married_filing_jointly requires a 'spouse' block in the input")
+
     computation = config['computation']
     computation_ny = config['computation_ny']
     computation_ny_recapture = config['computation_ny_recapture']
@@ -100,6 +126,21 @@ def fill_taxes(d, config):
     worksheets = {}  # worksheets need not be printed
     summary_info = {}  # fields with custom labels
 
+    def first_name_initial(first_name, initial):
+        return f"{first_name} {initial}" if initial else first_name
+
+    def return_names():
+        """'Name(s) shown on return' for schedules: 'John & Jane Doe' or 'John Doe & Jane Smith' when MFJ."""
+        self_first = forms_state[k_1040]['self_first_name_initial']
+        self_last = forms_state[k_1040]['self_last_name']
+        if not married_filing_jointly:
+            return f"{self_first} {self_last}"
+        spouse_first = forms_state[k_1040]['spouse_first_name_initial']
+        spouse_last = forms_state[k_1040]['spouse_last_name']
+        if spouse_last == self_last:
+            return f"{self_first} & {spouse_first} {self_last}"
+        return f"{self_first} {self_last} & {spouse_first} {spouse_last}"
+
     class Form:
         def __init__(self, key, get_existing=False):
             self.key = key
@@ -114,8 +155,7 @@ def fill_taxes(d, config):
                 self.d[key] = round(value, round_i)
 
         def push_name_ssn(self, prefix="", suffix=""):
-            self.d[prefix + 'name' + suffix] = forms_state[k_1040]['self_first_name_initial'] \
-                             + " " + forms_state[k_1040]['self_last_name']
+            self.d[prefix + 'name' + suffix] = return_names()
             self.d[prefix + 'ssn' + suffix] = main_info['ssn']
 
         def push_sum(self, key, it):
@@ -133,12 +173,10 @@ def fill_taxes(d, config):
             Form.__init__(self, k_1040)
 
         def build(self):
-            first_name_and_initial = main_info['first_name']
-            if main_info['initial'] != "":
-                first_name_and_initial += " " + main_info['initial']
+            filing_status_box = 'married_filling_jointly' if married_filing_jointly else 'single'
             self.d.update({
-                'single': True,
-                'self_first_name_initial': first_name_and_initial,
+                filing_status_box: True,
+                'self_first_name_initial': first_name_initial(main_info['first_name'], main_info['initial']),
                 'self_last_name': main_info['last_name'],
                 'self_ssn': main_info['ssn'],
                 'address': main_info['address_street_and_number'],
@@ -152,6 +190,16 @@ def fill_taxes(d, config):
                 'phone': d['phone'],
                 'email': d['email'],
             })
+            if married_filing_jointly:
+                self.d.update({
+                    'spouse_first_name_initial': first_name_initial(spouse.get('first_name', ''),
+                                                                    spouse.get('initial', '')),
+                    'spouse_last_name': spouse.get('last_name', ''),
+                    'spouse_ssn': spouse.get('ssn', ''),
+                    'presidential_election_spouse': spouse.get('presidential_election', False),
+                    'spouse_occupation': spouse.get('occupation', ''),
+                })
+            summary_info[f"{self.key} Filing status"] = filing_status
 
             if d.get('virtual_currency', False):
                 self.push_to_dict('virtual_currency_y', True)
@@ -696,7 +744,7 @@ def fill_taxes(d, config):
                     self.d['17_n'] = True
 
             elif self.d['16'] < 0:
-                capital_loss_limit = 3000 if d['single'] else 1500
+                capital_loss_limit = config['capital_loss_limit']  # $3,000 single and MFJ ($1,500 MFS)
                 self.push_to_dict('21', - min(capital_loss_limit, -self.d['16']))
                 Form(k_1040, get_existing=True).push_to_dict('7_value', self.d['21'])
                 self.revert_sign(key='21')  # show amount as positive
@@ -846,13 +894,21 @@ def fill_taxes(d, config):
         def build(self):
             self.push_name_ssn()
 
-            self.d['1_self'] = True
+            # input key: health_savings_account_coverage = 'self' (default) or 'family'
+            # MFJ with family coverage: one Form 8889 for the family limit, assumed not split with spouse
+            family_coverage = d.get('health_savings_account_coverage', 'self') == 'family'
+            if family_coverage:
+                self.d['1_family'] = True
+                max_contribution = config['hsa_max_contribution_family']
+            else:
+                self.d['1_self'] = True
+                max_contribution = health_savings_account_max_contribution
 
             self.push_to_dict('2', d.get('health_savings_account_contributions', 0))
-            self.push_to_dict('3', health_savings_account_max_contribution)
+            self.push_to_dict('3', max_contribution)
             self.push_to_dict('4', 0)
             self.push_to_dict('5', self.d.get('3', 0) - self.d.get('4', 0))
-            self.push_to_dict('6', self.d.get('5', 0))  # except if you have separate for spouse
+            self.push_to_dict('6', self.d.get('5', 0))  # except if family limit is split with spouse
             self.push_to_dict('7', 0)
             self.push_sum('8', ['6', '7'])
             self.push_to_dict('9', d.get('health_savings_account_employer_contributions', 0))
@@ -984,7 +1040,7 @@ def fill_taxes(d, config):
             # Part I
             self.push_to_dict('1', medicare_wages)
             self.push_sum('4', ['1', '2', '3'])
-            self.push_to_dict('5', 200_000)  # single
+            self.push_to_dict('5', config['additional_medicare_threshold'])
             self.push_to_dict('6', max(0, self.d['4'] - self.d['5']))
             self.push_to_dict('7', self.d.get('6', 0) * 0.009)
             if '7' in self.d:
@@ -992,7 +1048,7 @@ def fill_taxes(d, config):
 
             # Part II
             # 8 self-employment income
-            self.push_to_dict('9', 200_000)  # single
+            self.push_to_dict('9', config['additional_medicare_threshold'])
             self.push_sum('10', ['4'])
             self.push_to_dict('11', max(0, self.d['9'] - self.d['10']))
             self.push_to_dict('12', max(0, self.d.get('8', 0) - self.d.get('11', 0)))
@@ -1061,7 +1117,7 @@ def fill_taxes(d, config):
             self.push_to_dict('12', self.d.get('11', 0))
             # Line 13: MAGI (= AGI for simple case, no section 911 or CFC/PFIC)
             self.push_to_dict('13', forms_state[k_1040].get('11', 0))
-            self.push_to_dict('14', config.get('niit_threshold', 200_000))
+            self.push_to_dict('14', config['niit_threshold'])
             self.push_to_dict('15', max(0, self.d.get('13', 0) - self.d.get('14', 0)))
             self.push_to_dict('16', min(self.d.get('12', 0), self.d.get('15', 0)))
             niit = round(self.d.get('16', 0) * 0.038)
@@ -1209,14 +1265,14 @@ def fill_taxes(d, config):
                 self.d[3] = forms_state[k_1040].get('7_value', 0)
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
-            self.d[6] = config['qualified_div_0pct']  # single
+            self.d[6] = config['qualified_div_0pct']  # filing-status specific
             self.d[7] = min(self.d[1], self.d[6])
             self.d[8] = min(self.d[5], self.d[7])
             self.d[9] = self.d[7] - self.d[8]  # taxed 0%
             self.d[10] = min(self.d[1], self.d[4])
             self.d[11] = self.d[9]
             self.d[12] = self.d[10] - self.d[11]
-            self.d[13] = config['qualified_div_20pct']  # single
+            self.d[13] = config['qualified_div_20pct']  # filing-status specific
             self.d[14] = min(self.d[1], self.d[13])
             self.d[15] = self.d[5] + self.d[9]
             self.d[16] = max(0., self.d[14] - self.d[15])
@@ -1252,13 +1308,13 @@ def fill_taxes(d, config):
                 + forms_state[k_1040s1].get('8_z', 0) \
                 if k_1040s1 in forms_state else 0
             self.d[5] = self.d[3] - self.d[4]
-            self.d[6] = config['should_fill_6251_exemption']  # single
+            self.d[6] = config['should_fill_6251_exemption']  # filing-status specific
             if self.d[5] <= self.d[6]:
                 self.fill6251 = False
                 summary_info[f"{self.key} Should fill 6251"] = self.fill6251
                 return
             self.d[7] = self.d[5] - self.d[6]
-            self.d[8] = config['should_fill_6251_phaseout']  # single
+            self.d[8] = config['should_fill_6251_phaseout']  # filing-status specific
             if self.d[5] <= self.d[8]:
                 self.d[9] = 0
                 self.d[11] = self.d[7]
@@ -1266,7 +1322,7 @@ def fill_taxes(d, config):
                 self.d[9] = self.d[5] - self.d[8]
                 self.d[10] = min(self.d[9] * 0.25, self.d[6])
                 self.d[11] = self.d[7] + self.d[10]
-            if self.d[11] >= config['should_fill_6251_28pct']:  # single
+            if self.d[11] >= config['should_fill_6251_28pct']:  # same for single and MFJ (MFS is half)
                 self.fill6251 = True
                 summary_info[f"{self.key} Should fill 6251"] = self.fill6251
                 return
@@ -1357,14 +1413,16 @@ def fill_taxes(d, config):
 
             # fixed school tax credit (eligibility based on income = line 19)
             income_for_school_credit = self.d['19']
-            fixed_school_tax = 63 if income_for_school_credit <= 250_000 else 0
+            fixed_school_tax = config['nyc_school_fixed_credit'] if income_for_school_credit <= 250_000 else 0
             self.push_to_dict('69', fixed_school_tax)
             # school tax rate reduction (eligibility on income, calculation on city taxable income)
             city_taxable_income = self.d.get('47', 0)
+            rate_reduction_threshold = config['nyc_school_rate_reduction_threshold']
             if income_for_school_credit <= 500_000:
                 school_tax_reduction = city_taxable_income * 0.00171 \
-                    if city_taxable_income <= 12_000 \
-                    else 21 + (city_taxable_income - 12_000) * 0.00228
+                    if city_taxable_income <= rate_reduction_threshold \
+                    else config['nyc_school_rate_reduction_base'] \
+                    + (city_taxable_income - rate_reduction_threshold) * 0.00228
             else:
                 school_tax_reduction = 0
             self.push_to_dict('69a', school_tax_reduction)
@@ -1405,8 +1463,7 @@ def fill_taxes(d, config):
             Form.__init__(self, k_it196)
 
         def build(self):
-            self.d['name'] = forms_state[k_1040]['self_first_name_initial'] \
-                             + " " + forms_state[k_1040]['self_last_name']
+            self.d['name'] = return_names()
 
             # medical and dental
             # self.push_to_dict('1', 100)
@@ -1491,7 +1548,7 @@ def fill_taxes(d, config):
             self.d[3] = self.d[1] - self.d[2]
             self.d[4] = self.d[3] * 0.80
             self.d[5] = forms_state[k_it201]['19']  # federal AGI
-            self.d[6] = config['ny_itemized_deduction_threshold']  # single
+            self.d[6] = config['ny_itemized_deduction_threshold']  # filing-status specific
             if self.d[6] >= self.d[5]:
                 summary_info[f"{self.key} 10 Total itemized deductions"] = self.d[1]
                 Form(k_it196, get_existing=True).push_to_dict('40', self.d[1])
@@ -1541,14 +1598,16 @@ def fill_taxes(d, config):
         def build(self):
             ny_agi = forms_state[k_it201]['33']
             line_45 = forms_state[k_it196].get('45', 0)
-            if ny_agi <= 100_000:
+            # worksheet 3 line 2: $100,000 single, $200,000 MFJ
+            adjustment_start = config['ny_itemized_adjustment_start']
+            if ny_agi <= adjustment_start:
                 return
             if ny_agi > 1_000_000:
                 # line 47 uses a different formula; no line 46 needed
                 return
             if ny_agi <= 475_000:
                 # Worksheet 3: phase-in from 0% to 25%
-                excess = min(ny_agi - 100_000, 50_000)
+                excess = min(ny_agi - adjustment_start, 50_000)
                 fraction = round(excess / 50_000, 4)
                 adjustment = fraction * line_45 * 0.25
             elif ny_agi <= 525_000:
