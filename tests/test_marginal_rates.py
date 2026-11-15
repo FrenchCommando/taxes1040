@@ -47,6 +47,19 @@ class TestMarginalRates(unittest.TestCase):
         dividends = results['marginal_rates']['Qualified dividends']['segments']
         self.assertAlmostEqual(dividends[0]['rates']['federal'], 0.238, places=6)
 
+    def test_2025_mfj_high_income_wages(self):
+        # MFJ, AGI $523,000, itemizing, Medicare wages over the $250,000 MFJ threshold:
+        # each $1 of wages also costs 30% of $1 of SALT deduction (phaseout above $500,000 AGI)
+        results = _results('2025', 'mfj_high_income')
+        self.assertEqual(results['filing_status'], 'married_filing_jointly')
+        wages = results['marginal_rates']['W2 Wages']['segments']
+        self.assertAlmostEqual(wages[0]['rates']['federal'], 0.32 + 0.009 + 0.30 * 0.32, places=6)
+        # 35% MFJ bracket at ordinary taxable $501,050, still in the SALT phaseout
+        self.assertAlmostEqual(_segment_at(wages, 50_000)['rates']['federal'], 0.35 + 0.009 + 0.30 * 0.35, places=6)
+        # SALT reaches the $10,000 floor at AGI $600,000 (+$77,000): no more phaseout
+        self.assertIn(77_000, [segment['from'] for segment in wages])
+        self.assertAlmostEqual(_segment_at(wages, 80_000)['rates']['federal'], 0.35 + 0.009, places=6)
+
     def test_2026_runs(self):
         # provisional year: rates come from the same computation
         wages = _results('2026', 'w2_only')['marginal_rates']['W2 Wages']['segments']
