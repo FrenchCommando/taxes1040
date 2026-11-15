@@ -39,6 +39,7 @@ CONFIG_2025 = dict(
     hsa_max_contribution=4_300,  # self-only
     hsa_max_contribution_family=8_550,
     capital_loss_limit=3_000,
+    social_security_max_withholding=10_918.20,  # 6.2% of the $176,100 wage base, per person
     additional_medicare_threshold=200_000,
     niit_threshold=200_000,
     ny_itemized_adjustment_start=100_000,  # IT-196 line 46 worksheet 3 line 2

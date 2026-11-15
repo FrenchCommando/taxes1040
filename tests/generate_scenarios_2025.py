@@ -28,6 +28,8 @@ Scenarios:
     mfj_hsa_family        - MFJ HSA family coverage limit
     mfj_ny_itemized_under_200k - MFJ NYAGI $100k-$200k: no IT-196 line 46 adjustment (MFJ start is $200k)
     mfj_capital_loss      - MFJ capital loss limited to $3,000
+    excess_social_security     - two employers, social security withheld over the max (Schedule 3 line 11)
+    mfj_excess_social_security - MFJ, only the spouse had two employers (excess is per person)
 """
 import json
 import os
@@ -508,6 +510,28 @@ SCENARIOS = {
                     },
                 ],
             },
+        ],
+    },
+    "excess_social_security": {
+        # job change: two employers each withheld social security on their own wages,
+        # $7,440 + $6,200 = $13,640 is over the per-person max -> Schedule 3 line 11 credit
+        "W2": [
+            {**BASE_W2, "Wages": 120000, "SocialSecurity_wages": 120000, "Medicare_wages": 120000,
+             "SocialSecurity_tax": 7440, "Medicare_tax": 1740},
+            {**BASE_W2, "Company": "Second Employer Inc", "Wages": 100000, "SocialSecurity_wages": 100000,
+             "Medicare_wages": 100000, "Federal_tax": 18000, "SocialSecurity_tax": 6200,
+             "Medicare_tax": 1450, "State_tax": 5000, "Local_tax": 2000},
+        ],
+    },
+    "mfj_excess_social_security": {
+        # excess is figured per person: only the spouse had two employers
+        **MFJ,
+        "W2": [
+            BASE_W2,
+            SPOUSE_W2,
+            {**SPOUSE_W2, "Company": "Third Company LLC", "Wages": 80000, "SocialSecurity_wages": 80000,
+             "Medicare_wages": 80000, "Federal_tax": 12000, "SocialSecurity_tax": 4960,
+             "Medicare_tax": 1160, "State_tax": 4000, "Local_tax": 1500},
         ],
     },
 }

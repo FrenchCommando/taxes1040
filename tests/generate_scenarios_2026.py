@@ -16,6 +16,7 @@ Scenarios:
     mfj_high_income             - MFJ: Additional Medicare Tax, NIIT, itemized, 0.5% charitable floor
     mfj_hsa_family              - MFJ HSA family coverage limit ($8,750 in 2026)
     mfj_capital_loss            - MFJ capital loss limited to $3,000
+    excess_social_security / mfj_excess_social_security - Schedule 3 line 11 at this year's max
     charitable_nonitemizer      - single, standard deduction + cash gifts ($1,000 cap, DAF excluded)
     mfj_charitable_nonitemizer  - MFJ, standard deduction + cash gifts ($2,000 cap)
 
@@ -40,6 +41,8 @@ SCENARIO_NAMES = [
     'high_income_ny',
     'mfj_two_w2',
     'mfj_high_income',
+    'excess_social_security',
+    'mfj_excess_social_security',
     'mfj_capital_loss',
 ]
 

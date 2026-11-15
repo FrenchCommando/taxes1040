@@ -57,6 +57,7 @@ CONFIG_2026 = dict(
     hsa_max_contribution=4_400,  # self-only
     hsa_max_contribution_family=8_750,
     capital_loss_limit=3_000,
+    social_security_max_withholding=11_439.00,  # 6.2% of the $184,500 wage base (Pub 15 2026), per person
     additional_medicare_threshold=200_000,
     niit_threshold=200_000,
     # NY / NYC: PROVISIONAL 2025 values until the 2026 IT-201-I / IT-196-I are published

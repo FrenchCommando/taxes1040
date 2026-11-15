@@ -93,6 +93,24 @@ def fill_taxes(d, config):
     state_tax = sum(w['State_tax'] for w in d['W2'])
     local_tax = sum(w['Local_tax'] for w in d['W2'])
 
+    def excess_social_security_withheld():
+        """Schedule 3 line 11, figured separately for each spouse (W2 'Owner').
+        Withholding above the yearly max by a single employer isn't claimable (the employer must refund it),
+        so each employer's withholding is capped at the max before adding across employers."""
+        max_withholding = config['social_security_max_withholding']
+        withheld = {}  # owner -> employer -> social security tax withheld
+        for w2 in d['W2']:
+            employers = withheld.setdefault(w2.get('Owner', 'self'), {})
+            employers[w2.get('Company', '')] = employers.get(w2.get('Company', ''), 0) + w2['SocialSecurity_tax']
+        excess = 0
+        for owner, employers in withheld.items():
+            claimable = sum(min(amount, max_withholding) for amount in employers.values())
+            owner_excess = max(0, claimable - max_withholding)
+            if owner_excess > 0:
+                summary_info[f"{k_1040s3} 11 Excess social security tax withheld ({owner})"] = round(owner_excess, 2)
+            excess += owner_excess
+        return excess
+
     has_1099 = '1099' in d
     dividends_qualified = None
     additional_income = None
@@ -136,6 +154,8 @@ def fill_taxes(d, config):
         if k_1040sa not in forms_state or w_itemized_limitation not in worksheets:
             return 0
         return worksheets[w_itemized_limitation][6]
+
+    excess_social_security = excess_social_security_withheld()
 
     def first_name_initial(first_name, initial):
         return f"{first_name} {initial}" if initial else first_name
@@ -315,8 +335,8 @@ def fill_taxes(d, config):
             self.push_sum('18', ['16', '17'])
             self.push_to_dict('19', 0)  # child tax credit
 
-            if foreign_tax > 0:
-                Form1040s3().build()  # fills 20
+            if foreign_tax > 0 or excess_social_security > 0:
+                Form1040s3().build()  # fills 20 and 31
             self.push_sum('21', ['19', '20'])
             self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
 
@@ -342,7 +362,7 @@ def fill_taxes(d, config):
             self.push_to_dict('28', 0)  # Additional child tax Credit
             self.push_to_dict('29', 0)  # American opportunity credit Form 8863, line 8
             self.push_to_dict('30', 0)  # Recovery rebate credit
-            self.push_to_dict('31', 0)  # Schedule 3, line 15
+            # line 31: Schedule 3 line 15, filled by Form1040s3
             self.push_sum('32', ['27_a', '27_b', '27_c', '28', '29', '30', '31'])
             # total other payments and refundable credit
 
@@ -587,10 +607,18 @@ def fill_taxes(d, config):
 
         def build(self):
             self.push_name_ssn()
-            credit = Form1116().build()
-            self.push_to_dict('1', credit)
-            self.push_sum('8', ['1', '2', '3', '4', '5', '7'])  # 1040 line 20
+            # Part I - Nonrefundable credits
+            if foreign_tax > 0:
+                credit = Form1116().build()
+                self.push_to_dict('1', credit)
+            self.push_to_dict('8', sum(self.d.get(k, 0) for k in ['1', '2', '3', '4', '5', '7']))  # 1040 line 20
             Form(k_1040, get_existing=True).push_to_dict('20', self.d.get('8', 0))
+            # Part II - Other payments and refundable credits
+            self.push_to_dict('11', excess_social_security, round_i=2)
+            self.push_to_dict('14', sum(self.d.get(k, 0) for k in ['13_a', '13_b', '13_c', '13_d', '13_z_amount']))
+            self.push_to_dict('15', sum(self.d.get(k, 0) for k in ['9', '10', '11', '12', '14']),
+                              round_i=2)  # 1040 line 31
+            Form(k_1040, get_existing=True).push_to_dict('31', self.d.get('15', 0), round_i=2)
 
     class Form1040sa(Form):
         def __init__(self):

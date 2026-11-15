@@ -10,6 +10,7 @@ Scenarios:
     mfj_high_income  - MFJ: Additional Medicare Tax, NIIT, itemized, NY recapture
     mfj_hsa_family   - MFJ HSA family coverage limit ($8,300 in 2024)
     mfj_capital_loss - MFJ capital loss limited to $3,000
+    excess_social_security / mfj_excess_social_security - Schedule 3 line 11 at this year's max
 
 Run: python tests/generate_scenarios_2024.py
 """
@@ -30,6 +31,8 @@ SCENARIO_NAMES = [
     'itemized_wins',
     'mfj_two_w2',
     'mfj_high_income',
+    'excess_social_security',
+    'mfj_excess_social_security',
     'mfj_capital_loss',
 ]
 
