@@ -296,6 +296,12 @@ def fill_taxes(d, config):
             self.push_to_dict('11', self.d['9'] - self.d.get('10', 0))  # Adjusted Gross Income
             summary_info[f"{self.key} 11 adjusted gross income"] = self.d['11']
 
+            # 2025-2028: Schedule 1-A deductions (tips, overtime, car loan interest, seniors) -> line 13b
+            if config.get('schedule_1a', False):
+                Form1040s1a().build()
+                if forms_state[k_1040s1a].get('38', 0) == 0:
+                    del forms_state[k_1040s1a]
+
             Form1040sa().build()
             itemized_deduction = forms_state[k_1040sa].get('17', 0)
             # 2026+: non-itemizers also deduct cash gifts (not to donor-advised funds) up to the limit
@@ -318,7 +324,8 @@ def fill_taxes(d, config):
             summary_info[f"{self.key} 12 Standard deduction or itemized deductions"] = self.d['12']
 
             self.push_to_dict('13', qualified_business_deduction)
-            self.push_sum('14', ['12', '13', 'charitable_nonitemizer'])
+            self.push_to_dict('13_b', forms_state.get(k_1040s1a, {}).get('38', 0))
+            self.push_sum('14', ['12', '13', '13_b', 'charitable_nonitemizer'])
             self.push_to_dict('15', max(0, self.d.get('11', 0) - self.d.get('14', 0)))  # Taxable income
             summary_info[f"{self.key} 15 Taxable income"] = self.d['15']
 
@@ -392,6 +399,91 @@ def fill_taxes(d, config):
                 summary_info[f"{self.key} 37 amount you owe"] = self.d['37']
 
             self.push_to_dict('other_designee_n', True)
+
+    class Form1040s1a(Form):
+        """Schedule 1-A Additional Deductions (2025-2028), following the form line by line.
+        Input keys (all optional): qualified_tips (line 4c, as an employee), qualified_tips_business (line 5),
+        qualified_overtime (line 14a, W-2), qualified_overtime_1099 (line 14b),
+        vehicle_loans: [{"VIN", "Interest", "DeductedOnBusinessSchedule"}] (line 22, at most 2 rows),
+        birth_date / spouse.birth_date ("YYYY-MM-DD") for the senior deduction.
+        Valid SSNs are assumed; the tip occupation and vehicle eligibility rules are on the user."""
+        def __init__(self):
+            Form.__init__(self, k_1040s1a)
+
+        def build(self):
+            self.push_name_ssn()
+
+            # Part I - MAGI (Puerto Rico / Form 2555 / Form 4563 exclusions not supported)
+            self.push_to_dict('1', forms_state[k_1040]['11'])
+            self.push_to_dict('3', self.d.get('1', 0))
+            magi = self.d.get('3', 0)
+
+            # Part II - No tax on tips
+            self.push_to_dict('4_c', d.get('qualified_tips', 0))
+            self.push_to_dict('5', d.get('qualified_tips_business', 0))
+            self.push_to_dict('6', self.d.get('4_c', 0) + self.d.get('5', 0))
+            if '6' in self.d:
+                self.push_to_dict('7', min(self.d['6'], config['tips_deduction_max']))
+                self.push_to_dict('8', magi)
+                self.push_to_dict('9', config['tips_overtime_phaseout_start'])
+                self.push_to_dict('10', max(0, magi - self.d['9']))
+                self.push_to_dict('11', self.d.get('10', 0) // 1_000)  # rounded down
+                self.push_to_dict('12', self.d.get('11', 0) * 100)
+                self.push_to_dict('13', max(0, self.d.get('7', 0) - self.d.get('12', 0)))
+
+            # Part III - No tax on overtime
+            self.push_to_dict('14_a', d.get('qualified_overtime', 0))
+            self.push_to_dict('14_b', d.get('qualified_overtime_1099', 0))
+            self.push_to_dict('14_c', self.d.get('14_a', 0) + self.d.get('14_b', 0))
+            if '14_c' in self.d:
+                self.push_to_dict('15', min(self.d['14_c'], config['overtime_deduction_max']))
+                self.push_to_dict('16', magi)
+                self.push_to_dict('17', config['tips_overtime_phaseout_start'])
+                self.push_to_dict('18', max(0, magi - self.d['17']))
+                self.push_to_dict('19', self.d.get('18', 0) // 1_000)
+                self.push_to_dict('20', self.d.get('19', 0) * 100)
+                self.push_to_dict('21', max(0, self.d.get('15', 0) - self.d.get('20', 0)))
+
+            # Part IV - No tax on car loan interest
+            vehicle_loans = d.get('vehicle_loans', [])
+            if len(vehicle_loans) > 2:
+                logger.error("Schedule 1-A line 22: more than two vehicles, attach a statement (only 2 filled)")
+            for row, loan in zip('ab', vehicle_loans):
+                self.d[f'22{row}_vin'] = loan.get('VIN', '')
+                self.push_to_dict(f'22{row}_deducted', loan.get('DeductedOnBusinessSchedule', 0))
+                self.push_to_dict(f'22{row}_value', loan.get('Interest', 0) - loan.get('DeductedOnBusinessSchedule', 0))
+            self.push_to_dict('23', sum(
+                loan.get('Interest', 0) - loan.get('DeductedOnBusinessSchedule', 0) for loan in vehicle_loans))
+            if '23' in self.d:
+                self.push_to_dict('24', min(self.d['23'], config['car_loan_interest_max']))
+                self.push_to_dict('25', magi)
+                self.push_to_dict('26', config['car_loan_phaseout_start'])
+                self.push_to_dict('27', max(0, magi - self.d['26']))
+                # line 28 rounds the count UP (unlike tips/overtime)
+                self.push_to_dict('28', -(-self.d.get('27', 0) // 1_000))
+                self.push_to_dict('29', self.d.get('28', 0) * 200)
+                self.push_to_dict('30', max(0, self.d['24'] - self.d.get('29', 0)))
+
+            # Part V - Enhanced deduction for seniors (born before the cutoff, e.g. January 2, 1961 for 2025)
+            cutoff = config['senior_birth_cutoff']
+            self_senior = d.get('birth_date', '9999-12-31') < cutoff
+            spouse_senior = married_filing_jointly and spouse.get('birth_date', '9999-12-31') < cutoff
+            if self_senior or spouse_senior:
+                self.push_to_dict('31', magi)
+                self.push_to_dict('32', config['senior_phaseout_start'])
+                self.push_to_dict('33', max(0, magi - self.d['32']))
+                self.push_to_dict('34', self.d.get('33', 0) * config['senior_phaseout_rate'])
+                self.push_to_dict('35', max(0, config['senior_deduction'] - self.d.get('34', 0)))
+                if self_senior:
+                    self.push_to_dict('36_a', self.d.get('35', 0))
+                if spouse_senior:
+                    self.push_to_dict('36_b', self.d.get('35', 0))
+                self.push_to_dict('37', self.d.get('36_a', 0) + self.d.get('36_b', 0))
+
+            # Part VI - total, to Form 1040 line 13b
+            self.push_to_dict('38', sum(self.d.get(k, 0) for k in ['13', '21', '30', '37']))
+            if '38' in self.d:
+                summary_info[f"{self.key} 38 Additional deductions (Schedule 1-A)"] = self.d['38']
 
     class Form1040s1(Form):
         def __init__(self):
@@ -1310,8 +1402,9 @@ def fill_taxes(d, config):
 
         def build(self):
             self.d[1] = self.itemized_total
-            # taxable income before the limitation + itemized deductions = AGI - QBI deduction
-            self.d[2] = forms_state[k_1040]['11'] - qualified_business_deduction
+            # taxable income before the limitation + itemized deductions = AGI - QBI - Schedule 1-A deductions
+            self.d[2] = forms_state[k_1040]['11'] - qualified_business_deduction \
+                - forms_state.get(k_1040s1a, {}).get('38', 0)
             self.d[3] = config['fed_brackets'][-1]  # start of the 37% bracket, filing-status specific
             self.d[4] = max(0, self.d[2] - self.d[3])
             self.d[5] = min(self.d[1], self.d[4])

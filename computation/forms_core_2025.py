@@ -65,6 +65,10 @@ CONFIG_2025 = dict(
             qualified_div_20pct=600_050,
             additional_medicare_threshold=250_000,
             niit_threshold=250_000,
+            overtime_deduction_max=25_000,
+            tips_overtime_phaseout_start=300_000,
+            car_loan_phaseout_start=200_000,
+            senior_phaseout_start=150_000,
             ny_standard_deduction=16_050,
             ny_itemized_deduction_threshold=408_850,
             ny_itemized_adjustment_start=200_000,
@@ -79,6 +83,17 @@ CONFIG_2025 = dict(
     ),
     trades_per_page_limit=11,
     form_6251_line_1_split=True,
+    # Schedule 1-A (2025-2028, OBBBA): amounts are fixed in the law, not inflation-adjusted
+    schedule_1a=True,
+    tips_deduction_max=25_000,
+    overtime_deduction_max=12_500,  # $25,000 MFJ
+    tips_overtime_phaseout_start=150_000,  # $300,000 MFJ, $100 per $1,000 over
+    car_loan_interest_max=10_000,
+    car_loan_phaseout_start=100_000,  # $200,000 MFJ, $200 per $1,000 (rounded up) over
+    senior_deduction=6_000,  # per person
+    senior_phaseout_start=75_000,  # $150,000 MFJ
+    senior_phaseout_rate=0.06,
+    senior_birth_cutoff='1961-01-02',  # born before this date (age 65 by year end)
     field_maps={
         k_1040: {
             '11': ('11_a', '11_b'),  # AGI is repeated as 11b at the top of page 2

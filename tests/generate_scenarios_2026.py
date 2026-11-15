@@ -19,6 +19,7 @@ Scenarios:
     excess_social_security / mfj_excess_social_security - Schedule 3 line 11 at this year's max
     hsa_nonmedical_distribution - HSA income + 20% additional tax (Schedule 2 line 17c)
     amt_owed / amt_foreign_tax_credit - AMT owed, with and without foreign tax credit
+    schedule_1a_* / mfj_schedule_1a_seniors - Schedule 1-A deductions (2026 senior cutoff 1962-01-02)
     charitable_nonitemizer      - single, standard deduction + cash gifts ($1,000 cap, DAF excluded)
     mfj_charitable_nonitemizer  - MFJ, standard deduction + cash gifts ($2,000 cap)
 
@@ -48,6 +49,9 @@ SCENARIO_NAMES = [
     'hsa_nonmedical_distribution',
     'amt_owed',
     'amt_foreign_tax_credit',
+    'schedule_1a_tips_overtime',
+    'schedule_1a_phaseout',
+    'mfj_schedule_1a_seniors',
     'mfj_capital_loss',
 ]
 

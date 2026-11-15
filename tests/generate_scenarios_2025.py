@@ -35,6 +35,9 @@ Scenarios:
     hsa_testing_period          - Form 8889 Part III: testing period income + 10% additional tax
     amt_owed               - AMT owed: Form 6251 line 11 -> Schedule 2 line 2
     amt_foreign_tax_credit - AMT with foreign tax credit: line 10 net of FTC, line 8 AMTFTC
+    schedule_1a_tips_overtime - Schedule 1-A tips and overtime (overtime capped)
+    schedule_1a_phaseout      - Schedule 1-A phaseouts: tips/overtime round down, car loan rounds up, senior 6%
+    mfj_schedule_1a_seniors   - MFJ Schedule 1-A: both spouses' senior deduction, two vehicle loans
 """
 import json
 import os
@@ -580,6 +583,34 @@ SCENARIOS = {
                 "Foreign Country": "Various",
                 "Institution": "International Fund",
             },
+        ],
+    },
+    "schedule_1a_tips_overtime": {
+        # MAGI under $150k: full tips deduction, overtime capped at $12,500 (Schedule 1-A -> 1040 line 13b)
+        "W2": [{**BASE_W2, "Wages": 100000, "SocialSecurity_wages": 100000, "Medicare_wages": 100000}],
+        "qualified_tips": 8000,
+        "qualified_overtime": 15000,
+    },
+    "schedule_1a_phaseout": {
+        # MAGI $180,500: tips/overtime lose $100 per full $1,000 over $150k (30 -> $3,000),
+        # car loan interest loses $200 per $1,000 or part over $100k (81 -> $16,200, fully phased out),
+        # born 1961-01-01 is eligible for the senior deduction but 6% of $105,500 phases it out
+        "W2": [{**BASE_W2, "Wages": 180500, "SocialSecurity_wages": 176100, "Medicare_wages": 180500}],
+        "birth_date": "1961-01-01",
+        "qualified_tips": 30000,
+        "qualified_overtime": 5000,
+        "vehicle_loans": [{"VIN": "1FTFW1E50PFA00001", "Interest": 3000}],
+    },
+    "mfj_schedule_1a_seniors": {
+        # both spouses 65+: $6,000 each less 6% of MAGI over $150k; car loan interest under the MFJ $200k start
+        **MFJ,
+        "spouse": {**MFJ["spouse"], "birth_date": "1958-03-15"},
+        "birth_date": "1960-07-04",
+        "W2": [{**BASE_W2, "Wages": 100000, "SocialSecurity_wages": 100000, "Medicare_wages": 100000},
+               {**SPOUSE_W2, "Wages": 60000, "SocialSecurity_wages": 60000, "Medicare_wages": 60000}],
+        "vehicle_loans": [
+            {"VIN": "1FTFW1E50PFA00001", "Interest": 4500},
+            {"VIN": "5YJ3E1EA7PF000002", "Interest": 2000, "DeductedOnBusinessSchedule": 500},
         ],
     },
     "mfj_excess_social_security": {
