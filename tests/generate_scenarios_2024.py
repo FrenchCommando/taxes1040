@@ -12,6 +12,7 @@ Scenarios:
     mfj_capital_loss - MFJ capital loss limited to $3,000
     excess_social_security / mfj_excess_social_security - Schedule 3 line 11 at this year's max
     hsa_nonmedical_distribution - HSA income + 20% additional tax (Schedule 2 line 17c)
+    amt_owed / amt_foreign_tax_credit - AMT owed, with and without foreign tax credit
 
 Run: python tests/generate_scenarios_2024.py
 """
@@ -35,6 +36,8 @@ SCENARIO_NAMES = [
     'excess_social_security',
     'mfj_excess_social_security',
     'hsa_nonmedical_distribution',
+    'amt_owed',
+    'amt_foreign_tax_credit',
     'mfj_capital_loss',
 ]
 

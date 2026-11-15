@@ -60,7 +60,8 @@ def fill_taxes(d, config):
         year, computation, computation_ny, computation_ny_recapture, computation_nyc,
         standard_deduction, amt_exemption, amt_28pct_threshold, amt_28pct_excess,
         qualified_div_0pct, qualified_div_20pct,
-        should_fill_6251_exemption, should_fill_6251_phaseout, should_fill_6251_28pct,
+        should_fill_6251_exemption, should_fill_6251_phaseout (also the Form 6251 phaseout start),
+        should_fill_6251_worksheet, should_fill_6251_28pct (2024 only: 1040 AMT screening worksheet),
         filing_status_overrides: {filing_status: {key: value}} - replaces the single defaults
 
     d may contain 'prior_year' dict with keys:
@@ -324,19 +325,17 @@ def fill_taxes(d, config):
                 self.push_to_dict('16', computation(self.d['15']))
             summary_info[f"{self.key} 16 Tax"] = self.d['16']
 
-            Form1040s2().build()
+            # Schedule 3 first: Form 6251 line 10 subtracts the foreign tax credit (Schedule 3 line 1)
+            if foreign_tax > 0 or excess_social_security > 0:
+                Form1040s3().build()  # fills 20 and 31
+
+            Form1040s2().build()  # fills 17 and 23
             if forms_state[k_1040s2].get('3', 0) == 0 \
                     and forms_state[k_1040s2].get('21', 0) == 0:
                 del forms_state[k_1040s2]
-                if k_6251 in forms_state:
-                    del forms_state[k_6251]
 
-            # self.push_to_dict('17', 0)  # schedule 2 line 3
             self.push_sum('18', ['16', '17'])
             self.push_to_dict('19', 0)  # child tax credit
-
-            if foreign_tax > 0 or excess_social_security > 0:
-                Form1040s3().build()  # fills 20 and 31
             self.push_sum('21', ['19', '20'])
             self.push_to_dict('22', max(0, self.d.get('18', 0) - self.d.get('21', 0)))
 
@@ -450,12 +449,21 @@ def fill_taxes(d, config):
             # Additional Taxes
 
             # Part I - Tax
-            should_fill_6251 = ShouldFill6251Worksheet()
-            should_fill_6251.build()
-            if should_fill_6251.fill6251:
-                Form6251().build()  # AMT fills 1
-            # Form8962().build()  # Excess advance premium tax credit repayment - fills 2
-            self.push_sum(key='3', it=['1', '2'])
+            # line 1a-1z: additions to tax (Form 8962 excess advance premium tax credit etc., not implemented)
+            # line 2: AMT. The 1040 instructions had a screening worksheet through 2024; from 2025 they
+            # point to Form 6251 Who Must File, so the form is always computed.
+            if config.get('should_fill_6251_worksheet', False):
+                should_fill_6251 = ShouldFill6251Worksheet()
+                should_fill_6251.build()
+                fill_6251 = should_fill_6251.fill6251
+            else:
+                fill_6251 = True
+            if fill_6251:
+                Form6251().build()  # fills 2
+                # Who Must File: attach only when line 7 is more than line 10 (i.e. there is AMT)
+                if forms_state[k_6251].get('11_value', 0) == 0:
+                    del forms_state[k_6251]
+            self.push_sum(key='3', it=['1_z', '2'])
             Form(k_1040, get_existing=True).push_to_dict('17', self.d['3'])
 
             # Part II - Other Taxes
@@ -827,11 +835,19 @@ def fill_taxes(d, config):
             self.push_name_ssn()
 
             # Part I - Alternative Minimum Taxable Income (AMTI)
-            # Line 1: taxable income from f1040 line 15
-            self.push_to_dict('1_value', forms_state[k_1040]['15'])
-            # Line 2a: add back SALT deduction (Schedule A line 7) - only when itemizing
+            # Line 1 (through 2024): f1040 line 15, or line 11 - line 14 (can be negative) when line 15 is zero
+            # 2025+: line 1a = f1040 line 14 - Schedule 1-A line 37 (senior deduction, allowed for AMT),
+            #        line 1b = f1040 line 11 - line 1a (can be negative); '1_value' holds line 1 / 1b
+            senior_deduction = forms_state.get(k_1040s1a, {}).get('37', 0)
+            line_1a = forms_state[k_1040].get('14', 0) - senior_deduction
+            if config.get('form_6251_line_1_split', False):
+                self.push_to_dict('1a_value', line_1a)
+            self.push_to_dict('1_value', forms_state[k_1040]['11'] - line_1a)
+            # Line 2a: taxes from Schedule A line 7 when itemizing, otherwise the standard deduction (f1040 line 12)
             if k_1040sa in forms_state:
                 self.push_to_dict('2a_value', forms_state[k_1040sa]['7'])
+            else:
+                self.push_to_dict('2a_value', forms_state[k_1040]['12'])
             # Lines 2b-2t, 3: other AMT preference items (not yet implemented)
             # IRC 68 itemized limitation (2026+) doesn't apply for AMT (IRC 56(b)(1)(F)): subtract it back.
             # PROVISIONAL key until the final 2026 Form 6251 line is known.
@@ -862,7 +878,7 @@ def fill_taxes(d, config):
             self.push_to_dict('5_value', exemption)
             # Line 6: AMTI minus exemption
             self.push_to_dict('6_value', max(0, amti - self.d.get('5_value', 0)))
-            if self.d.get('6_value') > 0:
+            if self.d.get('6_value', 0) > 0:
                 amt_taxable = self.d['6_value']
 
                 def amt_26_28(amount):
@@ -905,15 +921,19 @@ def fill_taxes(d, config):
                     self.push_to_dict('7_value', min(preferential, amt_26_28(amt_taxable)))
                 else:
                     self.push_to_dict('7_value', amt_26_28(amt_taxable))
-                # Line 8: AMT foreign tax credit (not implemented)
-                self.push_to_dict('8_value', 0)
+                # Line 10: f1040 line 16 + Schedule 2 line 1z - Schedule 3 line 1 (foreign tax credit)
+                self.push_to_dict('10_value', max(
+                    0,
+                    forms_state[k_1040]['16']
+                    + forms_state[k_1040s2].get('1_z', 0)
+                    - forms_state.get(k_1040s3, {}).get('1', 0),
+                ))
+                # Line 8: AMT foreign tax credit, only needed when line 10 is less than line 7
+                if k_1116 in forms_state and self.d.get('10_value', 0) < self.d.get('7_value', 0):
+                    self.push_to_dict('8_value', self.amt_foreign_tax_credit(
+                        tentative_minimum_tax=self.d['7_value'], amti=amti))
                 # Line 9: tentative minimum tax
                 self.push_to_dict('9_value', self.d.get('7_value', 0) - self.d.get('8_value', 0))
-                # Line 10: regular tax (f1040 line 16 + Schedule 2 line 2 excess advance PTC)
-                self.push_to_dict(
-                    '10_value',
-                    max(0, forms_state[k_1040]['16'] + forms_state[k_1040s2].get('2', 0))
-                )
             else:
                 self.push_to_dict('7_value', 0)
                 self.push_to_dict('9_value', 0)
@@ -923,7 +943,18 @@ def fill_taxes(d, config):
             self.push_to_dict('11_value', max(0, self.d.get('9_value', 0) - self.d.get('10_value', 0)))
             if '11_value' in self.d:
                 summary_info[f"{self.key} 11 AMT"] = self.d['11_value']
-                Form(k_1040s2, get_existing=True).push_to_dict('1', self.d['11_value'])
+                Form(k_1040s2, get_existing=True).push_to_dict('2', self.d['11_value'])
+
+        def amt_foreign_tax_credit(self, tentative_minimum_tax, amti):
+            """AMT Form 1116 with the simplified limitation election (i6251 line 8): the AMT foreign source
+            income is the regular-tax Form 1116 line 17, the worldwide income is AMTI (Form 6251 line 4),
+            and the limitation applies that fraction to Form 6251 line 7. Not attached as a separate form."""
+            regular_1116 = forms_state[k_1116]
+            fraction = min(1.0, round(regular_1116.get('17', 0) / amti, 4)) if amti > 0 else 0
+            limitation = round(fraction * tentative_minimum_tax)
+            credit = min(regular_1116.get('14', 0), limitation)
+            summary_info[f"{self.key} 8 AMT foreign tax credit (simplified limitation election)"] = credit
+            return credit
 
     class Form6781(Form):
         def __init__(self):
@@ -1437,7 +1468,7 @@ def fill_taxes(d, config):
                 return
             self.d[12] = self.d[11] * 0.26
             self.d[13] = forms_state[k_1040]['16'] \
-                + forms_state[k_1040s2].get('2', 0)
+                + forms_state[k_1040s2].get('1_z', 0)
             self.fill6251 = (self.d[13] < self.d[12])
             summary_info[f"{self.key} Should fill 6251"] = self.fill6251
 

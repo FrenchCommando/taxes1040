@@ -26,8 +26,6 @@ CONFIG_2025 = dict(
     qualified_div_20pct=533_400,
     should_fill_6251_exemption=88_100,
     should_fill_6251_phaseout=626_350,
-    # 1040 ShouldFill6251 worksheet line 12: screening threshold, intentionally lower than amt_28pct_threshold
-    should_fill_6251_28pct=232_600,
     salt_limit=40_000,
     salt_phaseout_start=500_000,
     salt_phaseout_rate=0.30,
@@ -80,6 +78,7 @@ CONFIG_2025 = dict(
         ),
     ),
     trades_per_page_limit=11,
+    form_6251_line_1_split=True,
     field_maps={
         k_1040: {
             '11': '11_a',
@@ -91,7 +90,8 @@ CONFIG_2025 = dict(
             '28': '28_value',
         },
         k_6251: {
-            '1_value': '1_a',
+            '1a_value': '1_a',  # 2025 split line 1 into 1a (line 14 - senior deduction) and 1b
+            '1_value': '1_b',
             **{f'2{c}_value': f'2_{c}' for c in 'abcdefghijklmnopqrst'},
             **{f'{n}_value': str(n) for n in range(3, 12)},
         },

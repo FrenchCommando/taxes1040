@@ -23,7 +23,7 @@ Rev. Proc. 2025-19 (HSA), IRC 164(b)(7) (SALT), 170(p), 170(b)(1)(I), 68 as amen
 | HSA limit | $4,400 self-only | $8,750 family |
 
 New rules in `forms_core_impl.py`, gated by config keys, so 2024/2025 are unchanged:
-- `amt_phaseout_rate`: 0.50 (0.25 before 2026), on Form 6251 line 5 and the ShouldFill6251 worksheet.
+- `amt_phaseout_rate`: 0.50 (0.25 before 2026), on Form 6251 line 5.
 - `charitable_nonitemizer_limit`: cash gifts deducted on top of the standard deduction.
   `Charitable` entries flagged `"DonorAdvisedFund": true` are excluded.
 - `charitable_agi_floor_rate`: Schedule A line 14 reduced by 0.5% of AGI.
@@ -35,7 +35,8 @@ New rules in `forms_core_impl.py`, gated by config keys, so 2024/2025 are unchan
 - **Field names.** `charitable_nonitemizer` (f1040) and `itemized_limitation_adjustment` (f6251) are
   placeholder keys, and `field_maps` is copied from 2025. Map them once the final 2026 PDFs are in
   `forms/2026/` and the `.fields` files exist. `trades_per_page_limit` is also the 2025 value.
-- **ShouldFill6251 line 12** uses $244,500 (the Rev. Proc. 28% threshold). Check the 2026 1040 instructions.
+- **Non-itemizer charitable deduction for AMT**: Form 6251 line 1b is computed after it (treated as allowed
+  for AMT, like the 2025 senior deduction); check against the 2026 Form 6251.
 - **NY / NYC.** All NY values and the rate/recapture/NYC schedules are 2025 copies
   (`computation_2026_ny* = computation_2025_ny*` in `forms_functions.py`). NY's FY2026 budget cut the
   lower brackets for 2026, so NY tax will be overstated for lower brackets until the real IT-201-I

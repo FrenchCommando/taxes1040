@@ -33,6 +33,8 @@ Scenarios:
     hsa_nonmedical_distribution - HSA distribution not used for medical: income + 20% additional tax
     hsa_distribution_exception  - same, with an exception to the 20% tax (box 17a)
     hsa_testing_period          - Form 8889 Part III: testing period income + 10% additional tax
+    amt_owed               - AMT owed: Form 6251 line 11 -> Schedule 2 line 2
+    amt_foreign_tax_credit - AMT with foreign tax credit: line 10 net of FTC, line 8 AMTFTC
 """
 import json
 import os
@@ -549,6 +551,36 @@ SCENARIOS = {
         "health_savings_account": True,
         "health_savings_account_contributions": 2000,
         "health_savings_account_last_month_rule_income": 1500,
+    },
+    "amt_owed": {
+        # large qualified dividends phase the AMT exemption out while regular tax stacks them on top of a
+        # small ordinary income: AMT is owed (Form 6251 line 11 -> Schedule 2 line 2)
+        "W2": [{**BASE_W2, "Wages": 200000, "SocialSecurity_wages": 176100, "Medicare_wages": 200000,
+                "Federal_tax": 40000, "SocialSecurity_tax": 10918.20, "Medicare_tax": 2900,
+                "State_tax": 12000, "Local_tax": 7000}],
+        "1099": [
+            {
+                "Qualified Dividends": 900000,
+                "Ordinary Dividends": 900000,
+                "Institution": "Brokerage",
+            },
+        ],
+    },
+    "amt_foreign_tax_credit": {
+        # same with foreign tax paid: Form 6251 line 10 subtracts the foreign tax credit and line 8 takes
+        # the AMT foreign tax credit (simplified limitation election)
+        "W2": [{**BASE_W2, "Wages": 200000, "SocialSecurity_wages": 176100, "Medicare_wages": 200000,
+                "Federal_tax": 40000, "SocialSecurity_tax": 10918.20, "Medicare_tax": 2900,
+                "State_tax": 12000, "Local_tax": 7000}],
+        "1099": [
+            {
+                "Qualified Dividends": 900000,
+                "Ordinary Dividends": 900000,
+                "Foreign Tax Paid": 20000,
+                "Foreign Country": "Various",
+                "Institution": "International Fund",
+            },
+        ],
     },
     "mfj_excess_social_security": {
         # excess is figured per person: only the spouse had two employers

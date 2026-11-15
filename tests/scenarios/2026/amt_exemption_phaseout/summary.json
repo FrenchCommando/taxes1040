@@ -9,7 +9,6 @@
     "Federal/f1040 12 Standard deduction or itemized deductions": 28378,
     "Federal/f1040 15 Taxable income": 671622,
     "Federal/f1040 16 Tax": 204457.0,
-    "ShouldFill6251 Should fill 6251": true,
     "Federal/f6251 4 Alternative minimum taxable income": 680000,
     "Federal/f8959 7 Additional Medicare Tax on Medicare wages": 4500.0,
     "Federal/f8959 18 Total Additional Medicare Tax": 4500.0,

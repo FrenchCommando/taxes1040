@@ -1,6 +1,7 @@
 k_1040 = 'Federal/f1040'
 k_1040nr = 'Federal/f1040nr'
 k_1040s1 = 'Federal/f1040s1'
+k_1040s1a = 'Federal/f1040s1a'
 k_1040s2 = 'Federal/f1040s2'
 k_1040s3 = 'Federal/f1040s3'
 k_1040sa = 'Federal/f1040sa'
@@ -34,7 +35,7 @@ w_state_local_income_tax_refund = 'StateLocalIncomeTaxRefund'  # s1 line 10
 w_self_employed_health_insurance_deduction = 'SelfEmployedHealthInsuranceDeduction'  # s1 line 29
 w_ira_deduction = "IRADeduction"  # s1 line 32
 w_student_loan_interest_deduction = 'StudentLoanInterestDeduction'  # s1 line 33
-w_should_fill_6251 = 'ShouldFill6251'  # s2 line 45
+w_should_fill_6251 = 'ShouldFill6251'  # Schedule 2 line 2, 1040 instructions through 2024
 
 w_mortgage_interest_deduction = "MortgageInterestDeduction"
 w_salt_deduction = "SALTDeduction"  # Schedule A line 5e

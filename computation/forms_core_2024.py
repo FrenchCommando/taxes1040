@@ -24,6 +24,8 @@ CONFIG_2024 = dict(
     qualified_div_20pct=518_900,
     should_fill_6251_exemption=85_700,
     should_fill_6251_phaseout=609_350,
+    # 1040 instructions 'Worksheet To See if You Should Fill in Form 6251' (dropped from 2025)
+    should_fill_6251_worksheet=True,
     should_fill_6251_28pct=232_600,
     trades_per_page_limit=14,
     salt_limit=10_000,

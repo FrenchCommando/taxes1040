@@ -39,8 +39,6 @@ CONFIG_2026 = dict(
     qualified_div_20pct=545_500,
     should_fill_6251_exemption=90_100,
     should_fill_6251_phaseout=500_000,  # not inflation-adjusted before 2027 for MFJ ($1M)
-    # 1040 ShouldFill6251 worksheet line 12: 2026 instructions not out, using the 28% threshold
-    should_fill_6251_28pct=244_500,
     salt_limit=40_400,  # 101% of 2025
     salt_phaseout_start=505_000,  # 101% of 2025
     salt_phaseout_rate=0.30,
@@ -101,6 +99,7 @@ CONFIG_2026 = dict(
         ),
     ),
     trades_per_page_limit=11,  # 2025 value, recheck on the final 2026 f8949
+    form_6251_line_1_split=True,
     # PROVISIONAL: 2025 layout until the final 2026 PDFs are mapped
     field_maps=CONFIG_2025['field_maps'],
 )
