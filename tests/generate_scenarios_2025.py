@@ -30,6 +30,9 @@ Scenarios:
     mfj_capital_loss      - MFJ capital loss limited to $3,000
     excess_social_security     - two employers, social security withheld over the max (Schedule 3 line 11)
     mfj_excess_social_security - MFJ, only the spouse had two employers (excess is per person)
+    hsa_nonmedical_distribution - HSA distribution not used for medical: income + 20% additional tax
+    hsa_distribution_exception  - same, with an exception to the 20% tax (box 17a)
+    hsa_testing_period          - Form 8889 Part III: testing period income + 10% additional tax
 """
 import json
 import os
@@ -522,6 +525,30 @@ SCENARIOS = {
              "Medicare_wages": 100000, "Federal_tax": 18000, "SocialSecurity_tax": 6200,
              "Medicare_tax": 1450, "State_tax": 5000, "Local_tax": 2000},
         ],
+    },
+    "hsa_nonmedical_distribution": {
+        # $3,000 distributed, $1,000 for medical: $2,000 taxable (Schedule 1 line 8f) + 20% tax (Schedule 2 line 17c)
+        "W2": [BASE_W2],
+        "health_savings_account": True,
+        "health_savings_account_contributions": 2000,
+        "health_savings_account_distributions": 3000,
+        "health_savings_account_qualified_medical_expenses": 1000,
+    },
+    "hsa_distribution_exception": {
+        # same distribution, but an exception (e.g. age 65) applies: income, no 20% tax, box 17a checked
+        "W2": [BASE_W2],
+        "health_savings_account": True,
+        "health_savings_account_contributions": 2000,
+        "health_savings_account_distributions": 3000,
+        "health_savings_account_qualified_medical_expenses": 1000,
+        "health_savings_account_distribution_exception": True,
+    },
+    "hsa_testing_period": {
+        # lost HDHP coverage during the testing period: last-month rule income + 10% tax (Form 8889 Part III)
+        "W2": [BASE_W2],
+        "health_savings_account": True,
+        "health_savings_account_contributions": 2000,
+        "health_savings_account_last_month_rule_income": 1500,
     },
     "mfj_excess_social_security": {
         # excess is figured per person: only the spouse had two employers

@@ -17,6 +17,7 @@ Scenarios:
     mfj_hsa_family              - MFJ HSA family coverage limit ($8,750 in 2026)
     mfj_capital_loss            - MFJ capital loss limited to $3,000
     excess_social_security / mfj_excess_social_security - Schedule 3 line 11 at this year's max
+    hsa_nonmedical_distribution - HSA income + 20% additional tax (Schedule 2 line 17c)
     charitable_nonitemizer      - single, standard deduction + cash gifts ($1,000 cap, DAF excluded)
     mfj_charitable_nonitemizer  - MFJ, standard deduction + cash gifts ($2,000 cap)
 
@@ -43,6 +44,7 @@ SCENARIO_NAMES = [
     'mfj_high_income',
     'excess_social_security',
     'mfj_excess_social_security',
+    'hsa_nonmedical_distribution',
     'mfj_capital_loss',
 ]
 

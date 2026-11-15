@@ -400,10 +400,11 @@ def fill_taxes(d, config):
                 hsa_deduction = forms_state[k_8889].get('13', 0)
                 if hsa_deduction > 0:
                     self.push_to_dict('13', hsa_deduction)
-                hsa_taxable_distribution = forms_state[k_8889].get('16', 0)
-                if hsa_taxable_distribution > 0:
-                    self.push_to_dict('8_f', hsa_taxable_distribution)  # income from Form 8889
-                if forms_state[k_8889].get('13', 0) == 0 and forms_state[k_8889].get('16', 0) == 0:
+                # income from Form 8889: taxable distributions (line 16) + testing period income (line 20)
+                hsa_income = forms_state[k_8889].get('16', 0) + forms_state[k_8889].get('20', 0)
+                if hsa_income > 0:
+                    self.push_to_dict('8_f', hsa_income)
+                if forms_state[k_8889].get('13', 0) == 0 and hsa_income == 0:
                     del forms_state[k_8889]
             # 8a, 8d, 8s are losses/subtractions on the IRS form
             self.push_to_dict('9',
@@ -468,6 +469,11 @@ def fill_taxes(d, config):
             if forms_state.get(k_8960, {}).get('17', 0) == 0:
                 if k_8960 in forms_state:
                     del forms_state[k_8960]
+
+            # HSA additional taxes from Form 8889
+            if k_8889 in forms_state:
+                self.push_to_dict('17_c', forms_state[k_8889].get('17_b', 0))
+                self.push_to_dict('17_d', forms_state[k_8889].get('21', 0))
 
             self.push_sum(key='18', it=[
                 f'17_{letter}' for letter in [
@@ -985,12 +991,28 @@ def fill_taxes(d, config):
             self.push_to_dict('14_a', d.get('health_savings_account_distributions', 0))
             self.push_to_dict('14_b', 0)  # distribution rolled over
             self.push_to_dict('14_c', self.d.get('14_a', 0) - self.d.get('14_b', 0))
-            self.push_to_dict('15', self.d.get('14_c', 0))  # I don't assume it to be different
+            # line 15: qualified medical expenses paid from the HSA (defaults to all distributions)
+            self.push_to_dict('15', min(
+                self.d.get('14_c', 0),
+                d.get('health_savings_account_qualified_medical_expenses', self.d.get('14_c', 0)),
+            ))
+            self.push_to_dict('16', max(0, self.d.get('14_c', 0) - self.d.get('15', 0)))  # to Schedule 1 line 8f
 
-            self.push_to_dict('16', self.d.get('14_c', 0) - self.d.get('15', 0))
-            # if positive, Schedule 1-I-8 HSA
+            # line 17: 20% additional tax on taxable distributions, unless an exception applies
+            # (age 65+, disabled, or death - input health_savings_account_distribution_exception, all-or-nothing)
+            if d.get('health_savings_account_distribution_exception', False):
+                if self.d.get('16', 0) > 0:
+                    self.d['17_a'] = True
+            else:
+                self.push_to_dict('17_b', self.d.get('16', 0) * 0.20)  # to Schedule 2 line 17c
 
-            # Then is part III, not implemented
+            # Part III: failure to stay HDHP-eligible during the testing period
+            self.push_to_dict('18', d.get('health_savings_account_last_month_rule_income', 0))
+            self.push_to_dict('19', d.get('health_savings_account_funding_distribution_income', 0))
+            self.push_to_dict('20', self.d.get('18', 0) + self.d.get('19', 0))  # to Schedule 1 line 8f
+            # line 21: 10% additional tax (none if the failure was due to death or disability)
+            if not d.get('health_savings_account_testing_period_exception', False):
+                self.push_to_dict('21', self.d.get('20', 0) * 0.10)  # to Schedule 2 line 17d
 
     class Form8949(Form):  # may need several of them when many transactions
         def __init__(self):
