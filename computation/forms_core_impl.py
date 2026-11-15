@@ -327,6 +327,7 @@ def fill_taxes(d, config):
             self.push_to_dict('13_b', forms_state.get(k_1040s1a, {}).get('38', 0))
             self.push_sum('14', ['12', '13', '13_b', 'charitable_nonitemizer'])
             self.push_to_dict('15', max(0, self.d.get('11', 0) - self.d.get('14', 0)))  # Taxable income
+            self.d.setdefault('15', 0)  # 'If zero or less, enter -0-'
             summary_info[f"{self.key} 15 Taxable income"] = self.d['15']
 
             if dividends_qualified:
@@ -334,6 +335,7 @@ def fill_taxes(d, config):
                 qualified_dividend_worksheet.build()  # enters value in 16
             else:
                 self.push_to_dict('16', computation(self.d['15']))
+            self.d.setdefault('16', 0)
             summary_info[f"{self.key} 16 Tax"] = self.d['16']
 
             # Schedule 3 first: Form 6251 line 10 subtracts the foreign tax credit (Schedule 3 line 1)
@@ -665,7 +667,7 @@ def fill_taxes(d, config):
             # Line 15-17: foreign source taxable income
             self.push_to_dict('15', foreign_source_income - line_3a)
             # line 16: adjustments (loss allocation, recapture - not applicable)
-            self.push_to_dict('17', max(0, self.d['15']))
+            self.push_to_dict('17', max(0, self.d.get('15', 0)))
 
             # Line 18: taxable income from all sources
             taxable_income = forms_state[k_1040]['15']
@@ -673,7 +675,7 @@ def fill_taxes(d, config):
 
             # Line 19: line 17 / line 18 (limitation fraction)
             if taxable_income > 0:
-                limitation_fraction = round(self.d['17'] / taxable_income, 4)
+                limitation_fraction = round(self.d.get('17', 0) / taxable_income, 4)
                 limitation_fraction = min(limitation_fraction, 1.0)
             else:
                 limitation_fraction = 0
@@ -692,7 +694,7 @@ def fill_taxes(d, config):
             self.push_to_dict('23', max_credit)
 
             # Line 24: smaller of line 14 or line 23
-            credit = min(self.d['14'], self.d['23'])
+            credit = min(self.d.get('14', 0), self.d.get('23', 0))
             self.push_to_dict('24', credit)
 
             # Part IV: summary (only one Form 1116)
@@ -702,7 +704,7 @@ def fill_taxes(d, config):
             self.push_to_dict('35', 0)  # reduction for international boycott
 
             # Summary info
-            summary_info[f"{self.key} 17 Foreign source taxable income"] = self.d['17']
+            summary_info[f"{self.key} 17 Foreign source taxable income"] = self.d.get('17', 0)
             summary_info[f"{self.key} 19 Limitation fraction"] = limitation_fraction
             summary_info[f"{self.key} 21 Maximum credit"] = max_credit
             summary_info[f"{self.key} 24 Foreign tax credit"] = credit
