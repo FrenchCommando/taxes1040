@@ -603,7 +603,7 @@ def fill_taxes(d, config):
             self.push_name_ssn()
 
             # Passive category income (box c)
-            self.push_to_dict('custom_missing_c', True)
+            self.d['c'] = True
 
             # Part I: Foreign source income from 1099s that report foreign tax
             # Only include income from 1099 entries that paid foreign tax

@@ -17,18 +17,10 @@ def process_pdf(file, year_folder):
     if not os.path.isfile(k_file_map):
         d = {}
         d_type = {}  # /Tx for text /Btn for button
-        i = 0
         template_pdf = pdfrw.PdfReader(file)
-        for annotations in template_pdf.pages:
-            if ANNOT_KEY in annotations:
-                for annotation in annotations[ANNOT_KEY]:
-                    if annotation[SUBTYPE_KEY] == WIDGET_SUBTYPE_KEY:
-                        if annotation[ANNOT_FIELD_KEY]:
-                            key = annotation[ANNOT_FIELD_KEY][1:-1]
-                            fields_type = annotation[ANNOT_FIELD_TYPE_KEY]
-                            d[key] = str(i)
-                            d_type[key] = fields_type
-                            i += 1
+        for index, (annotation, key) in enumerate(iter_widgets(template_pdf)):
+            d[key] = str(index)
+            d_type[key] = annotation[ANNOT_FIELD_TYPE_KEY]
 
         with open(k_file_map, 'w+') as f:
             logger.info("File created %s", k_file_map)

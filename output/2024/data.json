@@ -178,7 +178,7 @@
     "Federal/f1116": {
         "name": "French Commando",
         "ssn": "200112222",
-        "custom_missing_c": 1,
+        "c": true,
         "i_a": "Various",
         "i_1a_source1": "Dividends, Interest",
         "i_1a_a": 1969.0,

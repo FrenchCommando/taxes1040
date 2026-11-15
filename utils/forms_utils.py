@@ -42,33 +42,41 @@ def load_keys(file, out_dict=True):
     return d
 
 
+def iter_widgets(template_pdf):
+    """Yield (annotation, key) for every named widget, in page order.
+    The key is the annotation name; widgets sharing a name (e.g. checkbox groups in different columns)
+    get a '#2', '#3', ... suffix on the repeats so each one can be addressed in .keys files."""
+    seen = {}
+    for annotations in template_pdf.pages:
+        if ANNOT_KEY in annotations:
+            for annotation in annotations[ANNOT_KEY]:
+                if annotation[SUBTYPE_KEY] == WIDGET_SUBTYPE_KEY and annotation[ANNOT_FIELD_KEY]:
+                    name = annotation[ANNOT_FIELD_KEY][1:-1]
+                    seen[name] = seen.get(name, 0) + 1
+                    yield annotation, name if seen[name] == 1 else f"{name}#{seen[name]}"
+
+
 def fill_pdf_from_keys(file, out_file, d):
     logger = logging.getLogger('fill_pdf')
     # file is the pdf file
     # d is the dictionary mapping the annotation fields to values
     template_pdf = pdfrw.PdfReader(file)
 
-    for annotations in template_pdf.pages:
-        if ANNOT_KEY in annotations:
-            for annotation in annotations[ANNOT_KEY]:
-                if annotation[SUBTYPE_KEY] == WIDGET_SUBTYPE_KEY:
-                    if annotation[ANNOT_FIELD_KEY]:
-                        key = annotation[ANNOT_FIELD_KEY][1:-1]
-                        if key in d.keys():
-                            if annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_BTN:
-                                if d[key]:
-                                    annotation.update(pdfrw.PdfDict(AS=next(iter(annotation['/AP']['/N']))))
-                                else:
-                                    annotation.update(pdfrw.PdfDict(AS='Off'))
-                            elif annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_TXT:
-                                r = d[key]
-                                if isinstance(r, float) and r == round(r):
-                                    r = int(r)
-                                elif isinstance(r, float) and r != round(r, 2):
-                                    r = f'{r:.2f}'
-                                annotation.update(
-                                    pdfrw.PdfDict(V=f'{r}')
-                                )
+    for annotation, key in iter_widgets(template_pdf):
+        if key not in d:
+            continue
+        if annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_BTN:
+            if d[key]:
+                annotation.update(pdfrw.PdfDict(AS=next(iter(annotation['/AP']['/N']))))
+            else:
+                annotation.update(pdfrw.PdfDict(AS='Off'))
+        elif annotation[ANNOT_FIELD_TYPE_KEY] == ANNOT_FIELD_TYPE_TXT:
+            value = d[key]
+            if isinstance(value, float) and value == round(value):
+                value = int(value)
+            elif isinstance(value, float) and value != round(value, 2):
+                value = f'{value:.2f}'
+            annotation.update(pdfrw.PdfDict(V=f'{value}'))
     try:
         pdfrw.PdfWriter().write(out_file, template_pdf)
         logger.info("Exporting PDF file %s succeeded", out_file)
