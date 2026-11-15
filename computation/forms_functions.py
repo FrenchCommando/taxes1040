@@ -381,3 +381,48 @@ def computation_2024_nyc_mfj(amount):
 computation_2025_ny_mfj = computation_2024_ny_mfj
 computation_2025_ny_recapture_mfj = computation_2024_ny_recapture_mfj
 computation_2025_nyc_mfj = computation_2024_nyc_mfj
+
+
+# 2026 federal: Rev. Proc. 2025-32 section 4.01, Table 3 (single) and Table 1 (MFJ / surviving spouse)
+
+def computation_2026(amount):
+    if amount <= 12_400:
+        return amount * 0.10
+    if amount <= 50_400:
+        return 1_240 + (amount - 12_400) * 0.12
+    if amount <= 105_700:
+        return 5_800 + (amount - 50_400) * 0.22
+    if amount <= 201_775:
+        return 17_966 + (amount - 105_700) * 0.24
+    if amount <= 256_225:
+        return 41_024 + (amount - 201_775) * 0.32
+    if amount <= 640_600:
+        return 58_448 + (amount - 256_225) * 0.35
+    return 192_979.25 + (amount - 640_600) * 0.37
+
+
+def computation_2026_mfj(amount):
+    if amount <= 24_800:
+        return amount * 0.10
+    if amount <= 100_800:
+        return 2_480 + (amount - 24_800) * 0.12
+    if amount <= 211_400:
+        return 11_600 + (amount - 100_800) * 0.22
+    if amount <= 403_550:
+        return 35_932 + (amount - 211_400) * 0.24
+    if amount <= 512_450:
+        return 82_048 + (amount - 403_550) * 0.32
+    if amount <= 768_700:
+        return 116_896 + (amount - 512_450) * 0.35
+    return 206_583.50 + (amount - 768_700) * 0.37
+
+
+# 2026 NY / NYC: PROVISIONAL - the 2026 IT-201-I rate schedules are not published yet.
+# These reuse the 2025 schedules; NY's FY2026 budget cut the lower brackets for 2026,
+# so the real 2026 tables will differ. Replace once the official instructions are out.
+computation_2026_ny = computation_2025_ny
+computation_2026_ny_recapture = computation_2025_ny_recapture
+computation_2026_nyc = computation_2025_nyc
+computation_2026_ny_mfj = computation_2025_ny_mfj
+computation_2026_ny_recapture_mfj = computation_2025_ny_recapture_mfj
+computation_2026_nyc_mfj = computation_2025_nyc_mfj

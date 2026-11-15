@@ -36,6 +36,7 @@ python -m unittest tests.test_computation -v
 # Regenerate test expected outputs after computation changes
 python tests/generate_scenarios_2025.py
 python tests/generate_scenarios_2024.py
+python tests/generate_scenarios_2026.py
 ```
 
 The entry point is `main.py` with two modes:
@@ -73,6 +74,7 @@ taxes1040/
 |   |-- legacy/                 # frozen monoliths (2018-2023), one per year
 |   |-- forms_core_2024.py      # thin config wrapper -> forms_core_impl
 |   |-- forms_core_2025.py      # thin config wrapper -> forms_core_impl (with field_maps)
+|   |-- forms_core_2026.py      # provisional: final federal numbers, 2025 NY + field_maps
 |   |-- forms_core_impl.py      # shared computation engine for 2024+
 |   |-- forms_functions.py      # tax bracket functions + get_main_info
 |   +-- form_worksheet_names.py # form key constants (k_1040, k_6251, etc.)
@@ -84,8 +86,9 @@ taxes1040/
 |   |-- test_computation.py     # scenario-based tests (discovers scenarios/<year>/) + real data test
 |   |-- generate_scenarios_2025.py  # generates/regenerates 2025 expected outputs
 |   |-- generate_scenarios_2024.py  # 2024 subset (reuses 2025 inputs), single + MFJ
+|   |-- generate_scenarios_2026.py  # 2026 subset + 2026 law-change scenarios
 |   +-- scenarios/              # scenarios organized by year
-|       +-- 2024/, 2025/        # each scenario has input.json + expected JSONs
+|       +-- 2024/, 2025/, 2026/ # each scenario has input.json + expected JSONs
 |-- forms/                      # blank PDFs + committed .keys files, by year
 |-- fields_mapping/             # .fields files (positional annotation mappings), by year
 |-- input_data/                 # input JSON, by year
@@ -172,3 +175,4 @@ taxes1040/
 - Form 8960: computes Net Investment Income Tax (NIIT) at 3.8% on the lesser of net investment income (interest + dividends + capital gains) or MAGI - `niit_threshold` ($200k single, $250k MFJ). Flows to Schedule 2 line 12. Skipped when NIIT is zero. The threshold is not inflation-indexed. Form 8959 uses `additional_medicare_threshold` ($200k single, $250k MFJ). Passive activity income, annuities, and Part II deductions (9b state tax allocation, 9c misc expenses) are not implemented.
 - `make_pdf_output` filters out `custom_missing_*` keys from `data.json` with a warning log before PDF filling. These are computation-only flags (e.g. Form 1116 income category checkbox) that have no corresponding `.keys` entry.
 - `make_pdf_output` logs an error and skips when a computed form has no .keys file, rather than crashing.
+- 2026 is provisional (see `forms/2026/notes.md`): the federal numbers are final (Rev. Proc. 2025-32 / 2025-19), but there are no 2026 PDFs/`.keys`, NY/NYC values are 2025 placeholders, and `2026` is in `FILL_FUNCTIONS` and the tests but not in `main.py` `all_years` or `marginal_rates.py`. The OBBBA 2026 rules are gated by config keys whose defaults reproduce 2024-2025: `amt_phaseout_rate` (0.50 in 2026, default 0.25), `charitable_nonitemizer_limit` (cash gifts on top of the standard deduction; `Charitable` entries with `"DonorAdvisedFund": true` are excluded), `charitable_agi_floor_rate` (0.5% AGI floor on Schedule A line 14) and `itemized_limitation_rate` (IRC 68 2/37 reduction of Schedule A line 17 above the 37% bracket start `fed_brackets[-1]`, subtracted back on Form 6251 since it doesn't apply for AMT). `charitable_nonitemizer` (f1040) and `itemized_limitation_adjustment` (f6251) are placeholder field names until the final 2026 forms are mapped.

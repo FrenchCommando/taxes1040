@@ -6,6 +6,7 @@ from computation.forms_core_impl import extract_carryover
 from computation.legacy.forms_core_2023 import fill_taxes_2023
 from computation.forms_core_2024 import fill_taxes_2024
 from computation.forms_core_2025 import fill_taxes_2025
+from computation.forms_core_2026 import fill_taxes_2026
 
 
 def gather_inputs(input_year_folder):
@@ -81,6 +82,7 @@ FILL_FUNCTIONS = {
     "2023": fill_taxes_2023,
     "2024": fill_taxes_2024,
     "2025": fill_taxes_2025,
+    "2026": fill_taxes_2026,  # provisional, see forms/2026/notes.md
 }
 
 

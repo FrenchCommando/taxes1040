@@ -121,10 +121,21 @@ def fill_taxes(d, config):
     standard_deduction = config['standard_deduction']
     qualified_business_deduction = 0
     health_savings_account_max_contribution = config.get('hsa_max_contribution', 0)
+    # 2026+ (OBBBA) settings; the defaults reproduce the 2024-2025 rules
+    amt_phaseout_rate = config.get('amt_phaseout_rate', 0.25)
+    charitable_nonitemizer_limit = config.get('charitable_nonitemizer_limit', 0)
+    charitable_agi_floor_rate = config.get('charitable_agi_floor_rate', 0)
+    itemized_limitation_rate = config.get('itemized_limitation_rate', 0)
 
     forms_state = {}  # mapping name of forms with content
     worksheets = {}  # worksheets need not be printed
     summary_info = {}  # fields with custom labels
+
+    def itemized_limitation_reduction():
+        """IRC 68 reduction applied to Schedule A line 17 (0 when not itemizing or before 2026)."""
+        if k_1040sa not in forms_state or w_itemized_limitation not in worksheets:
+            return 0
+        return worksheets[w_itemized_limitation][6]
 
     def first_name_initial(first_name, initial):
         return f"{first_name} {initial}" if initial else first_name
@@ -262,16 +273,27 @@ def fill_taxes(d, config):
 
             Form1040sa().build()
             itemized_deduction = forms_state[k_1040sa].get('17', 0)
-            # itemized_deduction = 0
-            if itemized_deduction > standard_deduction:
+            # 2026+: non-itemizers also deduct cash gifts (not to donor-advised funds) up to the limit
+            charitable_nonitemizer = min(
+                charitable_nonitemizer_limit,
+                sum(c.get('Amount', 0) for c in d.get('Charitable', []) if not c.get('DonorAdvisedFund', False)),
+            )
+            if itemized_deduction > standard_deduction + charitable_nonitemizer:
                 self.push_to_dict('12', itemized_deduction)
             else:
                 self.push_to_dict('12', standard_deduction)
                 del forms_state[k_1040sa]
+                # the 2026 charitable floor / IRC 68 limitation only matter when itemizing
+                summary_info.pop(f"{k_1040sa} 14 Charitable gifts below the AGI floor", None)
+                summary_info.pop(f"{w_itemized_limitation} 6 Itemized deduction limitation (IRC 68)", None)
+                # PROVISIONAL key until the final 2026 Form 1040 line is known
+                self.push_to_dict('charitable_nonitemizer', charitable_nonitemizer)
+                if charitable_nonitemizer > 0:
+                    summary_info[f"{self.key} Charitable deduction for non-itemizers"] = charitable_nonitemizer
             summary_info[f"{self.key} 12 Standard deduction or itemized deductions"] = self.d['12']
 
             self.push_to_dict('13', qualified_business_deduction)
-            self.push_sum('14', ['12', '13'])
+            self.push_sum('14', ['12', '13', 'charitable_nonitemizer'])
             self.push_to_dict('15', max(0, self.d.get('11', 0) - self.d.get('14', 0)))  # Taxable income
             summary_info[f"{self.key} 15 Taxable income"] = self.d['15']
 
@@ -616,10 +638,19 @@ def fill_taxes(d, config):
             charitable_cash = sum(c.get('Amount', 0) for c in d.get('Charitable', []))
             self.push_to_dict('11', charitable_cash)
             self.push_sum('14', ['11', '12', '13'])
+            if charitable_agi_floor_rate and self.d['14'] > 0:
+                # 2026+: gifts count only above 0.5% of AGI (contribution base)
+                charitable_floor = min(self.d['14'], forms_state[k_1040]['11'] * charitable_agi_floor_rate)
+                summary_info[f"{self.key} 14 Charitable gifts below the AGI floor"] = round(charitable_floor)
+                self.d['14'] = round(self.d['14'] - charitable_floor)
             # theft
             # other
 
             self.push_sum('17', ['4', '7', '10', '14', '15', '16'])
+            if itemized_limitation_rate and self.d['17'] > 0:
+                limitation_worksheet = ItemizedDeductionLimitationWorksheet(self.d['17'])
+                limitation_worksheet.build()
+                self.d['17'] = round(self.d['17'] - limitation_worksheet.d[6])
             # to 1040 line 12
 
             # tick 18 if you want to lose money
@@ -768,8 +799,14 @@ def fill_taxes(d, config):
             if k_1040sa in forms_state:
                 self.push_to_dict('2a_value', forms_state[k_1040sa]['7'])
             # Lines 2b-2t, 3: other AMT preference items (not yet implemented)
+            # IRC 68 itemized limitation (2026+) doesn't apply for AMT (IRC 56(b)(1)(F)): subtract it back.
+            # PROVISIONAL key until the final 2026 Form 6251 line is known.
+            itemized_limitation = itemized_limitation_reduction()
+            if itemized_limitation > 0:
+                self.push_to_dict('itemized_limitation_adjustment', -itemized_limitation)
             # Line 4: AMTI = sum of lines 1 through 3
             self.push_sum(key='4_value', it=[
+                'itemized_limitation_adjustment',
                 '1_value',
                 '2a_value', '2b_value', '2c_value', '2d_value',
                 '2e_value', '2f_value', '2g_value', '2h_value',
@@ -782,12 +819,12 @@ def fill_taxes(d, config):
                 summary_info[f"{self.key} 4 Alternative minimum taxable income"] = self.d['4_value']
 
             # Part II - AMT Exemption and Computation
-            # Line 5: exemption reduced by 25% of AMTI exceeding phaseout start
+            # Line 5: exemption reduced by 25% (50% from 2026) of AMTI exceeding phaseout start
             amti = self.d.get('4_value', 0)
             exemption = config['amt_exemption']
             phaseout_start = config['should_fill_6251_phaseout']
             if amti > phaseout_start:
-                exemption = max(0, exemption - 0.25 * (amti - phaseout_start))
+                exemption = max(0, exemption - amt_phaseout_rate * (amti - phaseout_start))
             self.push_to_dict('5_value', exemption)
             # Line 6: AMTI minus exemption
             self.push_to_dict('6_value', max(0, amti - self.d.get('5_value', 0)))
@@ -1176,6 +1213,27 @@ def fill_taxes(d, config):
             self.result = self.d[10]
             summary_info[f"{self.key} 10 SALT deduction"] = self.result
 
+    class ItemizedDeductionLimitationWorksheet(Worksheet):
+        """IRC 68 as amended by OBBBA (2026+): itemized deductions are reduced by 2/37 of the lesser of
+        the itemized deductions or the amount by which taxable income (before this limitation,
+        increased by itemized deductions) exceeds the start of the 37% bracket.
+        PROVISIONAL line layout until the 2026 Schedule A instructions are published.
+        """
+        def __init__(self, itemized_total):
+            Worksheet.__init__(self, w_itemized_limitation, 6)
+            self.itemized_total = itemized_total  # Schedule A line 17 before the limitation
+
+        def build(self):
+            self.d[1] = self.itemized_total
+            # taxable income before the limitation + itemized deductions = AGI - QBI deduction
+            self.d[2] = forms_state[k_1040]['11'] - qualified_business_deduction
+            self.d[3] = config['fed_brackets'][-1]  # start of the 37% bracket, filing-status specific
+            self.d[4] = max(0, self.d[2] - self.d[3])
+            self.d[5] = min(self.d[1], self.d[4])
+            self.d[6] = round(self.d[5] * itemized_limitation_rate)
+            if self.d[6] > 0:
+                summary_info[f"{self.key} 6 Itemized deduction limitation (IRC 68)"] = self.d[6]
+
     # See IRS Publication 936 - Home Mortgage Interest Deduction
     class MortgageInterestDeductionWorksheet(Worksheet):
         def __init__(self):
@@ -1301,7 +1359,8 @@ def fill_taxes(d, config):
             if itemized:
                 self.d[1] = forms_state[k_1040]['15']
                 self.d[2] = forms_state[k_1040sa]['7']
-                self.d[3] = self.d[1] + self.d[2]
+                # IRC 68 limitation (2026+) is not an AMT deduction limit: take it back out
+                self.d[3] = self.d[1] + self.d[2] - itemized_limitation_reduction()
             else:
                 self.d[3] = forms_state[k_1040]['11']
             self.d[4] = forms_state[k_1040s1].get('1', 0) \
@@ -1320,7 +1379,7 @@ def fill_taxes(d, config):
                 self.d[11] = self.d[7]
             else:
                 self.d[9] = self.d[5] - self.d[8]
-                self.d[10] = min(self.d[9] * 0.25, self.d[6])
+                self.d[10] = min(self.d[9] * amt_phaseout_rate, self.d[6])
                 self.d[11] = self.d[7] + self.d[10]
             if self.d[11] >= config['should_fill_6251_28pct']:  # same for single and MFJ (MFS is half)
                 self.fill6251 = True
