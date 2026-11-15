@@ -81,7 +81,7 @@ CONFIG_2025 = dict(
     form_6251_line_1_split=True,
     field_maps={
         k_1040: {
-            '11': '11_a',
+            '11': ('11_a', '11_b'),  # AGI is repeated as 11b at the top of page 2
             '12': '12_e',
             '13': '13_a',
             '7_n': None,  # removed in 2025

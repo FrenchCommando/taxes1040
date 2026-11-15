@@ -6,14 +6,18 @@ logger = logging.getLogger('computation')
 
 
 def _remap_dict(d, field_map):
+    """Rename keys: a str renames, None drops, a tuple copies the value to several fields."""
     result = {}
     for key, value in d.items():
-        if key in field_map:
-            new_key = field_map[key]
-            if new_key is not None:
-                result[new_key] = value
-        else:
+        if key not in field_map:
             result[key] = value
+            continue
+        new_key = field_map[key]
+        if isinstance(new_key, tuple):
+            for each_key in new_key:
+                result[each_key] = value
+        elif new_key is not None:
+            result[new_key] = value
     return result
 
 
