@@ -3,6 +3,11 @@ logger = logging.getLogger('computation')
 from utils.forms_constants import override_keyword
 
 
+def _phase_in_fraction(value, exact=False):
+    """IT-201-I recapture worksheets round the phase-in fraction to 4 decimals (exact=True skips it)."""
+    return value if exact else round(value, 4)
+
+
 def get_main_info(d):
     # gets name ssn address etc from w2
 
@@ -191,7 +196,7 @@ def computation_2024_ny(amount):
     return 2_509_929 + (amount - 25_000_000) * 0.10_90
 
 
-def computation_2024_ny_recapture(amount, gross):
+def computation_2024_ny_recapture(amount, gross, exact=False):
     # single and married filing separately
     # recapture triggers on AGI (gross), not taxable income (amount)
     if gross <= 107_650:
@@ -200,14 +205,14 @@ def computation_2024_ny_recapture(amount, gross):
         tax = computation_2024_ny(amount=amount)
         if gross >= 157_650:
             return 0.06 * amount - tax
-        return (0.06 * amount - tax) * round((gross - 107_650) / 50_000, 4)
+        return (0.06 * amount - tax) * _phase_in_fraction((gross - 107_650) / 50_000, exact)
     if amount <= 1_077_550:
-        return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
+        return 568 + 1_831 * _phase_in_fraction(min(50_000, gross - 215_400) / 50_000, exact)
     if amount <= 5_000_000:
-        return 2_399 + 30_172 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
+        return 2_399 + 30_172 * _phase_in_fraction(min(50_000, gross - 1_077_550) / 50_000, exact)
     if amount <= 25_000_000:
-        return 32_571 + 32_500 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
-    return 65_071 + 150_000 * round(min(50_000, gross - 25_000_000) / 50_000, 4)
+        return 32_571 + 32_500 * _phase_in_fraction(min(50_000, gross - 5_000_000) / 50_000, exact)
+    return 65_071 + 150_000 * _phase_in_fraction(min(50_000, gross - 25_000_000) / 50_000, exact)
 
 
 def computation_2024_nyc(amount):
@@ -258,7 +263,7 @@ def computation_2025_ny(amount):
     return 2_509_929 + (amount - 25_000_000) * 0.10_90
 
 
-def computation_2025_ny_recapture(amount, gross):
+def computation_2025_ny_recapture(amount, gross, exact=False):
     # single and married filing separately
     # recapture triggers on AGI (gross), not taxable income (amount)
     if gross <= 107_650:
@@ -267,14 +272,14 @@ def computation_2025_ny_recapture(amount, gross):
         tax = computation_2025_ny(amount=amount)
         if gross >= 157_650:
             return 0.06 * amount - tax
-        return (0.06 * amount - tax) * round((gross - 107_650) / 50_000, 4)
+        return (0.06 * amount - tax) * _phase_in_fraction((gross - 107_650) / 50_000, exact)
     if amount <= 1_077_550:
-        return 568 + 1_831 * round(min(50_000, gross - 215_400) / 50_000, 4)
+        return 568 + 1_831 * _phase_in_fraction(min(50_000, gross - 215_400) / 50_000, exact)
     if amount <= 5_000_000:
-        return 2_399 + 30_172 * round(min(50_000, gross - 1_077_550) / 50_000, 4)
+        return 2_399 + 30_172 * _phase_in_fraction(min(50_000, gross - 1_077_550) / 50_000, exact)
     if amount <= 25_000_000:
-        return 32_571 + 32_500 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
-    return 65_071 + 150_000 * round(min(50_000, gross - 25_000_000) / 50_000, 4)
+        return 32_571 + 32_500 * _phase_in_fraction(min(50_000, gross - 5_000_000) / 50_000, exact)
+    return 65_071 + 150_000 * _phase_in_fraction(min(50_000, gross - 25_000_000) / 50_000, exact)
 
 
 def computation_2025_nyc(amount):
@@ -344,7 +349,7 @@ def computation_2024_ny_mfj(amount):
     return 2_478_263 + (amount - 25_000_000) * 0.10_90
 
 
-def computation_2024_ny_recapture_mfj(amount, gross):
+def computation_2024_ny_recapture_mfj(amount, gross, exact=False):
     # IT-201-I tax computation worksheets 1-6 (married filing jointly / qualifying surviving spouse)
     # recapture triggers on AGI (gross), not taxable income (amount)
     if gross <= 107_650:
@@ -353,15 +358,15 @@ def computation_2024_ny_recapture_mfj(amount, gross):
         tax = computation_2024_ny_mfj(amount=amount)
         if gross >= 157_650:
             return 0.055 * amount - tax
-        return (0.055 * amount - tax) * round((gross - 107_650) / 50_000, 4)
+        return (0.055 * amount - tax) * _phase_in_fraction((gross - 107_650) / 50_000, exact)
     if amount <= 323_200:
-        return 333 + 807 * round(min(50_000, gross - 161_550) / 50_000, 4)
+        return 333 + 807 * _phase_in_fraction(min(50_000, gross - 161_550) / 50_000, exact)
     if amount <= 2_155_350:
-        return 1_140 + 2_747 * round(min(50_000, gross - 323_200) / 50_000, 4)
+        return 1_140 + 2_747 * _phase_in_fraction(min(50_000, gross - 323_200) / 50_000, exact)
     if amount <= 5_000_000:
-        return 3_887 + 60_350 * round(min(50_000, gross - 2_155_350) / 50_000, 4)
+        return 3_887 + 60_350 * _phase_in_fraction(min(50_000, gross - 2_155_350) / 50_000, exact)
     if amount <= 25_000_000:
-        return 64_237 + 32_500 * round(min(50_000, gross - 5_000_000) / 50_000, 4)
+        return 64_237 + 32_500 * _phase_in_fraction(min(50_000, gross - 5_000_000) / 50_000, exact)
     # worksheet 6: flat 10.9% of taxable income
     return 0.10_90 * amount - computation_2024_ny_mfj(amount=amount)
 

@@ -1,0 +1,112 @@
+Marginal tax rates (numeric, year=2024, single)
+Baseline: AGI=$1,003,632, taxable=$984,625, itemizing, AMT=no, NY AGI=$1,002,581, NY taxable=$994,581
+Tax: federal=$322,836, NY state=$68,129, NYC=$38,425
+
+  W2 Wages:  (added to the first W2 (wages and Medicare wages))
+    Additional                     Federal   NY State        NYC   Combined
+    $0 - $82,969                   37.89%     6.85%     3.88%    48.62%  <- NY bracket at taxable $1,077,550; cliff: tax +$4,847
+    $82,969 - $124,969             37.89%    69.99%     3.88%   111.76%  <- NY recapture phase-in ends (NYAGI $1,127,550)
+    $124,969 - $4,005,419          37.90%     9.65%     3.88%    51.42%  <- NY bracket at taxable $5,000,000; cliff: tax +$5,253
+    $4,005,419 - $4,047,419        37.90%    75.30%     3.88%   117.08%  <- NY recapture phase-in ends (NYAGI $5,050,000)
+    $4,047,419 - $24,005,419       37.90%    10.30%     3.88%    52.08%  <- NY bracket at taxable $25,000,000; cliff: tax +$24,473
+    $24,005,419 - $24,047,419      37.90%   310.90%     3.88%   352.68%  <- NY recapture phase-in ends (NYAGI $25,050,000)
+    $24,047,419 - ...              37.90%    10.90%     3.88%    52.68%
+
+  Short-term capital gain:  (new Form 8949 box A trade)
+    Additional                     Federal   NY State        NYC   Combined
+    $0 - $82,969                   40.79%     6.85%     3.88%    51.52%  <- NY bracket at taxable $1,077,550; cliff: tax +$4,847
+    $82,969 - $124,969             40.79%    69.99%     3.88%   114.66%  <- NY recapture phase-in ends (NYAGI $1,127,550)
+    $124,969 - $4,005,419          40.80%     9.65%     3.88%    54.32%  <- NY bracket at taxable $5,000,000; cliff: tax +$5,253
+    $4,005,419 - $4,047,419        40.80%    75.30%     3.88%   119.98%  <- NY recapture phase-in ends (NYAGI $5,050,000)
+    $4,047,419 - $24,005,419       40.80%    10.30%     3.88%    54.98%  <- NY bracket at taxable $25,000,000; cliff: tax +$24,473
+    $24,005,419 - $24,047,419      40.80%   310.90%     3.88%   355.58%  <- NY recapture phase-in ends (NYAGI $25,050,000)
+    $24,047,419 - ...              40.80%    10.90%     3.88%    55.58%
+
+  Long-term capital gain:  (new Form 8949 box D trade)
+    Additional                     Federal   NY State        NYC   Combined
+    $0 - $12,000                   40.79%     6.85%     3.88%    51.52%  <- Net long-term gain/loss crosses zero
+    $12,000 - $82,969              23.82%     6.85%     3.88%    34.55%  <- NY bracket at taxable $1,077,550; cliff: tax +$4,847
+    $82,969 - $124,969             23.82%    69.99%     3.88%    97.69%  <- NY recapture phase-in ends (NYAGI $1,127,550)
+    $124,969 - $4,005,419          23.80%     9.65%     3.88%    37.33%  <- NY bracket at taxable $5,000,000; cliff: tax +$5,253
+    $4,005,419 - $4,047,419        23.80%    75.30%     3.88%   102.98%  <- NY recapture phase-in ends (NYAGI $5,050,000)
+    $4,047,419 - $24,005,419       23.80%    10.30%     3.88%    37.98%  <- NY bracket at taxable $25,000,000; cliff: tax +$24,473
+    $24,005,419 - $24,047,419      23.80%   310.90%     3.88%   338.58%  <- NY recapture phase-in ends (NYAGI $25,050,000)
+    $24,047,419 - ...              23.80%    10.90%     3.88%    38.58%
+
+  Qualified dividends:  (new 1099-DIV, qualified)
+    Additional                     Federal   NY State        NYC   Combined
+    $0 - $82,969                   23.82%     6.85%     3.88%    34.55%  <- NY bracket at taxable $1,077,550; cliff: tax +$4,847
+    $82,969 - $124,969             23.82%    69.99%     3.88%    97.69%  <- NY recapture phase-in ends (NYAGI $1,127,550)
+    $124,969 - $4,005,419          23.80%     9.65%     3.88%    37.33%  <- NY bracket at taxable $5,000,000; cliff: tax +$5,253
+    $4,005,419 - $4,047,419        23.80%    75.30%     3.88%   102.98%  <- NY recapture phase-in ends (NYAGI $5,050,000)
+    $4,047,419 - $24,005,419       23.80%    10.30%     3.88%    37.98%  <- NY bracket at taxable $25,000,000; cliff: tax +$24,473
+    $24,005,419 - $24,047,419      23.80%   310.90%     3.88%   338.58%  <- NY recapture phase-in ends (NYAGI $25,050,000)
+    $24,047,419 - ...              23.80%    10.90%     3.88%    38.58%
+
+  Ordinary dividends (non-qualified):  (new 1099-DIV, non-qualified)
+    Additional                     Federal   NY State        NYC   Combined
+    $0 - $82,969                   40.79%     6.85%     3.88%    51.52%  <- NY bracket at taxable $1,077,550; cliff: tax +$4,847
+    $82,969 - $124,969             40.79%    69.99%     3.88%   114.66%  <- NY recapture phase-in ends (NYAGI $1,127,550)
+    $124,969 - $4,005,419          40.80%     9.65%     3.88%    54.32%  <- NY bracket at taxable $5,000,000; cliff: tax +$5,253
+    $4,005,419 - $4,047,419        40.80%    75.30%     3.88%   119.98%  <- NY recapture phase-in ends (NYAGI $5,050,000)
+    $4,047,419 - $24,005,419       40.80%    10.30%     3.88%    54.98%  <- NY bracket at taxable $25,000,000; cliff: tax +$24,473
+    $24,005,419 - $24,047,419      40.80%   310.90%     3.88%   355.58%  <- NY recapture phase-in ends (NYAGI $25,050,000)
+    $24,047,419 - ...              40.80%    10.90%     3.88%    55.58%
+
+  Interest income:  (new 1099-INT)
+    Additional                     Federal   NY State        NYC   Combined
+    $0 - $82,969                   40.79%     6.85%     3.88%    51.52%  <- NY bracket at taxable $1,077,550; cliff: tax +$4,847
+    $82,969 - $124,969             40.79%    69.99%     3.88%   114.66%  <- NY recapture phase-in ends (NYAGI $1,127,550)
+    $124,969 - $4,005,419          40.80%     9.65%     3.88%    54.32%  <- NY bracket at taxable $5,000,000; cliff: tax +$5,253
+    $4,005,419 - $4,047,419        40.80%    75.30%     3.88%   119.98%  <- NY recapture phase-in ends (NYAGI $5,050,000)
+    $4,047,419 - $24,005,419       40.80%    10.30%     3.88%    54.98%  <- NY bracket at taxable $25,000,000; cliff: tax +$24,473
+    $24,005,419 - $24,047,419      40.80%   310.90%     3.88%   355.58%  <- NY recapture phase-in ends (NYAGI $25,050,000)
+    $24,047,419 - ...              40.80%    10.90%     3.88%    55.58%
+
+  1256 contracts:  (Form 6781 realized gain (60% long-term / 40% short-term))
+    Additional                     Federal   NY State        NYC   Combined
+    $0 - $20,000                   40.79%     6.85%     3.88%    51.52%  <- Net long-term gain/loss crosses zero
+    $20,000 - $82,969              30.61%     6.85%     3.88%    41.34%  <- NY bracket at taxable $1,077,550; cliff: tax +$4,847
+    $82,969 - $124,969             30.61%    69.99%     3.88%   104.48%  <- NY recapture phase-in ends (NYAGI $1,127,550)
+    $124,969 - $4,005,419          30.60%     9.65%     3.88%    44.13%  <- NY bracket at taxable $5,000,000; cliff: tax +$5,253
+    $4,005,419 - $4,047,419        30.60%    75.30%     3.88%   109.78%  <- NY recapture phase-in ends (NYAGI $5,050,000)
+    $4,047,419 - $24,005,419       30.60%    10.30%     3.88%    44.78%  <- NY bracket at taxable $25,000,000; cliff: tax +$24,473
+    $24,005,419 - $24,047,419      30.60%   310.90%     3.88%   345.38%  <- NY recapture phase-in ends (NYAGI $25,050,000)
+    $24,047,419 - ...              30.60%    10.90%     3.88%    45.38%
+
+  HSA contribution:  (Form 8889, up to the remaining limit ($4,150))
+    Additional    Federal   NY State        NYC   Combined
+    $0 - ...     -36.99%    -6.85%    -3.88%   -47.72%
+
+  Charitable contributions:  (new cash gift (Schedule A line 11, IT-196 line 16))
+    Additional               Federal   NY State        NYC   Combined
+    $0 - $16,000            -36.93%     0.00%     0.00%   -36.93%  <- NY switches to itemized deductions
+    $16,000 - $373,106      -36.93%    -3.43%    -1.94%   -42.29%  <- Federal bracket at ordinary taxable income $609,350
+    $373,106 - $463,556     -34.93%    -3.43%    -1.94%   -40.29%  <- Gains start to fill the 15% band (ordinary taxable $518,900)
+    $463,556 - $465,725     -39.92%    -3.43%    -1.94%   -45.28%  <- 15% -> 20% capital gain rate at taxable $518,900
+    $465,725 - $738,731     -34.93%    -3.43%    -1.94%   -40.29%  <- Federal bracket at ordinary taxable income $243,725
+    $738,731 - $790,506     -31.94%    -3.43%    -1.94%   -37.30%  <- Federal bracket at ordinary taxable income $191,950
+    $790,506 - $881,931     -23.95%    -3.43%    -1.94%   -29.32%  <- Federal bracket at ordinary taxable income $100,525
+    $881,931 - $935,306     -21.96%    -3.43%    -1.94%   -27.32%  <- Federal bracket at ordinary taxable income $47,150; Gains start to fill the 0% band (ordinary taxable $47,025)
+    $935,306 - $935,331     -11.98%    -3.43%    -1.94%   -17.34%  <- Federal bracket at ordinary taxable income $47,150; Gains start to fill the 0% band (ordinary taxable $47,025); cliff: tax +$2
+    $935,331 - $937,600     -26.95%    -3.43%    -1.94%   -32.31%  <- 0% -> 15% capital gain rate at taxable $47,025
+    $937,600 - $970,856     -11.98%    -3.43%    -1.94%   -17.34%  <- Federal bracket at ordinary taxable income $11,600
+    $970,856 - $982,456      -9.98%    -3.43%    -1.94%   -15.34%  <- Ordinary taxable income reaches zero
+    $982,456 - ...            0.00%    -3.43%    -1.94%    -5.36%
+
+  Property tax:  (added to Schedule A line 5c / IT-196 line 6)
+    Additional    Federal   NY State        NYC   Combined
+    $0 - ...       0.00%     0.00%     0.00%     0.00%
+
+  Mortgage interest:  (added to the first 1098 payment)
+    Additional               Federal   NY State        NYC   Combined
+    $0 - $497,077           -27.72%     0.00%     0.00%   -27.72%  <- Federal bracket at ordinary taxable income $609,350
+    $497,077 - $617,580     -26.22%     0.00%     0.00%   -26.22%  <- Gains start to fill the 15% band (ordinary taxable $518,900)
+    $617,580 - $620,470     -29.97%     0.00%     0.00%   -29.97%  <- 15% -> 20% capital gain rate at taxable $518,900
+    $620,470 - $984,187     -26.22%     0.00%     0.00%   -26.22%  <- Federal bracket at ordinary taxable income $243,725
+    $984,187 - ...          -23.97%     0.00%     0.00%   -23.97%
+
+  Foreign tax paid:  (added to the 1099 that reports foreign tax (Form 1116))
+    Additional    Federal   NY State        NYC   Combined
+    $0 - ...       0.00%     0.00%     0.00%     0.00%
+

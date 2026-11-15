@@ -26,12 +26,12 @@ python main.py
 # Dev mode: set dev_mode = True in main.py to regenerate .keys from .fields
 
 # Compute marginal tax rates
-# Compute marginal tax rates
 python marginal_rates.py                  # default: 2025
 python marginal_rates.py --year 2024      # different year
 
 # Run tests
 python -m unittest tests.test_computation -v
+python -m unittest tests.test_marginal_rates -v
 
 # Regenerate test expected outputs after computation changes
 python tests/generate_scenarios_2025.py
@@ -84,6 +84,7 @@ taxes1040/
 |   +-- logger.py               # root logger configuration (single file: logs/taxes1040.log)
 |-- tests/                      # test suite
 |   |-- test_computation.py     # scenario-based tests (discovers scenarios/<year>/) + real data test
+|   |-- test_marginal_rates.py  # marginal rate checks on a few scenarios
 |   |-- generate_scenarios_2025.py  # generates/regenerates 2025 expected outputs
 |   |-- generate_scenarios_2024.py  # 2024 subset (reuses 2025 inputs), single + MFJ
 |   |-- generate_scenarios_2026.py  # 2026 subset + 2026 law-change scenarios
@@ -112,7 +113,7 @@ taxes1040/
 2. **Debug PDF (human-readable names)** - `fill_keys.py:process_fields()` loads the original keys (integers), overlays the rewritten keys (human-readable names), checks all `/Btn` checkboxes, and writes a PDF to `fields_mapping/{year}/`. Used to verify the `.fields` positional mapping is correct. Gitignored.
 3. **Final output PDFs** - `make_pdf_output.py:fill_pdfs()` reads the rewritten `.keys` from `forms/{year}/`, joins `annotation_name -> human_readable_name` with `forms_state[human_readable_name] -> computed_value`, and fills the blank PDF. Forms with list contents (e.g. multiple 8949 pages) produce suffixed copies (`_0`, `_1`). Then `merge_pdfs()` concatenates all individual PDFs into `output/{year}/forms.pdf`.
 
-**Marginal rate analysis (`marginal_rates.py`):** Standalone script that computes marginal tax rates analytically. Runs `fill_taxes` once to determine the baseline position (brackets, SALT regime, etc.), then derives exact marginal rates for each input category (W2 wages, short/long-term capital gains, dividends, interest, 1256 contracts, HSA contributions, charitable contributions, mortgage interest, property tax, foreign tax credit). Year configs are imported from `computation/forms_core_{year}.py` (not duplicated). For each category, outputs segmented rates with knots at every threshold where the rate changes (federal brackets, SALT transitions, NY bracket/recapture boundaries, NIIT threshold). Includes 3.8% NIIT on investment income (not wages). HSA contributions are above-the-line (reduce AGI), capped at the annual max; segments stop at the cap. Charitable contributions, mortgage interest, and property tax include NY/NYC marginal rates: for NYAGI > $1M, only charitable has NY benefit (IT-196 line 47 = fraction of charitable gifts). For charitable contributions at NYAGI > $1M, models the crossover where NY itemized exceeds the NY standard deduction. Outputs to `output/{year}/marginal_rates.json` and `.txt`. Runs independently of the main pipeline.
+**Marginal rate analysis (`marginal_rates.py`):** Standalone script that measures marginal tax rates numerically from the real computation, so every rule (AMT, Form 1116 limitation, NY worksheets and recapture, 2026 OBBBA rules, Schedule 1-A, ...) is reflected without a second model. For each input category (W2 wages, short/long-term gains, qualified/ordinary dividends, interest, 1256 contracts, HSA contributions up to the remaining limit, charitable gifts, property tax, mortgage interest, foreign tax paid) it adds $x to the input, re-runs `forms_core_impl.fill_taxes` with `exact=True` (no rounding) and `field_maps=None` (canonical names), and splits total tax into federal (1040 line 24), NY state (IT-201 line 46) and NYC (line 58 minus school credits 69/69a). Tax is piecewise linear in x: knots are found by recursive subdivision, placed at the intersection of the left/right lines, and jumps (cliffs, e.g. NY recapture) are located by bisection. Knots are labelled with the thresholds crossed on either side (brackets on ordinary taxable income, capital gain bands, SALT, AMT, NY worksheets/recapture, NYC school credits, ...) and with flips (itemizing, AMT, NIIT, Additional Medicare Tax, SALT cap, Form 1116 limit). Years: `YEAR_CONFIGS` (2024, 2025, 2026). Outputs to `output/{year}/marginal_rates.json` and `.txt`. Runs independently of the main pipeline (about a second per year).
 
 **Core computation:** Each tax year has its own `computation/forms_core_{year}.py` containing a single `fill_taxes_{year}(d)` function. Old years (2018-2023) are frozen monoliths in `computation/legacy/` - large single functions that compute every form line by line. Years 2024+ use thin config wrappers that call `computation/forms_core_impl.py` - the shared implementation - with a `CONFIG_{year}` dict specifying year-specific constants (standard deduction, AMT thresholds, bracket functions, etc.). All years use an inner `Form` class to accumulate field values into `forms_state` dict. Prior year output can be passed in for carryover values (e.g., capital loss carryover).
 
@@ -177,5 +178,6 @@ taxes1040/
 - Excess social security withholding (Schedule 3 line 11 -> line 15 -> 1040 line 31): figured per person (W2 `Owner`), each employer's withholding (W2 `Company`) capped at `social_security_max_withholding` (6.2% of the wage base) before summing, since one employer's over-withholding must be refunded by that employer. Schedule 3 is built when there is foreign tax or excess social security. Tier 1 RRTA is not handled.
 - `make_pdf_output` filters out `custom_missing_*` keys from `data.json` with a warning log before PDF filling. These are computation-only flags that have no corresponding `.keys` entry (none are produced today).
 - `make_pdf_output` logs an error and skips when a computed form has no .keys file, rather than crashing.
+- Config `exact=True` (only used by `marginal_rates.py`) turns off rounding in the computation: whole dollars in `push_to_dict` and the form-specified decimals (Form 1116 fractions, NY worksheet and recapture phase-in fractions via `exact` on the `computation_*_ny_recapture` functions). Normal runs are unchanged.
 - Widgets that share an annotation name (Form 1116 income category boxes a-g, Form 1040 HoH/QSS filing status) are told apart by `utils.forms_utils.iter_widgets`, which suffixes repeats with `#2`, `#3`, ... in page order; `key_matcher` and `fill_pdf_from_keys` both use it, so `.keys` and filling stay aligned.
 - 2026 is provisional (see `forms/2026/notes.md`): the federal numbers are final (Rev. Proc. 2025-32 / 2025-19), but there are no 2026 PDFs/`.keys`, NY/NYC values are 2025 placeholders, and `2026` is in `FILL_FUNCTIONS` and the tests but not in `main.py` `all_years` or `marginal_rates.py`. The OBBBA 2026 rules are gated by config keys whose defaults reproduce 2024-2025: `amt_phaseout_rate` (0.50 in 2026, default 0.25), `charitable_nonitemizer_limit` (cash gifts on top of the standard deduction; `Charitable` entries with `"DonorAdvisedFund": true` are excluded), `charitable_agi_floor_rate` (0.5% AGI floor on Schedule A line 14) and `itemized_limitation_rate` (IRC 68 2/37 reduction of Schedule A line 17 above the 37% bracket start `fed_brackets[-1]`, subtracted back on Form 6251 since it doesn't apply for AMT). `charitable_nonitemizer` (f1040) and `itemized_limitation_adjustment` (f6251) are placeholder field names until the final 2026 forms are mapped.

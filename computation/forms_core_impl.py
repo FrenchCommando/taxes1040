@@ -77,6 +77,12 @@ def fill_taxes(d, config):
     filing_status = get_filing_status(d)
     married_filing_jointly = filing_status == 'married_filing_jointly'
     config = resolve_config(config, filing_status)
+    # exact=True skips rounding to whole dollars / form-specified decimals (used by marginal_rates.py,
+    # which measures slopes and needs the unrounded piecewise-linear tax)
+    exact = config.get('exact', False)
+
+    def rounded(value, digits=None):
+        return value if exact else round(value, digits)
     spouse = d.get('spouse', {}) if married_filing_jointly else {}
     if married_filing_jointly and not spouse:
         logger.error("married_filing_jointly requires a 'spouse' block in the input")
@@ -188,7 +194,7 @@ def fill_taxes(d, config):
 
         def push_to_dict(self, key, value, round_i=0):
             if value != 0:
-                self.d[key] = round(value, round_i)
+                self.d[key] = rounded(value, round_i)
 
         def push_name_ssn(self, prefix="", suffix=""):
             self.d[prefix + 'name' + suffix] = return_names()
@@ -630,13 +636,13 @@ def fill_taxes(d, config):
             agi = forms_state[k_1040]['11']
             gross_income = forms_state[k_1040]['9']
             if gross_income > 0:
-                apportionment_ratio = round(foreign_source_income / gross_income, 4)
+                apportionment_ratio = rounded(foreign_source_income / gross_income, 4)
             else:
                 apportionment_ratio = 0
 
             # Line 3a: standard deduction or certain itemized deductions, apportioned
             deduction = forms_state[k_1040]['12']
-            line_3a = round(deduction * apportionment_ratio, 2) if gross_income > 5000 else deduction
+            line_3a = rounded(deduction * apportionment_ratio, 2) if gross_income > 5000 else deduction
             self.push_to_dict('2_a', line_3a)
 
             # Line 3d: gross foreign source income in this category
@@ -675,7 +681,7 @@ def fill_taxes(d, config):
 
             # Line 19: line 17 / line 18 (limitation fraction)
             if taxable_income > 0:
-                limitation_fraction = round(self.d.get('17', 0) / taxable_income, 4)
+                limitation_fraction = rounded(self.d.get('17', 0) / taxable_income, 4)
                 limitation_fraction = min(limitation_fraction, 1.0)
             else:
                 limitation_fraction = 0
@@ -686,7 +692,7 @@ def fill_taxes(d, config):
             self.push_to_dict('20', us_tax)
 
             # Line 21: line 19 * line 20 (maximum credit)
-            max_credit = round(limitation_fraction * us_tax)
+            max_credit = rounded(limitation_fraction * us_tax)
             self.push_to_dict('21', max_credit)
 
             # Line 22: section 960(c) increase (not applicable)
@@ -782,7 +788,7 @@ def fill_taxes(d, config):
                 # 2026+: gifts count only above 0.5% of AGI (contribution base)
                 charitable_floor = min(self.d['14'], forms_state[k_1040]['11'] * charitable_agi_floor_rate)
                 summary_info[f"{self.key} 14 Charitable gifts below the AGI floor"] = round(charitable_floor)
-                self.d['14'] = round(self.d['14'] - charitable_floor)
+                self.d['14'] = rounded(self.d['14'] - charitable_floor)
             # theft
             # other
 
@@ -790,7 +796,7 @@ def fill_taxes(d, config):
             if itemized_limitation_rate and self.d['17'] > 0:
                 limitation_worksheet = ItemizedDeductionLimitationWorksheet(self.d['17'])
                 limitation_worksheet.build()
-                self.d['17'] = round(self.d['17'] - limitation_worksheet.d[6])
+                self.d['17'] = rounded(self.d['17'] - limitation_worksheet.d[6])
             # to 1040 line 12
 
             # tick 18 if you want to lose money
@@ -1048,8 +1054,8 @@ def fill_taxes(d, config):
             income is the regular-tax Form 1116 line 17, the worldwide income is AMTI (Form 6251 line 4),
             and the limitation applies that fraction to Form 6251 line 7. Not attached as a separate form."""
             regular_1116 = forms_state[k_1116]
-            fraction = min(1.0, round(regular_1116.get('17', 0) / amti, 4)) if amti > 0 else 0
-            limitation = round(fraction * tentative_minimum_tax)
+            fraction = min(1.0, rounded(regular_1116.get('17', 0) / amti, 4)) if amti > 0 else 0
+            limitation = rounded(fraction * tentative_minimum_tax)
             credit = min(regular_1116.get('14', 0), limitation)
             summary_info[f"{self.key} 8 AMT foreign tax credit (simplified limitation election)"] = credit
             return credit
@@ -1084,8 +1090,8 @@ def fill_taxes(d, config):
             self.push_to_dict('3', self.d.get('2_c', 0) - self.d.get('2_b', 0))
             self.push_sum('5', ['3', '4'])
             self.push_sum('7', ['5', '6'])
-            self.push_to_dict('8', round(self.d.get('7', 0) * 0.4))
-            self.push_to_dict('9', round(self.d.get('7', 0) * 0.6))
+            self.push_to_dict('8', rounded(self.d.get('7', 0) * 0.4))
+            self.push_to_dict('9', rounded(self.d.get('7', 0) * 0.6))
 
     class Form8889(Form):
         def __init__(self):
@@ -1336,7 +1342,7 @@ def fill_taxes(d, config):
             self.push_to_dict('14', config['niit_threshold'])
             self.push_to_dict('15', max(0, self.d.get('13', 0) - self.d.get('14', 0)))
             self.push_to_dict('16', min(self.d.get('12', 0), self.d.get('15', 0)))
-            niit = round(self.d.get('16', 0) * 0.038)
+            niit = rounded(self.d.get('16', 0) * 0.038)
             self.push_to_dict('17', niit)
             summary_info[f"{self.key} 17 Net Investment Income Tax"] = niit
             # Push to Schedule 2 line 12
@@ -1410,7 +1416,7 @@ def fill_taxes(d, config):
             self.d[3] = config['fed_brackets'][-1]  # start of the 37% bracket, filing-status specific
             self.d[4] = max(0, self.d[2] - self.d[3])
             self.d[5] = min(self.d[1], self.d[4])
-            self.d[6] = round(self.d[5] * itemized_limitation_rate)
+            self.d[6] = rounded(self.d[5] * itemized_limitation_rate)
             if self.d[6] > 0:
                 summary_info[f"{self.key} 6 Itemized deduction limitation (IRC 68)"] = self.d[6]
 
@@ -1454,7 +1460,7 @@ def fill_taxes(d, config):
                 return
 
             # Partial deduction - prorate by qualified loan ratio
-            self.d[14] = round(self.d[11] / self.d[12], 3)
+            self.d[14] = rounded(self.d[11] / self.d[12], 3)
             self.d[15] = self.d[13] * self.d[14]
             Form(k_1040sa, get_existing=True).push_to_dict('8_a', self.d[15])
             summary_info[f"{self.key} 15 Deductible Home Mortgage Interest for {year}"] = self.d[15]
@@ -1620,7 +1626,7 @@ def fill_taxes(d, config):
             self.push_sum('38', ['37'])
             computed_tax_ny = computation_ny(amount=self.d.get('38', 0))
             summary_info[f"{self.key} 39 Tax pre-Recapture"] = computed_tax_ny
-            recapture_amount_ny = computation_ny_recapture(amount=self.d['38'], gross=self.d['33'])
+            recapture_amount_ny = computation_ny_recapture(amount=self.d['38'], gross=self.d['33'], exact=exact)
             computed_tax_ny_full = computed_tax_ny + recapture_amount_ny
             summary_info[f"{self.key} 39 Tax post-Recapture"] = computed_tax_ny_full
             self.push_to_dict('39', computed_tax_ny_full)
@@ -1822,7 +1828,7 @@ def fill_taxes(d, config):
 
             self.d[1] = worksheets[w_ny_line40_itemized_deductions][9]
             self.d[2] = worksheets[w_ny_line40_itemized_deductions][3]
-            self.d[3] = round(self.d[1] / self.d[2], 4)
+            self.d[3] = rounded(self.d[1] / self.d[2], 4)
             self.d[4] = taxes_subtracted
             self.d[5] = 0  # B,C
             self.d[6] = self.d[4] + self.d[5]
@@ -1851,12 +1857,12 @@ def fill_taxes(d, config):
             if ny_agi <= 475_000:
                 # Worksheet 3: phase-in from 0% to 25%
                 excess = min(ny_agi - adjustment_start, 50_000)
-                fraction = round(excess / 50_000, 4)
+                fraction = rounded(excess / 50_000, 4)
                 adjustment = fraction * line_45 * 0.25
             elif ny_agi <= 525_000:
                 # Worksheet 4: phase-in from 25% to 50%
                 excess = min(ny_agi - 475_000, 50_000)
-                fraction = round(excess / 50_000, 4)
+                fraction = rounded(excess / 50_000, 4)
                 adjustment = line_45 * 0.25 + fraction * line_45 * 0.25
             else:
                 # NYAGI $525k-$1M: flat 50%
