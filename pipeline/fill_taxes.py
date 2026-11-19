@@ -21,7 +21,7 @@ def gather_inputs(input_year_folder):
         'full_year_health_coverage_or_exempt': True,  # ignored starting 2019
         'presidential_election_self': False,
         'resident': True,  # if you're not it's not done yet
-        'scheduleD': True,
+        'scheduleD': True,  # read by the legacy 2018-2023 modules only; 2024+ files Schedule D for any 1099
         'checking': True,
         'routing_number': "11111111",
         'account_number': "444444444",

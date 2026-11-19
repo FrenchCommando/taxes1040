@@ -27,7 +27,7 @@
                         "nyc": 0.03876,
                         "combined": 0.514242
                     },
-                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,359"
+                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,200"
                 },
                 {
                     "from": 3871007,
@@ -49,7 +49,7 @@
                         "nyc": 0.03876,
                         "combined": 0.520759
                     },
-                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,410"
+                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,001"
                 },
                 {
                     "from": 23871007,
@@ -86,7 +86,7 @@
                         "nyc": 0.03876,
                         "combined": 0.543242
                     },
-                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,359"
+                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,200"
                 },
                 {
                     "from": 3871007,
@@ -108,7 +108,7 @@
                         "nyc": 0.03876,
                         "combined": 0.549759
                     },
-                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,410"
+                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,001"
                 },
                 {
                     "from": 23871007,
@@ -145,7 +145,7 @@
                         "nyc": 0.03876,
                         "combined": 0.373309
                     },
-                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,359"
+                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,200"
                 },
                 {
                     "from": 3871007,
@@ -167,7 +167,7 @@
                         "nyc": 0.03876,
                         "combined": 0.379762
                     },
-                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,410"
+                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,001"
                 },
                 {
                     "from": 23871007,
@@ -204,7 +204,7 @@
                         "nyc": 0.03876,
                         "combined": 0.373309
                     },
-                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,359"
+                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,200"
                 },
                 {
                     "from": 3871007,
@@ -226,7 +226,7 @@
                         "nyc": 0.03876,
                         "combined": 0.379762
                     },
-                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,410"
+                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,001"
                 },
                 {
                     "from": 23871007,
@@ -263,7 +263,7 @@
                         "nyc": 0.03876,
                         "combined": 0.543242
                     },
-                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,359"
+                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,200"
                 },
                 {
                     "from": 3871007,
@@ -285,7 +285,7 @@
                         "nyc": 0.03876,
                         "combined": 0.549759
                     },
-                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,410"
+                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,001"
                 },
                 {
                     "from": 23871007,
@@ -322,7 +322,7 @@
                         "nyc": 0.03876,
                         "combined": 0.543242
                     },
-                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,359"
+                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,200"
                 },
                 {
                     "from": 3871007,
@@ -344,7 +344,7 @@
                         "nyc": 0.03876,
                         "combined": 0.549759
                     },
-                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,410"
+                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,001"
                 },
                 {
                     "from": 23871007,
@@ -381,7 +381,7 @@
                         "nyc": 0.03876,
                         "combined": 0.441282
                     },
-                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,359"
+                    "next_knot": "NY bracket at taxable $5,000,000; cliff: tax +$5,200"
                 },
                 {
                     "from": 3871007,
@@ -403,7 +403,7 @@
                         "nyc": 0.03876,
                         "combined": 0.447761
                     },
-                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,410"
+                    "next_knot": "NY bracket at taxable $25,000,000; cliff: tax +$24,001"
                 },
                 {
                     "from": 23871007,
@@ -536,7 +536,7 @@
                 },
                 {
                     "from": 1002353,
-                    "to": 1057147,
+                    "to": 1057142,
                     "rates": {
                         "federal": -0.21962,
                         "ny_state": -0.03425,
@@ -546,18 +546,18 @@
                     "next_knot": "Federal bracket at ordinary taxable income $48,475; Gains start to fill the 0% band (ordinary taxable $48,350)"
                 },
                 {
-                    "from": 1057147,
-                    "to": 1057374,
+                    "from": 1057142,
+                    "to": 1057375,
                     "rates": {
-                        "federal": -0.141436,
+                        "federal": -0.143878,
                         "ny_state": -0.03425,
                         "nyc": -0.01938,
-                        "combined": -0.195066
+                        "combined": -0.197508
                     },
                     "next_knot": "Federal bracket at ordinary taxable income $48,475; Gains start to fill the 0% band (ordinary taxable $48,350)"
                 },
                 {
-                    "from": 1057374,
+                    "from": 1057375,
                     "to": 1071770,
                     "rates": {
                         "federal": -0.269533,

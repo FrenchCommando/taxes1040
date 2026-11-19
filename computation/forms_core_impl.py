@@ -123,6 +123,9 @@ def fill_taxes(d, config):
         return excess
 
     has_1099 = '1099' in d
+    # Schedule D is built for any 1099 (Form1040.build); derived here rather than read from a `scheduleD`
+    # input flag, which could disagree with the forms actually built
+    schedule_d_filed = has_1099
     dividends_qualified = None
     additional_income = None
     # input keys: health_savings_account (bool), health_savings_account_contributions,
@@ -284,7 +287,9 @@ def fill_taxes(d, config):
                 Form8949().build()  # build 8949 first
                 Form1040sd().build()
 
-            self.d["7_n"] = not d['scheduleD']
+            # "Schedule D not required" box: only for capital gain distributions reported directly on line 7;
+            # here they always go through Schedule D, and without gains line 7 is simply blank
+            self.d["7_n"] = False
 
             if health_savings_account or additional_income:
                 # fill 8889 and schedule 1
@@ -994,7 +999,7 @@ def fill_taxes(d, config):
                 # Line 7: Part III (preferential capital gain rates) or flat 26%/28%
                 use_part_iii = (
                     (dividends_qualified is not None and dividends_qualified > 0)
-                    or (d.get('scheduleD', False) and k_1040sd in forms_state
+                    or (schedule_d_filed
                         and forms_state[k_1040sd].get('15', 0) > 0
                         and forms_state[k_1040sd].get('16', 0) > 0)
                 )
@@ -1002,7 +1007,7 @@ def fill_taxes(d, config):
                     # Part III: 0%/15%/20% on qualified dividends and capital gains,
                     # 26%/28% on ordinary portion only
                     qdiv = forms_state[k_1040].get('3_a', 0)
-                    if d.get('scheduleD', False) and k_1040sd in forms_state:
+                    if schedule_d_filed:
                         sd15 = forms_state[k_1040sd].get('15', 0)
                         sd16 = forms_state[k_1040sd].get('16', 0)
                         sd_gain = max(0, min(sd15, sd16)) if sd15 > 0 and sd16 > 0 else 0
@@ -1503,10 +1508,10 @@ def fill_taxes(d, config):
         def build(self):
             self.d[1] = forms_state[k_1040]['15']  # except if foreign earned income
             self.d[2] = forms_state[k_1040]['3_a']
-            if d['scheduleD']:
+            if schedule_d_filed:
                 self.d[3] = max(0, min(forms_state[k_1040sd]['15'], forms_state[k_1040sd]['16']))
             else:
-                self.d[3] = forms_state[k_1040].get('7_value', 0)
+                self.d[3] = forms_state[k_1040].get('7_value', 0)  # capital gain distributions (no Schedule D)
             self.d[4] = self.d[2] + self.d[3]
             self.d[5] = max(0., self.d[1] - self.d[4])
             self.d[6] = config['qualified_div_0pct']  # filing-status specific

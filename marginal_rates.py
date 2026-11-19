@@ -24,8 +24,8 @@ import os
 
 from pipeline.fill_taxes import gather_inputs
 from computation.form_worksheet_names import (
-    k_1040, k_1040s1a, k_1040sa, k_1040sd, k_6251, k_8959, k_8960, k_it196, k_it201,
-    w_qualified_dividends_and_capital_gains, w_salt_deduction,
+    k_1040, k_1040s1a, k_1040sa, k_1040sd, k_1116, k_6251, k_8959, k_8960, k_it196, k_it201,
+    w_itemized_limitation, w_qualified_dividends_and_capital_gains, w_salt_deduction,
 )
 from computation.forms_core_impl import fill_taxes, resolve_config, get_filing_status
 from computation.forms_core_2024 import CONFIG_2024
@@ -143,13 +143,27 @@ def _run(base_data, config, change, amount):
     if amount:
         change(data, amount)
     forms_state, worksheets, summary, carryover = fill_taxes(d=data, config=config)
-    return forms_state, worksheets, summary, data
+    return forms_state, worksheets, summary, data, config
 
 
-def _metrics(forms_state, worksheets, summary, data):
+def _metrics(forms_state, worksheets, summary, data, config):
     f1040 = forms_state[k_1040]
     it201 = forms_state.get(k_it201, {})
+    schedule_d = forms_state.get(k_1040sd, {})
     salt_worksheet = worksheets.get(w_salt_deduction, [0] * 11)
+    f8960 = forms_state.get(k_8960, {})
+    nan = float('nan')  # metrics that don't apply: never cross a threshold
+    amt_taxable = forms_state[k_6251].get('6_value', 0) if k_6251 in forms_state else nan
+    # Form 6251 Part III: qualified dividends + net capital gain are taxed at the capital gain rates
+    net_gain = min(schedule_d['15'], schedule_d['16']) \
+        if schedule_d.get('15', 0) > 0 and schedule_d.get('16', 0) > 0 else 0
+    amt_gains = f1040.get('3_a', 0) + net_gain
+    limitation = worksheets.get(w_itemized_limitation) if k_1040sa in forms_state else None
+    gifts = data.get('Charitable', [])
+    gift_total = sum(gift.get('Amount', 0) for gift in gifts)
+    non_daf_gifts = sum(gift.get('Amount', 0) for gift in gifts if not gift.get('DonorAdvisedFund', False))
+    amt_foreign_tax_credit = summary.get(f"{k_6251} 8 AMT foreign tax credit (simplified limitation election)")
+    floor_rate = config.get('charitable_agi_floor_rate')
     return dict(
         federal=f1040.get('24', 0),
         ny_state=it201.get('46', 0),
@@ -167,6 +181,15 @@ def _metrics(forms_state, worksheets, summary, data):
             forms_state.get(k_1040sd, {}).get('15', 0) > 0 and forms_state.get(k_1040sd, {}).get('16', 0) > 0),
         schedule_1a=k_1040s1a in forms_state,
         amti=summary.get(f"{k_6251} 4 Alternative minimum taxable income", 0),
+        # Form 6251 line 6 and its ordinary part (the 26%/28% rates apply to it when Part III taxes gains)
+        amt_taxable=amt_taxable,
+        amt_ordinary=max(0, amt_taxable - amt_gains) if amt_gains > 0 else amt_taxable,
+        # IRC 68 worksheet (2026+): income over the 37% bracket start, and that excess minus the itemized
+        # deductions (the limitation is 2/37 of the smaller)
+        irc68_income_over=limitation[2] - limitation[3] if limitation else nan,
+        irc68_over_itemized=limitation[4] - limitation[1] if limitation else nan,
+        # 2026+: Schedule A gifts minus the 0.5% AGI floor
+        charitable_over_floor=gift_total - f1040.get('11', 0) * floor_rate if floor_rate else nan,
         ny_agi=it201.get('33', 0),
         ny_taxable=it201.get('37', 0),
         federal_agi_ny=it201.get('19', 0),
@@ -174,7 +197,12 @@ def _metrics(forms_state, worksheets, summary, data):
         ny_itemizing=k_it196 in forms_state,
         amt=k_6251 in forms_state,
         foreign_tax_limited=any('Excess foreign tax' in key for key in summary),
+        amt_foreign_tax_limited=amt_foreign_tax_credit is not None
+        and amt_foreign_tax_credit < forms_state.get(k_1116, {}).get('14', 0),
+        nonitemizer_charitable_capped=0 < f1040.get('charitable_nonitemizer', 0) < non_daf_gifts,
         salt_capped=salt_worksheet[9] > 0 and salt_worksheet[10] >= salt_worksheet[9],
+        # Form 8960 line 15 - line 12: MAGI over the threshold minus net investment income (NIIT = 3.8% of the smaller)
+        niit_magi_over_income=f8960.get('15', 0) - f8960.get('12', 0),
         niit=k_8960 in forms_state,
         additional_medicare=forms_state.get(k_8959, {}).get('18', 0) > 0,
     )
@@ -195,6 +223,9 @@ class TaxCurve:
             self.cache[amount] = _metrics(*_run(self.base_data, self.config, self.change, amount))
         return self.cache[amount]
 
+    def total(self, amount):
+        return sum(self.tax(amount))
+
     def tax(self, amount):
         metrics = self.metrics(amount)
         return tuple(metrics[component] for component in COMPONENTS)
@@ -211,30 +242,40 @@ def _differs(slope_a, slope_b):
 def _locate(curve, start, end):
     """Resolve a small interval holding one rate change into (knot, jump). The left and right lines are
     measured just outside the interval and intersected; if they don't meet inside it, the change is a
-    jump (cliff), located to the dollar by bisection."""
-    left = curve.slope(max(0, start - SLOPE_STEP), start) if start > 0 else curve.slope(start, start + 1)
-    right = curve.slope(end, end + SLOPE_STEP)
+    jump (cliff), located to the dollar by bisection.
+    The measuring windows stop a dollar short of the interval, so a cliff sitting right at `start` or just
+    past `end` (e.g. a Schedule 1-A step and the NYC school credit cliff a dollar apart) doesn't skew them."""
+    left_end = start - 1 if start > 1 else start
+    left = curve.slope(max(0, left_end - SLOPE_STEP), left_end) if start > 0 else curve.slope(start, start + 1)
+    right = curve.slope(end + 1, end + 1 + SLOPE_STEP)
+    total_left, total_right = sum(left), sum(right)
+    base_total, end_total = curve.total(start), curve.total(end)
     # use the component whose slope changes the most
     index = max(range(len(COMPONENTS)), key=lambda each: abs(left[each] - right[each]))
-    tax_start, tax_end = curve.tax(start)[index], curve.tax(end)[index]
     if abs(left[index] - right[index]) > SLOPE_TOLERANCE:
+        tax_start, tax_end = curve.tax(start)[index], curve.tax(end)[index]
         knot = (tax_end - tax_start + left[index] * start - right[index] * end) / (left[index] - right[index])
-        if start <= knot <= end:
-            # a kink: the tax at the intersection lies on both lines (a jump would leave a gap)
-            on_left_line = tax_start + left[index] * (knot - start)
-            if abs(curve.tax(knot)[index] - on_left_line) < 0.5:
-                return round(knot), 0
+
+        def on_lines(point):
+            return base_total + total_left * (min(point, knot) - start) + total_right * max(0, point - knot)
+
+        # a kink: the total tax at the intersection lies on both lines, and nothing else (a jump in another
+        # component) happens in the interval
+        if start <= knot <= end and abs(curve.total(knot) - on_lines(knot)) < 0.5 \
+                and abs(end_total - on_lines(end)) < 0.5:
+            return round(knot), 0
     # jump: find where the tax leaves the left line
-    total_left = sum(left)
-    base_total = sum(curve.tax(start))
-    jump = sum(curve.tax(end)) - base_total - total_left * (end - start)
+    # gap at `end` between the actual tax and the left line: the jump plus the slope change since the jump
+    gap = end_total - base_total - total_left * (end - start)
     low, high = start, end
     while high - low > 1:
         middle = (low + high) // 2
-        if abs(sum(curve.tax(middle)) - base_total - total_left * (middle - start)) > abs(jump) / 2:
+        if abs(curve.total(middle) - base_total - total_left * (middle - start)) > abs(gap) / 2:
             high = middle
         else:
             low = middle
+    # the jump itself: the right line and the left line, both evaluated at the located knot
+    jump = (end_total - total_right * (end - high)) - (base_total + total_left * (high - start))
     return high, round(jump)
 
 
@@ -267,11 +308,20 @@ def _find_knots(curve, horizon):
         # rate change at a partition point
         if end < horizon and _differs(curve.slope(end - SLOPE_STEP, end), curve.slope(end, end + SLOPE_STEP)):
             knots.append(_locate(curve, end - SLOPE_STEP, end + SLOPE_STEP))
-    unique = {}
-    for knot, jump in sorted(knots):
-        if not any(abs(knot - existing) <= 2 for existing in unique):
-            unique[knot] = jump
-    return sorted(unique.items())
+    # the same knot can be found from neighbouring intervals: keep one per position (preferring the one that
+    # measured the cliff). Knots a dollar or two apart are separate events (e.g. cliffs in two components)
+    # shown as one, with their jumps added.
+    by_position = {}
+    for knot, jump in knots:
+        if knot not in by_position or abs(jump) > abs(by_position[knot]):
+            by_position[knot] = jump
+    unique = []
+    for knot, jump in sorted(by_position.items()):
+        if unique and knot - unique[-1][0] <= 2:
+            unique[-1] = (unique[-1][0], unique[-1][1] + jump)
+        else:
+            unique.append((knot, jump))
+    return unique
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -298,6 +348,8 @@ def _thresholds(config):
          f"Gains start to fill the 15% band (ordinary taxable ${config['qualified_div_20pct']:,})", 'preferential_income'),
         ('agi', config['salt_phaseout_start'],
          f"SALT cap phaseout begins (AGI ${config['salt_phaseout_start']:,})", 'itemizing'),
+        ('niit_magi_over_income', 0,
+         f"NIIT capped at net investment income (MAGI over ${config['niit_threshold']:,} reaches it)", 'niit'),
         ('net_capital', 0, 'Net capital gain/loss crosses zero', None),
         ('net_long_term', 0, 'Net long-term gain/loss crosses zero', None),
         ('net_short_term', 0, 'Net short-term gain/loss crosses zero', None),
@@ -306,6 +358,12 @@ def _thresholds(config):
          f"AMT exemption phaseout begins (AMTI ${config['should_fill_6251_phaseout']:,})", 'amt'),
         ('ny_agi', config['ny_itemized_adjustment_start'],
          f"NY itemized deduction adjustment begins (NYAGI ${config['ny_itemized_adjustment_start']:,})", 'ny_itemizing'),
+        ('ny_agi', config['ny_itemized_adjustment_start'] + 50_000,
+         f"NY itemized deduction adjustment fully phased in (NYAGI ${config['ny_itemized_adjustment_start'] + 50_000:,})",
+         'ny_itemizing'),
+        ('federal_agi_ny', config['ny_itemized_deduction_threshold'],
+         f"NY itemized deductions reduced by 3% of federal AGI over ${config['ny_itemized_deduction_threshold']:,}",
+         'ny_itemizing'),
         ('ny_agi', 475_000, 'NY itemized deduction adjustment worksheet 4 (NYAGI $475,000)', 'ny_itemizing'),
         ('ny_agi', 525_000, 'NY itemized deduction adjustment reaches 50% (NYAGI $525,000)', 'ny_itemizing'),
         ('ny_agi', 1_000_000, 'NY itemized deduction limited to 50% of charitable gifts (NYAGI $1M)', 'ny_itemizing'),
@@ -321,6 +379,14 @@ def _thresholds(config):
                            f'SALT cap reaches the ${config["salt_floor"]:,} floor (AGI ${salt_floor_agi:,.0f})', 'itemizing'))
     amt_exemption_gone = config['should_fill_6251_phaseout']         + config['amt_exemption'] / config.get('amt_phaseout_rate', 0.25)
     thresholds.append(('amti', amt_exemption_gone, f'AMT exemption fully phased out (AMTI ${amt_exemption_gone:,.0f})', 'amt'))
+    amt_28, zero_band, twenty_band = config['amt_28pct_threshold'], config['qualified_div_0pct'], config['qualified_div_20pct']
+    thresholds += [
+        ('amt_ordinary', amt_28, f'AMT 26% -> 28% rate (Form 6251 ordinary income ${amt_28:,})', 'amt'),
+        ('amt_taxable', zero_band, f'AMT: 0% -> 15% capital gain rate at Form 6251 line 6 ${zero_band:,}', 'amt'),
+        ('amt_taxable', twenty_band, f'AMT: 15% -> 20% capital gain rate at Form 6251 line 6 ${twenty_band:,}', 'amt'),
+        ('amt_ordinary', zero_band, f'AMT: gains start to fill the 0% band (ordinary ${zero_band:,})', 'amt'),
+        ('amt_ordinary', twenty_band, f'AMT: gains start to fill the 15% band (ordinary ${twenty_band:,})', 'amt'),
+    ]
     thresholds += [('ny_taxable', bracket, f'NY bracket at taxable ${bracket:,}', None)
                    for bracket in config['ny_brackets']]
     for bracket in config['ny_recapture_brackets']:
@@ -329,7 +395,17 @@ def _thresholds(config):
     thresholds += [('ny_taxable', bracket, f'NYC bracket at taxable ${bracket:,}', None)
                    for bracket in config['nyc_brackets']]
     if config.get('itemized_limitation_rate'):
-        thresholds.append(('agi', config['fed_brackets'][-1], 'IRC 68 itemized deduction limitation begins', 'itemizing'))
+        top_bracket = config['fed_brackets'][-1]
+        thresholds += [
+            ('irc68_income_over', 0,
+             f'IRC 68 itemized deduction limitation begins (income before deductions over ${top_bracket:,})', 'itemizing'),
+            ('irc68_over_itemized', 0,
+             f'IRC 68 limitation reaches 2/37 of all itemized deductions (income over ${top_bracket:,} exceeds them)',
+             'itemizing'),
+        ]
+    if config.get('charitable_agi_floor_rate'):
+        thresholds.append(('charitable_over_floor', 0,
+                           f"Charitable gifts reach the {config['charitable_agi_floor_rate'] * 100:g}% AGI floor", 'itemizing'))
     if config.get('schedule_1a'):
         thresholds += [
             ('agi', config['tips_overtime_phaseout_start'], 'Schedule 1-A tips/overtime phaseout begins', 'schedule_1a'),
@@ -344,6 +420,9 @@ FLAG_LABELS = {
     'ny_itemizing': ('NY switches to itemized deductions', 'NY switches to the standard deduction'),
     'amt': ('AMT starts to apply', 'AMT stops applying'),
     'foreign_tax_limited': ('foreign tax credit reaches the Form 1116 limit', 'foreign tax credit below the Form 1116 limit'),
+    'amt_foreign_tax_limited': ('AMT foreign tax credit reaches its limit', 'AMT foreign tax credit below its limit'),
+    'nonitemizer_charitable_capped': ('non-itemizer charitable deduction reaches its limit',
+                                      'non-itemizer charitable deduction below its limit'),
     'salt_capped': ('SALT deduction reaches its cap', 'SALT deduction below its cap'),
     'niit': ('NIIT starts to apply', 'NIIT stops applying'),
     'additional_medicare': ('Additional Medicare Tax starts to apply', 'Additional Medicare Tax stops applying'),
@@ -403,7 +482,54 @@ def _segments(curve, horizon, thresholds):
                 previous.pop('next_knot', None)
         else:
             merged.append(segment)
-    return merged
+    return _collapse_staircases(curve, merged, jumps, thresholds)
+
+
+def _same_rates(first, second):
+    return all(round(first[component], 4) == round(second[component], 4) for component in COMPONENTS)
+
+
+# Stepped phaseouts (Schedule 1-A: $200 / $100 less deduction per $1,000 or fraction of income) make a cliff
+# every $1,000. A run of at least MIN_STEPS equal cliffs at equal spacing with the same rate in between is
+# shown as one segment whose rate averages the steps in. The cliff at the start of the run stays on the
+# previous segment.
+MIN_STEPS = 3
+
+
+def _collapse_staircases(curve, segments, jumps, thresholds):
+    result = []
+    position = 0
+    while position < len(segments):
+        first = segments[position]
+        jump = jumps.get(first['from'], 0)
+        # extend while the next segment starts with the same cliff, at the same spacing, with the same rates
+        last = position
+        while jump and last + 1 < len(segments):
+            current, following = segments[last], segments[last + 1]
+            if jumps.get(following['from']) != jump or not _same_rates(current['rates'], first['rates']) \
+                    or abs((following['from'] - current['from']) - (segments[position + 1]['from'] - first['from'])) > 2:
+                break
+            last += 1
+        steps = last - position  # cliffs inside the collapsed range (at the start of segments position+1..last)
+        if steps + 1 < MIN_STEPS:
+            result.append(first)
+            position += 1
+            continue
+        # [first.from, end]: `steps` cliffs, the last one at `end`
+        end = segments[last]['from']
+        rates = dict(zip(COMPONENTS, (round(rate, 6) for rate in curve.slope(first['from'], end))))
+        rates['combined'] = round(sum(rates[component] for component in COMPONENTS), 6)
+        other_labels = _label(curve, end, 0, thresholds)
+        result.append({
+            'from': first['from'], 'to': end, 'rates': rates,
+            'next_knot': f'stepped phaseout: {steps} steps of {"+" if jump > 0 else "-"}${abs(jump):,} '
+                         f'every ${round((end - first["from"]) / steps):,}, averaged into this rate'
+                         + ('' if other_labels == 'rate change' else f'; {other_labels}'),
+        })
+        # the segment after the last cliff keeps its own rate and label
+        result.append(segments[last])
+        position = last + 1
+    return result
 
 
 def compute_marginal_rates(year, base_data):
